@@ -177,7 +177,7 @@ typedef union tokenValue
  * The `Token` structure encapsulates the details of a single token identified
  * during lexical analysis. It includes the following fields:
  * 
- * - `text`: A pointer to a constant string that contains the textual representation
+ * - `text`: A pointer to a string that contains the textual representation
  *            of the token. This string is typically dynamically allocated and represents
  *            the content of the token.
  * 
@@ -197,7 +197,7 @@ typedef union tokenValue
  */
 typedef struct token
 {
-    const char *text; /**The text of the token. */
+    char *text; /**The text of the token. */
     TokenType type; /**The type of the token. */
     TokenValue value; /**The value associated with the token. */
 } Token;

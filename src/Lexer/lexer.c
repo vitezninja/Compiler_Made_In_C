@@ -550,7 +550,8 @@ static Token *handleStrings(Lexer *lexer)
     consumeChar(lexer, 1);
 
     text[pos] = '\0';
-    return createTokenString(text, TOKEN_STRING, substring(text, 1, pos - 1));
+    char *ss = substring(text, 1, pos - 1);
+    return createTokenString(text, TOKEN_STRING, ss);
 }
 
 /**
@@ -632,8 +633,9 @@ static Token *handleCharacters(Lexer *lexer)
     consumeChar(lexer, 1);
 
     text[pos] = '\0';
-    char retChar = isEscaped ? convertEscapeString(substring(text, 1, 4)) : text[1];
-
+    char *ss = substring(text, 1, 4);
+    char retChar = isEscaped ? convertEscapeString(ss) : text[1];
+    free(ss);
     return createTokenChar(text, TOKEN_CHARACTER, retChar);
 }
 

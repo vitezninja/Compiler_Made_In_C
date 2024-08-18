@@ -286,7 +286,7 @@ Token *createTokenNumber(const char *text, TokenType type, int number)
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenString(const char *text, TokenType type, const char *string)
+Token *createTokenString(const char *text, TokenType type, char *string)
 {
     TokenValue value = {0};
     value.string = NULL;
@@ -398,7 +398,7 @@ void deleteToken(Token *token)
     free((char *)token->text);
     if (token->type == TOKEN_STRING)
     {
-        free((char *)token->value.string);
+        free(token->value.string);
     }
     free(token);
 }

@@ -61,10 +61,7 @@ int main()
             tokens = newTokens;
         }
 
-        if (ctoken->type != TOKEN_WHITESPACE)
-        {
-            tokens[tokenCount++] = ctoken;
-        }
+        tokens[tokenCount++] = ctoken;
 
         if (ctoken->type == TOKEN_EOF)
         {
@@ -76,8 +73,11 @@ int main()
     printf("Lexer:\n");
     for (size_t i = 0; i < tokenCount; i++)
     {
-        printf("%u ", i);
-        printToken(tokens[i]);
+        if(tokens[i]->type != TOKEN_WHITESPACE)
+        {
+            printf("%llu ", (unsigned long long)i);
+            printToken(tokens[i]);
+        }
     }
 
     deleteTokens(tokens, tokenCount);
