@@ -31,6 +31,10 @@ clean:
 	-del $(subst /,\,$(OBJS)) $(TARGET).exe
 
 clean_lin:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJS) $(TARGET_LIN)
 
-.PHONY: all lin clean clean_lin
+# Valgrind check
+valgrind: $(TARGET_LIN)
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./$(TARGET_LIN)
+
+.PHONY: all lin clean clean_lin valgrind
