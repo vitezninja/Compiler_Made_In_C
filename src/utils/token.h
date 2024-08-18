@@ -166,7 +166,7 @@ typedef enum tokenType
 typedef union tokenValue
 {
     int number; /**Integer value for numeric tokens. */
-    const char *string; /**Pointer to a string for text-based tokens. */
+    char *string; /**Pointer to a string for text-based tokens. */
     char character; /**Single character for character tokens. */
     double floatingPoint; /**Floating-point value for floating-point tokens. */
 } TokenValue;
@@ -202,15 +202,15 @@ typedef struct token
     TokenValue value; /**The value associated with the token. */
 } Token;
 
-Token *createTokenNone(const char *text, TokenType type);
+Token *createTokenNone(char *text, TokenType type);
 
-Token *createTokenNumber(const char *text, TokenType type, int number);
+Token *createTokenNumber(char *text, TokenType type, int number);
 
-Token *createTokenString(const char *text, TokenType type, const char *string);
+Token *createTokenString(char *text, TokenType type, char *string);
 
-Token *createTokenChar(const char *text, TokenType type, char character);
+Token *createTokenChar(char *text, TokenType type, char character);
 
-Token *createTokenFloat(const char *text, TokenType type, double floatingPoint);
+Token *createTokenFloat(char *text, TokenType type, double floatingPoint);
 
 void deleteToken(Token *token);
 

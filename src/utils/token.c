@@ -9,7 +9,7 @@
  */
 #define KEYWORDS_COUNT (sizeof(keywords) / sizeof(keywords[0]))
 
-static Token *createToken(const char *text, TokenType type, TokenValue value);
+static Token *createToken(char *text, TokenType type, TokenValue value);
 
 static const char *escapeCharToString(char escapeChar);
 
@@ -36,7 +36,7 @@ static const char *escapeCharToString(char escapeChar);
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-static Token *createToken(const char *text, TokenType type, TokenValue value)
+static Token *createToken(char *text, TokenType type, TokenValue value)
 {
     Token *token = (Token *)malloc(sizeof(Token));
     if (token == NULL)
@@ -221,7 +221,7 @@ static const char *tokenTypeStrings[] = {
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenNone(const char *text, TokenType type)
+Token *createTokenNone(char *text, TokenType type)
 {
     TokenValue value = {0};
     Token *token = createToken(text, type, value);
@@ -251,7 +251,7 @@ Token *createTokenNone(const char *text, TokenType type)
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenNumber(const char *text, TokenType type, int number)
+Token *createTokenNumber(char *text, TokenType type, int number)
 {
     TokenValue value = {0};
     value.number = number;
@@ -286,7 +286,7 @@ Token *createTokenNumber(const char *text, TokenType type, int number)
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenString(const char *text, TokenType type, char *string)
+Token *createTokenString(char *text, TokenType type, char *string)
 {
     TokenValue value = {0};
     value.string = NULL;
@@ -333,7 +333,7 @@ Token *createTokenString(const char *text, TokenType type, char *string)
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenChar(const char *text, TokenType type, char character)
+Token *createTokenChar(char *text, TokenType type, char character)
 {
     TokenValue value = {0};
     value.character = character;
@@ -364,7 +364,7 @@ Token *createTokenChar(const char *text, TokenType type, char character)
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenFloat(const char *text, TokenType type, double floatingPoint)
+Token *createTokenFloat(char *text, TokenType type, double floatingPoint)
 {
     TokenValue value = {0};
     value.floatingPoint = floatingPoint;
