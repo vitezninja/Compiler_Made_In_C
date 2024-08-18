@@ -35,6 +35,6 @@ clean_lin:
 
 # Valgrind check
 valgrind: $(TARGET_LIN)
-	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./$(TARGET_LIN)
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1 ./$(TARGET_LIN)
 
 .PHONY: all lin clean clean_lin valgrind
