@@ -1,0 +1,36 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up GCC
+      uses: actions/setup-gcc@v1
+      with:
+        gcc-version: '11'
+
+    - name: Install Valgrind
+      run: sudo apt-get install -y valgrind
+
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y build-essential
+        
+    - name: Build
+      run: make lin
+      
+    - name: Valgrind Check
+      run: make valgrind
+      
+    - name: Clean
+      run: make clean_lin
