@@ -21,7 +21,7 @@
  * 
  * @note The caller is responsible for freeing the dynamically allocated string returned by this function.
  */
-char *substring(const char *from, int start, int end)
+char *substring(const char *from, const int start, const int end)
 {
     int length = strlen(from);
     if (from == NULL || start < 0 || start >= length || end > length || end < start)

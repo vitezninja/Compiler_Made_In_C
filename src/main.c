@@ -5,15 +5,15 @@
 int main()
 {
     //Test inputs:
-    char* input = "+-->*/===!=!<=<<<>=>>>&&&|||^~()[]{},;:. 123 077 0x1b72 1.5 'a' \"alma\" '\n' \"alma\n\" _Hello  break    /*Hello\r\n we are*/ //the best\r\n";
-    //char* input = "a + b - 42 * (c / 2)";
-    //char* input = "\"Hello, world!\" 'a' 'b'";
-    //char* input = "123 0x1A 075 3.14";
-    //char* input = "+ - * / == != <= >= && || ! ^ ~ () {} [] , ; : .";
-    //char* input = "int main() { /* this is a comment */ int x = 42; // another comment\r\n}";
-    //char* input = "unknown_token # $ % ^";
-    //char* input = "";
-    //char* input = "if else while return";
+    const char* input = "+-->*/===!=!<=<<<>=>>>&&&|||^~()[]{},;:. 123 077 0x1b72 1.5 'a' \"alma\" '\n' \"alma\n\" _Hello  break    /*Hello\r\n we are*/ //the best\r\n";
+    //const char* input = "a + b - 42 * (c / 2)";
+    //const char* input = "\"Hello, world!\" 'a' 'b'";
+    //const char* input = "123 0x1A 075 3.14";
+    //const char* input = "+ - * / == != <= >= && || ! ^ ~ () {} [] , ; : .";
+    //const char* input = "int main() { /* this is a comment */ int x = 42; // another comment\r\n}";
+    //const char* input = "unknown_token # $ % ^";
+    //const char* input = "";
+    //const char* input = "if else while return";
 
 
     size_t tokenCapacity = INITIAL_TOKEN_CAPACITY;
@@ -75,7 +75,7 @@ int main()
     {
         if(tokens[i]->type != TOKEN_WHITESPACE)
         {
-            printf("%llu ", (unsigned long long)i);
+            printf("%d ", (int)i);
             printToken(tokens[i]);
         }
     }

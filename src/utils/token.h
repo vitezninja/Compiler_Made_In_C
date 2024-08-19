@@ -146,15 +146,15 @@ typedef enum tokenType
  * depending on its type. The union provides a flexible way to handle various token values
  * without using multiple distinct structures. It includes the following members:
  * 
- * - `number`: An integer value representing numeric tokens. This can be used for tokens
+ * - `number`: A constant integer value representing numeric tokens. This can be used for tokens
  *              that represent whole numbers.
  * 
  * - `string`: A pointer to a constant string representing text-based tokens. This can be
  *             used for tokens that contain string literals.
  * 
- * - `character`: A single character value for tokens that represent individual characters.
+ * - `character`: A constant single character value for tokens that represent individual characters.
  * 
- * - `floatingPoint`: A double precision floating-point value for tokens that represent
+ * - `floatingPoint`: A constant double precision floating-point value for tokens that represent
  *                     floating-point numbers.
  * 
  * The exact member to be used depends on the `TokenType` and the specific needs of the
@@ -165,10 +165,10 @@ typedef enum tokenType
  */
 typedef union tokenValue
 {
-    int number; /**Integer value for numeric tokens. */
-    char *string; /**Pointer to a string for text-based tokens. */
-    char character; /**Single character for character tokens. */
-    double floatingPoint; /**Floating-point value for floating-point tokens. */
+    int number; /**Constant integer value for numeric tokens. */
+    const char *string; /**Pointer to a constant string for text-based tokens. */
+    char character; /**Constant single character for character tokens. */
+    double floatingPoint; /**Constant floating-point value for floating-point tokens. */
 } TokenValue;
 
 /**
@@ -197,24 +197,24 @@ typedef union tokenValue
  */
 typedef struct token
 {
-    char *text; /**The text of the token. */
+    const char *text; /**The text of the token. */
     TokenType type; /**The type of the token. */
     TokenValue value; /**The value associated with the token. */
 } Token;
 
-Token *createTokenNone(char *text, TokenType type);
+Token *createTokenNone(const char *text, const TokenType type);
 
-Token *createTokenNumber(char *text, TokenType type, int number);
+Token *createTokenNumber(const char *text, const TokenType type, const int number);
 
-Token *createTokenString(char *text, TokenType type, char *string);
+Token *createTokenString(const char *text, const TokenType type, const char *string);
 
-Token *createTokenChar(char *text, TokenType type, char character);
+Token *createTokenChar(const char *text, const TokenType type, const char character);
 
-Token *createTokenFloat(char *text, TokenType type, double floatingPoint);
+Token *createTokenFloat(const char *text, const TokenType type, const double floatingPoint);
 
 void deleteToken(Token *token);
 
-void deleteTokens(Token **tokens, size_t count);
+void deleteTokens(Token **tokens, const size_t count);
 
 void printToken(const Token *token);
 

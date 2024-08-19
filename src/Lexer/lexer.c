@@ -14,19 +14,19 @@
  */
 #define TEXT_BUFFER_FOR_CHAR 5
 
-static int isOctalDigit(char c);
+static int isOctalDigit(const char c);
 
-static int getOctalValue(char c);
+static int getOctalValue(const char c);
 
-static int isHexalDigit(char c);
+static int isHexalDigit(const char c);
 
-static int getHexalValue(char c);
+static int getHexalValue(const char c);
 
 static char nextChar(const Lexer *lexer);
 
 static char peekChar(const Lexer *lexer);
 
-static void consumeChar(Lexer *lexer, int count);
+static void consumeChar(Lexer *lexer, const int count);
 
 static Token *handleCommentsAndSlash(Lexer *lexer);
 
@@ -53,7 +53,7 @@ static Token *handleNumbers(Lexer *lexer);
  * 
  * @return 1 if the character is an octal digit (0-7), 0 otherwise.
  */
-static int isOctalDigit(char c)
+static int isOctalDigit(const char c)
 {
     return c >= '0' && c <= '7';
 }
@@ -69,7 +69,7 @@ static int isOctalDigit(char c)
  * 
  * @return The integer value of the octal digit, or -1 if the character is not a valid octal digit.
  */
-static int getOctalValue(char c)
+static int getOctalValue(const char c)
 {
     if (isOctalDigit(c))
     {
@@ -90,7 +90,7 @@ static int getOctalValue(char c)
  * 
  * @return 1 if the character is a hexadecimal digit (0-9, A-F, a-f), 0 otherwise.
  */
-static int isHexalDigit(char c)
+static int isHexalDigit(const char c)
 {
     return (isdigit(c) || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f'));
 }
@@ -106,7 +106,7 @@ static int isHexalDigit(char c)
  * 
  * @return The integer value of the hexadecimal digit, or -1 if the character is not a valid hexadecimal digit.
  */
-static int getHexalValue(char c)
+static int getHexalValue(const char c)
 {
     if (isdigit(c))
     {
@@ -190,7 +190,7 @@ static char peekChar(const Lexer *lexer)
  * 
  * @param count The number of characters to advance the position by.
  */
-static void consumeChar(Lexer *lexer, int count)
+static void consumeChar(Lexer *lexer, const int count)
 {
     if(lexer == NULL)
     {
@@ -550,8 +550,7 @@ static Token *handleStrings(Lexer *lexer)
     consumeChar(lexer, 1);
 
     text[pos] = '\0';
-    char *ss = substring(text, 1, pos - 1);
-    return createTokenString(text, TOKEN_STRING, ss);
+    return createTokenString(text, TOKEN_STRING, substring(text, 1, pos - 1));
 }
 
 /**
@@ -633,9 +632,9 @@ static Token *handleCharacters(Lexer *lexer)
     consumeChar(lexer, 1);
 
     text[pos] = '\0';
-    char *ss = substring(text, 1, 4);
+    const char *ss = substring(text, 1, 4);
     char retChar = isEscaped ? convertEscapeString(ss) : text[1];
-    free(ss);
+    free((char *)ss);
     return createTokenChar(text, TOKEN_CHARACTER, retChar);
 }
 

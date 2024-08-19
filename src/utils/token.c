@@ -9,9 +9,9 @@
  */
 #define KEYWORDS_COUNT (sizeof(keywords) / sizeof(keywords[0]))
 
-static Token *createToken(char *text, TokenType type, TokenValue value);
+static Token *createToken(const char *text, const TokenType type, TokenValue value);
 
-static const char *escapeCharToString(char escapeChar);
+static const char *escapeCharToString(const char escapeChar);
 
 /*****************************************************************************************************
                                 PRIVATE TOKEN FUNCTIONS START HERE
@@ -36,7 +36,7 @@ static const char *escapeCharToString(char escapeChar);
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-static Token *createToken(char *text, TokenType type, TokenValue value)
+static Token *createToken(const char *text, const TokenType type, TokenValue value)
 {
     Token *token = (Token *)malloc(sizeof(Token));
     if (token == NULL)
@@ -64,7 +64,7 @@ static Token *createToken(char *text, TokenType type, TokenValue value)
  * 
  * @return A string representing the escape character or NULL if not recognized.
  */
-const char *escapeCharToString(char escapeChar)
+const char *escapeCharToString(const char escapeChar)
 {
     switch (escapeChar)
     {
@@ -221,9 +221,10 @@ static const char *tokenTypeStrings[] = {
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenNone(char *text, TokenType type)
+Token *createTokenNone(const char *text, const TokenType type)
 {
     TokenValue value = {0};
+
     Token *token = createToken(text, type, value);
     if (token == NULL)
     {
@@ -251,10 +252,10 @@ Token *createTokenNone(char *text, TokenType type)
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenNumber(char *text, TokenType type, int number)
+Token *createTokenNumber(const char *text, const TokenType type, const int number)
 {
-    TokenValue value = {0};
-    value.number = number;
+    TokenValue value = {.number = number};
+
     Token *token = createToken(text, type, value);
     if (token == NULL)
     {
@@ -286,21 +287,9 @@ Token *createTokenNumber(char *text, TokenType type, int number)
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenString(char *text, TokenType type, char *string)
+Token *createTokenString(const char *text, const TokenType type, const char *string)
 {
-    TokenValue value = {0};
-    value.string = NULL;
-
-    if (string != NULL)
-    {
-        value.string = strdup(string);
-        if (value.string == NULL)
-        {
-            fprintf(stderr, "Memory allocation for Token string value failed!\n");
-            free((char *)text);
-            return NULL;
-        }
-    }
+    TokenValue value = {.string = string};
 
     Token *token = createToken(text, type, value);
     if (token == NULL)
@@ -333,10 +322,10 @@ Token *createTokenString(char *text, TokenType type, char *string)
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenChar(char *text, TokenType type, char character)
+Token *createTokenChar(const char *text, const TokenType type, const char character)
 {
-    TokenValue value = {0};
-    value.character = character;
+    TokenValue value = {.character = character};
+
     Token *token = createToken(text, type, value);
     if (token == NULL)
     {
@@ -364,10 +353,10 @@ Token *createTokenChar(char *text, TokenType type, char character)
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenFloat(char *text, TokenType type, double floatingPoint)
+Token *createTokenFloat(const char *text, const TokenType type, const double floatingPoint)
 {
-    TokenValue value = {0};
-    value.floatingPoint = floatingPoint;
+    TokenValue value = {.floatingPoint = floatingPoint};
+
     Token *token = createToken(text, type, value);
     if (token == NULL)
     {
@@ -398,7 +387,7 @@ void deleteToken(Token *token)
     free((char *)token->text);
     if (token->type == TOKEN_STRING)
     {
-        free(token->value.string);
+        free((char *)token->value.string);
     }
     free(token);
 }
@@ -414,7 +403,7 @@ void deleteToken(Token *token)
  * 
  * @param count The number of Tokens in the array.
  */
-void deleteTokens(Token **tokens, size_t count)
+void deleteTokens(Token **tokens, const size_t count)
 {
     if (tokens == NULL)
     {
@@ -512,6 +501,7 @@ void printToken(const Token *token)
  * It returns 1 if the input matches any of the keywords, and 0 otherwise.
  *
  * @param input The string to be checked. It should be non-NULL.
+ * 
  * @return 1 if the input is a keyword, 0 otherwise.
  */
 int isKeyword(const char *input)
