@@ -202,22 +202,22 @@ typedef struct token
     TokenValue value; /**The value associated with the token. */
 } Token;
 
-Token *createTokenNone(const char *text, const TokenType type);
+Token *createTokenNone(const char *const text, const TokenType type);
 
-Token *createTokenNumber(const char *text, const TokenType type, const int number);
+Token *createTokenNumber(const char *const text, const TokenType type, const int number);
 
-Token *createTokenString(const char *text, const TokenType type, const char *string);
+Token *createTokenString(const char *const text, const TokenType type, const char *const string);
 
-Token *createTokenChar(const char *text, const TokenType type, const char character);
+Token *createTokenChar(const char *const text, const TokenType type, const char character);
 
-Token *createTokenFloat(const char *text, const TokenType type, const double floatingPoint);
+Token *createTokenFloat(const char *const text, const TokenType type, const double floatingPoint);
 
-void deleteToken(Token *token);
+void deleteToken(Token *const token);
 
-void deleteTokens(Token **tokens, const size_t count);
+void deleteTokens(Token **const tokens, const size_t count);
 
-void printToken(const Token *token);
+void printToken(const Token *const token);
 
-int isKeyword(const char *input);
+int isKeyword(const char *const input);
 
 #endif

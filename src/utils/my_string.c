@@ -21,7 +21,7 @@
  * 
  * @note The caller is responsible for freeing the dynamically allocated string returned by this function.
  */
-char *substring(const char *from, const int start, const int end)
+char *substring(const char *const from, const int start, const int end)
 {
     int length = strlen(from);
     if (from == NULL || start < 0 || start >= length || end > length || end < start)
@@ -49,7 +49,7 @@ char *substring(const char *from, const int start, const int end)
  * 
  * @return The corresponding character, or `'\0'` if an error occurs.
  */
-char convertEscapeString(const char *input)
+char convertEscapeString(const char *const input)
 {
     if (input == NULL || strlen(input) != 2 || input[0] != '\\')
     {

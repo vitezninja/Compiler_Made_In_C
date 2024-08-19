@@ -22,21 +22,21 @@ static int isHexalDigit(const char c);
 
 static int getHexalValue(const char c);
 
-static char nextChar(const Lexer *lexer);
+static char nextChar(const Lexer *const lexer);
 
-static char peekChar(const Lexer *lexer);
+static char peekChar(const Lexer *const lexer);
 
-static void consumeChar(Lexer *lexer, const int count);
+static void consumeChar(Lexer *const lexer, const int count);
 
-static Token *handleCommentsAndSlash(Lexer *lexer);
+static Token *handleCommentsAndSlash(Lexer *const lexer);
 
-static Token *handleWhitespace(Lexer *lexer);
+static Token *handleWhitespace(Lexer *const lexer);
 
-static Token *handleIdentifiersAndKeywords(Lexer *lexer);
+static Token *handleIdentifiersAndKeywords(Lexer *const lexer);
 
-static Token *handleStrings(Lexer *lexer);
+static Token *handleStrings(Lexer *const lexer);
 
-static Token *handleNumbers(Lexer *lexer);
+static Token *handleNumbers(Lexer *const lexer);
 
 /*****************************************************************************************************
                                 PRIVATE LEXER FUNCTIONS START HERE
@@ -137,7 +137,7 @@ static int getHexalValue(const char c)
  * 
  * @return The character at the current position in the lexer input, or '\0' if the position is invalid.
  */
-static char nextChar(const Lexer *lexer)
+static char nextChar(const Lexer *const lexer)
 {
     if(lexer == NULL || lexer->position > lexer->charCount)
     {
@@ -162,7 +162,7 @@ static char nextChar(const Lexer *lexer)
  * 
  * @return The character at the next position in the lexer input, or '\0' if there is no next character.
  */
-static char peekChar(const Lexer *lexer)
+static char peekChar(const Lexer *const lexer)
 {
     if(lexer == NULL)
     {
@@ -190,7 +190,7 @@ static char peekChar(const Lexer *lexer)
  * 
  * @param count The number of characters to advance the position by.
  */
-static void consumeChar(Lexer *lexer, const int count)
+static void consumeChar(Lexer *const lexer, const int count)
 {
     if(lexer == NULL)
     {
@@ -230,7 +230,7 @@ static void consumeChar(Lexer *lexer, const int count)
  * 
  *         - `NULL`: If the lexer is NULL or if memory allocation fails.
  */
-static Token *handleCommentsAndSlash(Lexer *lexer)
+static Token *handleCommentsAndSlash(Lexer *const lexer)
 {
     if (lexer == NULL)
     {
@@ -360,7 +360,7 @@ static Token *handleCommentsAndSlash(Lexer *lexer)
  * @return Pointer to a `Token` object representing the collected whitespace characters. The token type 
  *         is set to `TOKEN_WHITESPACE`. Returns NULL if the lexer is NULL or if memory allocation fails.
  */
-static Token *handleWhitespace(Lexer *lexer)
+static Token *handleWhitespace(Lexer *const lexer)
 {
     if (lexer == NULL)
     {
@@ -422,7 +422,7 @@ static Token *handleWhitespace(Lexer *lexer)
  *         type is set to `TOKEN_KEYWORD` if the text matches a keyword, otherwise it is set to 
  *         `TOKEN_IDENTIFIER`. Returns NULL if the lexer is NULL or if memory allocation fails.
  */
-static Token *handleIdentifiersAndKeywords(Lexer *lexer)
+static Token *handleIdentifiersAndKeywords(Lexer *const lexer)
 {
     if (lexer == NULL)
     {
@@ -493,7 +493,7 @@ static Token *handleIdentifiersAndKeywords(Lexer *lexer)
  *         is encountered before finding a closing quote, the token type is set to `TOKEN_UNKNOWN`. 
  *         Returns NULL if the lexer is NULL or if memory allocation fails.
  */
-static Token *handleStrings(Lexer *lexer)
+static Token *handleStrings(Lexer *const lexer)
 {
     if (lexer == NULL)
     {
@@ -573,7 +573,7 @@ static Token *handleStrings(Lexer *lexer)
  *         type is set to `TOKEN_UNKNOWN`. Returns NULL if the lexer is NULL or if memory 
  *         allocation fails.
  */
-static Token *handleCharacters(Lexer *lexer)
+static Token *handleCharacters(Lexer *const lexer)
 {
     if (lexer == NULL)
     {
@@ -632,9 +632,13 @@ static Token *handleCharacters(Lexer *lexer)
     consumeChar(lexer, 1);
 
     text[pos] = '\0';
-    const char *ss = substring(text, 1, 4);
-    char retChar = isEscaped ? convertEscapeString(ss) : text[1];
-    free((char *)ss);
+    char retChar = text[1];
+    if (isEscaped)
+    {
+        const char *ss = substring(text, 1, 4);
+        retChar = convertEscapeString(ss);
+        free((char *)ss);
+    }
     return createTokenChar(text, TOKEN_CHARACTER, retChar);
 }
 
@@ -662,7 +666,7 @@ static Token *handleCharacters(Lexer *lexer)
  *         is invalid, the token type is set to `TOKEN_UNKNOWN`. Returns NULL if the lexer is NULL or if
  *         memory allocation fails.
  */
-static Token *handleNumbers(Lexer *lexer)
+static Token *handleNumbers(Lexer *const lexer)
 {
     if (lexer == NULL)
     {
@@ -865,7 +869,7 @@ static Token *handleNumbers(Lexer *lexer)
  *         is NULL, memory allocation fails, or an unrecognized character is encountered, the function
  *         returns NULL.
  */
-static Token *handleSimpleCase(Lexer *lexer)
+static Token *handleSimpleCase(Lexer *const lexer)
 {
     if (lexer == NULL)
     {
@@ -1034,7 +1038,7 @@ static Token *handleSimpleCase(Lexer *lexer)
  * @note The caller is responsible for cleaning up the `Lexer` object when it is no longer needed.
  *       This should be done using `deleteLexer`.
  */
-Lexer *createLexer(const char *input)
+Lexer *createLexer(const char *const input)
 {
     if (input == NULL) {
         fprintf(stderr, "Invalid input.\n");
@@ -1068,7 +1072,7 @@ Lexer *createLexer(const char *input)
  *
  * @param lexer The `Lexer` to be deleted.
  */
-void deleteLexer(Lexer *lexer)
+void deleteLexer(Lexer *const lexer)
 {
     if (lexer == NULL)
     {
@@ -1109,7 +1113,7 @@ void deleteLexer(Lexer *lexer)
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This should be
  *       done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *lex(Lexer *lexer)
+Token *lex(Lexer *const lexer)
 {
     if (lexer == NULL)
     {

@@ -9,7 +9,7 @@
  */
 #define KEYWORDS_COUNT (sizeof(keywords) / sizeof(keywords[0]))
 
-static Token *createToken(const char *text, const TokenType type, TokenValue value);
+static Token *createToken(const char *const text, const TokenType type, const TokenValue value);
 
 static const char *escapeCharToString(const char escapeChar);
 
@@ -36,7 +36,7 @@ static const char *escapeCharToString(const char escapeChar);
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-static Token *createToken(const char *text, const TokenType type, TokenValue value)
+static Token *createToken(const char *const text, const TokenType type, const TokenValue value)
 {
     Token *token = (Token *)malloc(sizeof(Token));
     if (token == NULL)
@@ -100,7 +100,7 @@ const char *escapeCharToString(const char escapeChar)
 /**
  * Lookup table for keywords
  */
-static const char *keywords[] = 
+static const char *const keywords[] = 
 {
     "break",
     "continue",
@@ -128,7 +128,7 @@ static const char *keywords[] =
 /**
  * Lookup table for TokenType
  */
-static const char *tokenTypeStrings[] = {
+static const char *const tokenTypeStrings[] = {
     // Arithmetic Operators:
     "PLUS",
     "MINUS",
@@ -221,7 +221,7 @@ static const char *tokenTypeStrings[] = {
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenNone(const char *text, const TokenType type)
+Token *createTokenNone(const char *const text, const TokenType type)
 {
     TokenValue value = {0};
 
@@ -252,7 +252,7 @@ Token *createTokenNone(const char *text, const TokenType type)
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenNumber(const char *text, const TokenType type, const int number)
+Token *createTokenNumber(const char *const text, const TokenType type, const int number)
 {
     TokenValue value = {.number = number};
 
@@ -287,7 +287,7 @@ Token *createTokenNumber(const char *text, const TokenType type, const int numbe
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenString(const char *text, const TokenType type, const char *string)
+Token *createTokenString(const char *const text, const TokenType type, const char *const string)
 {
     TokenValue value = {.string = string};
 
@@ -322,7 +322,7 @@ Token *createTokenString(const char *text, const TokenType type, const char *str
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenChar(const char *text, const TokenType type, const char character)
+Token *createTokenChar(const char *const text, const TokenType type, const char character)
 {
     TokenValue value = {.character = character};
 
@@ -353,7 +353,7 @@ Token *createTokenChar(const char *text, const TokenType type, const char charac
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenFloat(const char *text, const TokenType type, const double floatingPoint)
+Token *createTokenFloat(const char *const text, const TokenType type, const double floatingPoint)
 {
     TokenValue value = {.floatingPoint = floatingPoint};
 
@@ -376,7 +376,7 @@ Token *createTokenFloat(const char *text, const TokenType type, const double flo
  * 
  * @param token A pointer to the `Token` to be freed. If the pointer is NULL, no action is taken.
  */
-void deleteToken(Token *token)
+void deleteToken(Token *const token)
 {
     if (token == NULL)
     {
@@ -403,7 +403,7 @@ void deleteToken(Token *token)
  * 
  * @param count The number of Tokens in the array.
  */
-void deleteTokens(Token **tokens, const size_t count)
+void deleteTokens(Token **const tokens, const size_t count)
 {
     if (tokens == NULL)
     {
@@ -432,7 +432,7 @@ void deleteTokens(Token **tokens, const size_t count)
  * 
  * @param token The `Token` to be printed. This should be a valid pointer to a `Token` structure.
  */
-void printToken(const Token *token)
+void printToken(const Token *const token)
 {
     if (token == NULL)
     {
@@ -504,7 +504,7 @@ void printToken(const Token *token)
  * 
  * @return 1 if the input is a keyword, 0 otherwise.
  */
-int isKeyword(const char *input)
+int isKeyword(const char *const input)
 {
     if (input == NULL)
     {
