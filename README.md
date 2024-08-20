@@ -18,6 +18,10 @@ Stay tuned for updates as more components are developed and integrated into the 
 
 - **Lexer:** Implements a lexical analyzer to parse and tokenize C-style language constructs into tokens.
 
+## Grammer
+
+The grammer that this compiler translates can be found in the [grammer.md](grammer.md) file.
+
 ## Usage
 
 ### Building the Project
