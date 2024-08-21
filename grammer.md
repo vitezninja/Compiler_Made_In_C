@@ -90,7 +90,6 @@
 
 <labeled_statement> ::= "TOKEN_IDENTIFIER" "TOKEN_COLON" <statement>
 
-/TODO:
 <expression> ::= <binary_expression>
 
 <binary_expression> ::= <unary_expression>

@@ -20,7 +20,7 @@ Stay tuned for updates as more components are developed and integrated into the 
 
 ## Grammer
 
-The grammer that this compiler translates can be found in the [grammer.md](grammer.md) file.
+The grammer that this compiler translates can be found in the [Grammer](grammer.md).
 
 ## Usage
 
