@@ -6,7 +6,7 @@
 int main()
 {
     //Test inputs:
-    const char *const input = "+-->*/===!=!<=<<<>=>>>&&&|||^~()[]{},;:. 123 077 0x1b72 1.5 'a' \"alma\" '\n' \"alma\n\" _Hello  break    /*Hello\r\n we are*/ //the best\r\n";
+    const char *const input = "+ ++ - -- ->*/ % ===!=!<=<<<>=>>>&&&|||^~()[]{},;:. 123 077 0x1b72 1.5 'a' \"alma\" '\n' \"alma\n\" _Hello  break    /*Hello\r\n we are*/ //the best\r\n";
     //const char *const input = "a + b - 42 * (c / 2)";
     //const char *const input = "\"Hello, world!\" 'a' 'b'";
     //const char *const input = "123 0x1A 075 3.14";

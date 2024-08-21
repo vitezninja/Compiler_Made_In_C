@@ -15,60 +15,91 @@
  * The enum values are grouped by their functional categories:
  * 
  * - **Arithmetic Operators**: Operators for basic arithmetic operations.
- *   - `TOKEN_PLUS`, `TOKEN_MINUS`, `TOKEN_STAR`, `TOKEN_SLASH`
+ *   - `TOKEN_PLUS`         // Addition or Identity (+)
+ *   - `TOKEN_DOUBLE_PLUS`  // Increment (++)
+ *   - `TOKEN_MINUS`        // Subtraction or Negation (-)
+ *   - `TOKEN_DOUBLE_MINUS` // Decrement (--)
+ *   - `TOKEN_STAR`         // Multiplication (*)
+ *   - `TOKEN_SLASH`        // Division (/)
+ *   - `TOKEN_PERCENT`      // Modulus (remainder of division) (%)
  * 
  * - **Comparison Operators**: Operators for comparing values.
- *   - `TOKEN_EQUALS`, `TOKEN_DOUBLE_EQUALS`, `TOKEN_NOT_EQUALS`,
- *     `TOKEN_LESS_THAN`, `TOKEN_GREATER_THAN`, `TOKEN_LESS_THAN_OR_EQUAL`,
- *     `TOKEN_GREATER_THAN_OR_EQUAL`
+ *   - `TOKEN_EQUALS`                // Assignment (=)
+ *   - `TOKEN_DOUBLE_EQUALS`         // Equality (==)
+ *   - `TOKEN_NOT_EQUALS`            // Inequality (!=)
+ *   - `TOKEN_LESS_THAN`             // Less than (<)
+ *   - `TOKEN_GREATER_THAN`          // Greater than (>)
+ *   - `TOKEN_LESS_THAN_OR_EQUAL`    // Less than or equal (<=)
+ *   - `TOKEN_GREATER_THAN_OR_EQUAL` // Greater than or equal (>=)
  * 
  * - **Logical Operators**: Operators for logical operations.
- *   - `TOKEN_AND`, `TOKEN_OR`, `TOKEN_NOT`
+ *   - `TOKEN_AND`  // Logical AND (&&)
+ *   - `TOKEN_OR`   // Logical OR (||)
+ *   - `TOKEN_NOT`  // Logical NOT (!)
  * 
  * - **Bitwise Operators**: Operators for bitwise operations.
- *   - `TOKEN_BITWISE_AND`, `TOKEN_BITWISE_OR`, `TOKEN_BITWISE_XOR`,
- *     `TOKEN_BITWISE_NOT`, `TOKEN_BITWISE_LEFT_SHIFT`, `TOKEN_BITWISE_RIGHT_SHIFT`
+ *   - `TOKEN_BITWISE_AND`         // Bitwise AND (&)
+ *   - `TOKEN_BITWISE_OR`          // Bitwise OR (|)
+ *   - `TOKEN_BITWISE_XOR`         // Bitwise XOR (^)
+ *   - `TOKEN_BITWISE_NOT`         // Bitwise NOT (~)
+ *   - `TOKEN_BITWISE_LEFT_SHIFT`  // Bitwise left shift (<<)
+ *   - `TOKEN_BITWISE_RIGHT_SHIFT` // Bitwise right shift (>>)
  * 
  * - **Parentheses and Brackets**: Tokens representing various types of brackets.
- *   - `TOKEN_OPEN_PARENTHESIS`, `TOKEN_CLOSE_PARENTHESIS`,
- *     `TOKEN_OPEN_BRACKET`, `TOKEN_CLOSE_BRACKET`, `TOKEN_OPEN_CURLY`,
- *     `TOKEN_CLOSE_CURLY`
+ *   - `TOKEN_OPEN_PARENTHESIS`   // (
+ *   - `TOKEN_CLOSE_PARENTHESIS`  // )
+ *   - `TOKEN_OPEN_BRACKET`       // [
+ *   - `TOKEN_CLOSE_BRACKET`      // ]
+ *   - `TOKEN_OPEN_CURLY`         // {
+ *   - `TOKEN_CLOSE_CURLY`        // }
  * 
  * - **Literals**: Tokens representing literal values.
- *   - `TOKEN_INTEGER`, `TOKEN_FLOATINGPOINT`, `TOKEN_CHARACTER`, `TOKEN_STRING`,
- *     `TOKEN_HEXAL`, `TOKEN_OCTAL`
+ *   - `TOKEN_INTEGER`       // Integer literals
+ *   - `TOKEN_FLOATINGPOINT` // Floating-point literals
+ *   - `TOKEN_CHARACTER`     // Character literals
+ *   - `TOKEN_STRING`        // String literals
+ *   - `TOKEN_HEXADECIMAL`   // Hexadecimal literals
+ *   - `TOKEN_OCTAL`         // Octal literals
  * 
  * - **Identifier**: Tokens representing variable or function names.
- *   - `TOKEN_IDENTIFIER`
+ *   - `TOKEN_IDENTIFIER` // Variable and function names
  * 
  * - **Keywords**: Tokens representing reserved keywords in the language.
- *   - `TOKEN_KEYWORD`
+ *   - `TOKEN_KEYWORD`   // Reserved keywords in the language
  * 
  * - **Punctuation**: Tokens representing punctuation marks.
- *   - `TOKEN_COMMA`, `TOKEN_SEMICOLON`, `TOKEN_COLON`, `TOKEN_DOT`, `TOKEN_ARROW`
+ *   - `TOKEN_COMMA`      // ,
+ *   - `TOKEN_SEMICOLON`  // ;
+ *   - `TOKEN_COLON`      // :
+ *   - `TOKEN_DOT`        // .
+ *   - `TOKEN_ARROW`      // ->
  * 
  * - **Whitespace**: Tokens representing whitespace characters.
- *   - `TOKEN_WHITESPACE`
+ *   - `TOKEN_WHITESPACE` // Space, tab, newline
  * 
  * - **Comments**: Tokens representing comments in the source code.
- *   - `TOKEN_LINE_COMMENT`, `TOKEN_BLOCK_COMMENT`
+ *   - `TOKEN_LINE_COMMENT`  // Single-line comment
+ *   - `TOKEN_BLOCK_COMMENT` // Multi-line comment
  * 
  * - **End of File**: Token indicating the end of the input.
- *   - `TOKEN_EOF`
+ *   - `TOKEN_EOF`     // End of File marker
  * 
  * - **Unknown**: Token for unrecognized or invalid input.
- *   - `TOKEN_UNKNOWN`
+ *   - `TOKEN_UNKNOWN` // Unknown or invalid token
  * 
  * - **Total Token Types**: Total number of token types defined.
- *   - `TOKEN_TYPE_COUNT` (always last in the list)
+ *   - `TOKEN_TYPE_COUNT` // Keep this last in the list
  */
 typedef enum tokenType
 {
     // Arithmetic Operators:
     TOKEN_PLUS,
+    TOKEN_DOUBLE_PLUS,
     TOKEN_MINUS,
+    TOKEN_DOUBLE_MINUS,
     TOKEN_STAR,
     TOKEN_SLASH,
+    TOKEN_PERCENT,
 
     // Comparison Operators:
     TOKEN_EQUALS,
@@ -105,7 +136,7 @@ typedef enum tokenType
     TOKEN_FLOATINGPOINT,
     TOKEN_CHARACTER,
     TOKEN_STRING,
-    TOKEN_HEXAL,
+    TOKEN_HEXADECIMAL,
     TOKEN_OCTAL,
 
     // Identifier:
