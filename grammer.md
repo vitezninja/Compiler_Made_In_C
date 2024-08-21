@@ -14,7 +14,7 @@
 
 <variable_declaration> ::= <type> "TOKEN_IDENTIFIER"
 
-<function_declaration> ::= <type> "TOKEN_IDENTIFIER" "TOKEN_OPEN_PARENTHESIS" <parameter_list> "TOKEN_CLOSE_PARENTHESIS"
+<function_declaration> ::= <type> "TOKEN_IDENTIFIER" "TOKEN_OPEN_PARENTHESIS" <parameter_list> "TOKEN_CLOSE_PARENTHESIS" "TOKEN_SEMICOLON"
 
 <function_definition> ::= <type> "TOKEN_IDENTIFIER" "TOKEN_OPEN_PARENTHESIS" <parameter_list> "TOKEN_CLOSE_PARENTHESIS" <compound_statement>
 
@@ -36,9 +36,7 @@
 
 <type_cast> ::= "TOKEN_OPEN_PARENTHESIS" <type> "TOKEN_CLOSE_PARENTHESIS"
 
-<type> ::= "TOKEN_KEYWORD"[const]? ("TOKEN_KEYWORD"[int, float, char, string, void] | <custom_type>)
-
-<custom_type> ::= "TOKEN_IDENTIFIER"
+<type> ::= "TOKEN_KEYWORD"[const]? ("TOKEN_KEYWORD"[int, float, char, string, void] | "TOKEN_IDENTIFIER")
 
 <statement> ::= <expression_statement> 
              |  <selection_statement> 
@@ -53,11 +51,11 @@
 <selection_statement> ::= "TOKEN_KEYWORD"[if] "TOKEN_OPEN_PARENTHESIS" <expression> "TOKEN_CLOSE_PARENTHESIS" <statement> ("TOKEN_KEYWORD"[else] <statement>)?
                        |  "TOKEN_KEYWORD"[switch] "TOKEN_OPEN_PARENTHESIS" <expression> "TOKEN_CLOSE_PARENTHESIS" "TOKEN_OPEN_CURLY" <switch_body> "TOKEN_CLOSE_CURLY"
 
-<switch_body> ::= <case_clause>* <default_clause>?
+<switch_body> ::= <case_clause>* <default_clause>? <case_clause>*
 
-<case_clause> ::= "TOKEN_KEYWORD"[case] <literal> "TOKEN_COLON" <statement_list> <jump_statement>?
+<case_clause> ::= "TOKEN_KEYWORD"[case] <literal> "TOKEN_COLON" <statement>*
 
-<default_clause> ::= "TOKEN_KEYWORD"[default] "TOKEN_COLON" <statement_list> <jump_statement>?
+<default_clause> ::= "TOKEN_KEYWORD"[default] "TOKEN_COLON" <statement>*
 
 <iteration_statement> ::= <for_iteration_statement>
                        |  <while_iteration_statement>
@@ -82,9 +80,7 @@
 
 <continue_statement> ::= "TOKEN_KEYWORD"[continue] "TOKEN_SEMICOLON"
 
-<compound_statement> ::= "TOKEN_OPEN_CURLY" <statement_list> "TOKEN_CLOSE_CURLY"
-
-<statement_list> ::= <statement>+
+<compound_statement> ::= "TOKEN_OPEN_CURLY" <statement>* "TOKEN_CLOSE_CURLY"
 
 <goto_statement> ::= "TOKEN_KEYWORD"[goto] "TOKEN_IDENTIFIER" "TOKEN_SEMICOLON"
 
