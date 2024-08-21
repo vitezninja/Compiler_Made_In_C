@@ -21,11 +21,14 @@ main.o: src/main.c src/Lexer/lexer.h src/Parser/parser.h
 lexer.o: src/Lexer/lexer.c src/Lexer/lexer.h src/utils/token.h src/utils/my_string.h
 	$(CC) $(CFLAGS) -c src/Lexer/lexer.c -o src/Lexer/lexer.o
 
-parser.o: src/Parser/parser.c src/Parser/parser.h src/utils/token.h
+parser.o: src/Parser/parser.c src/Parser/parser.h src/utils/token.h src/utils/AST.h
 	$(CC) $(CFLAGS) -c src/Parser/parser.c -o src/Parser/parser.o
 
 token.o: src/utils/token.c src/utils/token.h
 	$(CC) $(CFLAGS) -c src/utils/token.c -o src/utils/token.o
+
+AST.o: src/utils/AST.c src/utils/AST.h
+	$(CC) $(CFLAGS) -c src/utils/AST.c -o src/utils/AST.o
 
 my_string.o: src/utils/my_string.c src/utils/my_string.h
 	$(CC) $(CFLAGS) -c src/utils/my_string.c -o src/utils/my_string.o
