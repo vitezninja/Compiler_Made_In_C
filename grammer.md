@@ -14,9 +14,9 @@
 
 <variable_declaration> ::= <type> "TOKEN_IDENTIFIER"
 
-<function_declaration> ::= <type> "TOKEN_IDENTIFIER" "TOKEN_OPEN_PARENTHESIS" <parameter_list> "TOKEN_CLOSE_PARENTHESIS" "TOKEN_SEMICOLON"
+<function_declaration> ::= <type> "TOKEN_IDENTIFIER" "TOKEN_OPEN_PARENTHESIS" <parameter_list>* "TOKEN_CLOSE_PARENTHESIS" "TOKEN_SEMICOLON"
 
-<function_definition> ::= <type> "TOKEN_IDENTIFIER" "TOKEN_OPEN_PARENTHESIS" <parameter_list> "TOKEN_CLOSE_PARENTHESIS" <compound_statement>
+<function_definition> ::= <type> "TOKEN_IDENTIFIER" "TOKEN_OPEN_PARENTHESIS" <parameter_list>* "TOKEN_CLOSE_PARENTHESIS" <compound_statement>
 
 <type_declaration> ::= "TOKEN_KEYWORD"[enum] "TOKEN_IDENTIFIER"? "TOKEN_OPEN_CURLY" <enum_list> "TOKEN_CLOSE_CURLY" "TOKEN_SEMICOLON"
                     |  <type_keyword> "TOKEN_IDENTIFIER"? "TOKEN_OPEN_CURLY" <member_list> "TOKEN_CLOSE_CURLY" "TOKEN_SEMICOLON"
@@ -86,7 +86,15 @@
 
 <labeled_statement> ::= "TOKEN_IDENTIFIER" "TOKEN_COLON" <statement>
 
-<expression> ::= <binary_expression>
+<expression> ::= <assignment_expression>
+              |  <function_call>
+
+<function_call> ::= "TOKEN_IDENTIFIER" "TOKEN_OPEN_PARENTHESIS" <function_call_parameter_list>* "TOKEN_CLOSE_PARENTHESIS"
+
+<function_call_parameter_list> ::= <expression> ("TOKEN_COLON" <expression>)*
+
+<assignment_expression> ::= "TOKEN_IDENTIFIER" "TOKEN_EQUALS" <expression>
+                         |  <binary_expression>
 
 <binary_expression> ::= <unary_expression>
                      |  <binary_expression> <binary_token> <binary_expression>
@@ -110,7 +118,6 @@
                 |  "TOKEN_BITWISE_OR"
                 |  "TOKEN_AND"
                 |  "TOKEN_OR"
-                |  "TOKEN_EQUALS"
 
 <unary_expression> ::= <primary_expression>
                     |  <prefix_unary_token> <unary_expression>
@@ -132,6 +139,8 @@
            |  "TOKEN_FLOATINGPOINT"
            |  "TOKEN_CHARACTER"
            |  "TOKEN_STRING"
+           |  "TOKEN_HEXADECIMAL"
+           |  "TOKEN_OCTAL"
 ```
 ## Operator precedence
 
@@ -147,7 +156,7 @@
     </thead>
     <tbody>
         <tr>
-            <td rowspan="3">1</td>
+            <td rowspan="3">13</td>
             <td>++, --</td>
             <td>Unary</td>
             <td>Postfix Increment and decrement operators.</td>
@@ -164,7 +173,7 @@
             <td>Structure and union member access through pointer.</td>
         </tr>
         <tr>
-            <td rowspan="4">2</td>
+            <td rowspan="4">12</td>
             <td>++, --</td>
             <td>Unary</td>
             <td>Prefix Increment and decrement operators.</td>
@@ -186,26 +195,26 @@
             <td>Type cast.</td>
         </tr>
         <tr>
-            <td rowspan="1">3</td>
+            <td rowspan="1">11</td>
             <td>*, /, %</td>
             <td>Binary</td>
             <td>Multiplication, division, and remainder operators.</td>
             <td rowspan="10">Left-to-right</td>
         </tr>
         <tr>
-            <td rowspan="1">4</td>
+            <td rowspan="1">10</td>
             <td>+, -</td>
             <td>Binary</td>
             <td>Addition and subtraction operators.</td>
         </tr>
         <tr>
-            <td>5</td>
+            <td>9</td>
             <td>&lt;&lt;, &gt;&gt;</td>
             <td>Binary</td>
             <td>Bitwise shift left and right operators.</td>
         </tr>
         <tr>
-            <td>6</td>
+            <td>8</td>
             <td>&lt;, &lt;=, &gt;, &gt;=</td>
             <td>Binary</td>
             <td>Less than, less than or equal, greater than, greater than or equal operators.</td>
@@ -217,37 +226,37 @@
             <td>Equality and inequality comparison operators.</td>
         </tr>
         <tr>
-            <td>8</td>
+            <td>6</td>
             <td>&amp;</td>
             <td>Binary</td>
             <td>Bitwise AND operator.</td>
         </tr>
         <tr>
-            <td>9</td>
+            <td>5</td>
             <td>^</td>
             <td>Binary</td>
             <td>Bitwise XOR operator.</td>
         </tr>
         <tr>
-            <td>10</td>
+            <td>4</td>
             <td>|</td>
             <td>Binary</td>
             <td>Bitwise OR operator.</td>
         </tr>
         <tr>
-            <td>11</td>
+            <td>3</td>
             <td>&&</td>
             <td>Binary</td>
             <td>Logical AND operator.</td>
         </tr>
         <tr>
-            <td>12</td>
+            <td>2</td>
             <td>||</td>
             <td>Binary</td>
             <td>Logical OR operator.</td>
         </tr>
         <tr>
-            <td>13</td>
+            <td>1</td>
             <td>=</td>
             <td>Binary</td>
             <td>Assignment operator.</td>
@@ -260,17 +269,17 @@
 
 Operator precedence determines the order in which operations are performed in an expression.
 
-1. **Lower Precedence Numbers Mean Stronger Binding**: Operators with lower precedence numbers are evaluated before those with higher numbers. For example, multiplication (`*`) has a stronger binding than addition (`+`), so in the expression `3 + 4 * 5`, the multiplication is done first.
+1. **Lower Precedence Numbers Mean Stronger Binding**: Operators with higher precedence numbers are evaluated before those with lower numbers. For example, multiplication (`*`) has a stronger binding than addition (`+`), so in the expression `3 + 4 * 5`, the multiplication is done first.
 
 2. **Associativity**: This indicates the direction in which operators of the same precedence are evaluated.
    - **Left-to-right**: Operators are evaluated from left to right. For example, in the expression `10 - 5 + 2`, subtraction and addition are performed from left to right.
    - **Right-to-left**: Operators are evaluated from right to left. For example, in assignments like `a = b = 5`, the assignment is done from right to left.
 
 ### Example:
-- **Basic Precedence**: Consider the expression `3 + 4 * 5`. Since multiplication (`*`) has a lower precedence number than addition (`+`), `4 * 5` is evaluated first, giving `20`. Adding `3` results in `23`.
+- **Basic Precedence**: Consider the expression `3 + 4 * 5`. Since multiplication (`*`) has a higher precedence number than addition (`+`), `4 * 5` is evaluated first, giving `20`. Adding `3` results in `23`.
 
-- **Unary Operators**: For the expression `-3 + 4`, the unary minus (`-`) has a lower precedence number than addition (`+`). This means the `-3` is evaluated first, and then `4` is added, resulting in `1`.
+- **Unary Operators**: For the expression `-3 + 4`, the unary minus (`-`) has a higher precedence number than addition (`+`). This means the `-3` is evaluated first, and then `4` is added, resulting in `1`.
 
-- **Operator Associativity**: For the expression `a = b = 5 + 3`, both the assignment operator (`=`) and addition operator (`+`) have different precedences. The addition operator has a lower precedence number, so `5 + 3` is evaluated first, resulting in `8`. Then, the assignments are performed from right to left, so `b` is assigned `8` first, and then `a` is also assigned `8`.
+- **Operator Associativity**: For the expression `a = b = 5 + 3`, both the assignment operator (`=`) and addition operator (`+`) have different precedences. The addition operator has a higher precedence number, so `5 + 3` is evaluated first, resulting in `8`. Then, the assignments are performed from right to left, so `b` is assigned `8` first, and then `a` is also assigned `8`.
 
 This table helps in understanding the evaluation order of operators in expressions and predicting how complex expressions will be processed.

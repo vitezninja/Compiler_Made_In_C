@@ -29,8 +29,8 @@
 typedef struct lexer
 {
     const char *input; /**Pointer to the constant input string to be analyzed. */
-    size_t charCount; /**Total number of characters in the input string. */
-    size_t position; /**Current position (index) in the input string. */
+    size_t charCount;  /**Total number of characters in the input string. */
+    size_t position;   /**Current position (index) in the input string. */
 } Lexer;
 
 Lexer *createLexer(const char *const input);

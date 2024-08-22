@@ -196,9 +196,9 @@ typedef enum tokenType
  */
 typedef union tokenValue
 {
-    int number; /**Constant integer value for numeric tokens. */
-    const char *string; /**Pointer to a constant string for text-based tokens. */
-    char character; /**Constant single character for character tokens. */
+    int number;           /**Constant integer value for numeric tokens. */
+    const char *string;   /**Pointer to a constant string for text-based tokens. */
+    char character;       /**Constant single character for character tokens. */
     double floatingPoint; /**Constant floating-point value for floating-point tokens. */
 } TokenValue;
 
@@ -229,7 +229,7 @@ typedef union tokenValue
 typedef struct token
 {
     const char *text; /**The text of the token. */
-    TokenType type; /**The type of the token. */
+    TokenType type;   /**The type of the token. */
     TokenValue value; /**The value associated with the token. */
 } Token;
 

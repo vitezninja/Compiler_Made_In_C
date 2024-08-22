@@ -3,8 +3,11 @@
 
 #include "../utils/token.h"
 
-//TODO:
-//Add AST types
+/**
+ * Enumeration of AST node types.
+ * 
+ * The `ASTType` enum defines various types of nodes in the Abstract Syntax Tree (AST).
+ */
 typedef enum astType
 {
     AST_PROGRAM,
@@ -36,15 +39,31 @@ typedef enum astType
     AST_UNARY_EXPRESSION,
     AST_IDENTIFIER_EXPRESSION,
     AST_PARENTHESES_EXPRESION,
+    AST_TYPE_CAST_EXPRESION,
+    AST_ASSIGNEMENT_EXPRESION,
+    AST_FUNCTION_CALL,
+    AST_FUNCTION_CALL_PARAMETER_LIST,
 } ASTType;
 
+/**
+ * Represents a node in the Abstract Syntax Tree (AST).
+ * 
+ * The `ASTNode` structure encapsulates details about an AST node, including its type,
+ * associated tokens, and child nodes.
+ * 
+ * - `type`: The type of the AST node.
+ * - `tokens`: An array of tokens associated with this node. This array is managed by the caller.
+ * - `tokenCount`: The number of tokens in the `tokens` array.
+ * - `children`: An array of child AST nodes.
+ * - `childCount`: The number of child nodes in the `children` array.
+ */
 typedef struct astNode
 {
-    ASTType type;
-    Token **tokens;
-    size_t tokenCount;
-    struct astNode **children;
-    size_t childCount;
+    ASTType type;               /** The type of the AST node. */
+    Token **tokens;             /** Array of tokens associated with the node. */
+    size_t tokenCount;          /** Number of tokens in the `tokens` array. */
+    struct astNode **children;  /** Array of child nodes. */
+    size_t childCount;          /** Number of child nodes in the `children` array. */
 } ASTNode;
 
 ASTNode *createASTNode(const ASTType type, Token **const tokens, const size_t tokenCount, ASTNode **const children, const size_t childCount);
@@ -53,7 +72,6 @@ void deleteASTNode(ASTNode *const astNode);
 
 ASTNode *duplicateASTNode(ASTNode *const astNode);
 
-//TODO:
-void printASTNode(const ASTNode *const astNode);
+void printASTNode(const ASTNode *const astNode, char *indent, int isLast);
 
 #endif

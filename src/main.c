@@ -6,7 +6,7 @@
 int main()
 {
     //Test inputs:
-    const char *const input = "+ ++ - -- ->*/ % ===!=!<=<<<>=>>>&&&|||^~()[]{},;:. 123 077 0x1b72 1.5 'a' \"alma\" '\n' \"alma\n\" _Hello  break    /*Hello\r\n we are*/ //the best\r\n";
+    //const char *const input = "+ ++ - -- ->*/ % ===!=!<=<<<>=>>>&&&|||^~()[]{},;:. 123 077 0x1b72 1.5 'a' \"alma\" '\n' \"alma\n\" _Hello  break    /*Hello\r\n we are*/ //the best\r\n";
     //const char *const input = "a + b - 42 * (c / 2)";
     //const char *const input = "\"Hello, world!\" 'a' 'b'";
     //const char *const input = "123 0x1A 075 3.14";
@@ -15,7 +15,7 @@ int main()
     //const char *const input = "unknown_token # $ % ^";
     //const char *const input = "";
     //const char *const input = "if else while return";
-
+    const char *const input = "int main() { int x = 5; x = \"Hello World!\"; if (x == 5) { printf(\"Hello World!\"); } }";
 
     size_t tokenCapacity = INITIAL_TOKEN_CAPACITY;
     Token **tokens = malloc(tokenCapacity * sizeof(Token));
@@ -82,8 +82,18 @@ int main()
     }
 
     Parser *parser = createParser(tokens, tokenCount);
+    int err = parse(parser);
+    if (!err)
+    {
+        printf("Parsing failed!\n");
+        deleteParser(parser);
+        deleteTokens(tokens, tokenCount);    
+    }
+    ASTNode *astNodeRoot = getCopyAST(parser);
 
+    printParseTrees(parser);
     deleteParser(parser);
+    deleteASTNode(astNodeRoot);
 
     deleteTokens(tokens, tokenCount);
     return 0;
