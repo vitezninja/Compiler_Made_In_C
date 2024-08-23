@@ -217,7 +217,7 @@ static void consumeToken(Parser *const parser, const size_t count)
     
     if (parser->position + count >= parser->tokenCount)
     {
-        parser->position = parser->tokenCount;
+        parser->position = parser->tokenCount - 1;
         return;
     }
 
