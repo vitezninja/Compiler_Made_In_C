@@ -782,7 +782,7 @@ static Token *handleNumbers(Lexer *const lexer)
         }
 
         text[pos] = '\0';
-        return createTokenNumber(text, TOKEN_HEXAL, value);
+        return createTokenNumber(text, TOKEN_HEXADECIMAL, value);
     }
 
     //Integer number part
@@ -894,9 +894,6 @@ static Token *handleSimpleCase(Lexer *const lexer)
     case '\0':
         type = TOKEN_EOF;
         break;
-    case '+':
-        type = TOKEN_PLUS;
-        break;
     case '^':
         type = TOKEN_BITWISE_XOR;
         break;
@@ -936,8 +933,26 @@ static Token *handleSimpleCase(Lexer *const lexer)
     case '*':
         type = TOKEN_STAR;
         break;
+    case '%':
+        type = TOKEN_PERCENT;
+        break;
+    case '+':
+        if (peekChar(lexer) == '+')
+        {
+            text[pos++] = nextChar(lexer);
+            type = TOKEN_DOUBLE_PLUS;
+            break;
+        }
+        type = TOKEN_PLUS;
+        break;
     case '-':
-        if (peekChar(lexer) == '>')
+        if (peekChar(lexer) == '-')
+        {
+            text[pos++] = nextChar(lexer);
+            type = TOKEN_DOUBLE_MINUS;
+            break;
+        }
+        else if (peekChar(lexer) == '>')
         {
             text[pos++] = nextChar(lexer);
             type = TOKEN_ARROW;

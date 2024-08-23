@@ -131,9 +131,12 @@ static const char *const keywords[] =
 static const char *const tokenTypeStrings[] = {
     // Arithmetic Operators:
     "PLUS",
+    "DOUBLE_PLUS",
     "MINUS",
+    "DOUBLE_MINUS",
     "STAR",
     "SLASH",
+    "PERCENT",
 
     // Comparison Operators:
     "EQUALS",
@@ -170,7 +173,7 @@ static const char *const tokenTypeStrings[] = {
     "FLOATINGPOINT",
     "CHARACTER",
     "STRING",
-    "HEXAL",
+    "HEXADECIMAL",
     "OCTAL",
 
     // Identifier:
@@ -471,7 +474,7 @@ void printToken(const Token *const token)
     case TOKEN_STRING:
         printf(", value: %s\n", token->value.string);
         break;
-    case TOKEN_HEXAL:
+    case TOKEN_HEXADECIMAL:
         printf(", value: %#x\n", token->value.number);
         break;
     case TOKEN_OCTAL:
