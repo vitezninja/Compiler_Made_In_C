@@ -44,6 +44,6 @@ clean_lin:
 
 # Valgrind check
 valgrind: $(TARGET_LIN)
-	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1 ./$(TARGET_LIN)
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1 ./$(TARGET_LIN) tests/parser_tests/test3.c
 
 .PHONY: all lin clean clean_lin valgrind
