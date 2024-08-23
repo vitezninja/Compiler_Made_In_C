@@ -1,35 +1,44 @@
 #include "Lexer/lexer.h"
 #include "Parser/parser.h"
+#include "utils/file_reading.h"
 
 #define INITIAL_TOKEN_CAPACITY 100
 
-int main()
+int main(int argc, char *argv[])
 {
-    int lexerTest = 1;
-    //Test inputs for lexer:
-    //const char *const input = "+ ++ - -- ->*/ % ===!=!<=<<<>=>>>&&&|||^~()[]{},;:. 123 077 0x1b72 1.5 'a' \"alma\" '\n' \"alma\n\" _Hello  break    /*Hello\r\n we are*/ //the best\r\n";
-    //const char *const input = "a + b - 42 * (c / 2)";
-    //const char *const input = "\"Hello, world!\" 'a' 'b'";
-    //const char *const input = "123 0x1A 075 3.14";
-    //const char *const input = "+ - * / == != <= >= && || ! ^ ~ () {} [] , ; : .";
-    //const char *const input = "int main() { /* this is a comment */ int x = 42; // another comment\r\n}";
-    //const char *const input = "unknown_token # $ % ^";
-    //const char *const input = "";
-    //const char *const input = "if else while return";
-    //const char *const input = "printf(\"Hello World!\");";
+    // 1 if we only want to run the lexer, 0 if we also want to parse
+    int onlyLexer = 1;
 
-    //Test inputs for parser:
-    lexerTest = 0;
-    //const char *const input = "int main() { int x = 5; x = \"Hello World!\"; if (x == 5) { printf(\"Hello World!\"); } }";
-    //const char *const input = "int x = 5; void hello(); int main() { int x = 5; }";
-    const char *const input = "int x = 5; void hello(); int main() { main: int x = 5; return 0; } void hello() { for(;;) { if (1) { break; } else if (2) { goto main; } } }";
+    int fileCount = argc - 1;
+    if (fileCount < 1)
+    {
+        fprintf(stderr, "Usage: %s <path_to_file_to_compile>\n", argv[0]);
+        exit(-1);
+    }
+
+    char **files = malloc(fileCount * sizeof(char *));
+    if (files == NULL)
+    {
+        fprintf(stderr, "Memory allocation for file paths failed!\n");
+        exit(-1);
+    }
+
+    for (size_t i = 0; (int)i < fileCount; i++)
+    {
+        files[i] = argv[i + 1];
+    }
+    
+    char **fileContents = readFromFiles(files, fileCount);
+    free(files);
+    const char *const input = fileContents[0];
 
     size_t tokenCapacity = INITIAL_TOKEN_CAPACITY;
     Token **tokens = malloc(tokenCapacity * sizeof(Token));
     if (tokens == NULL)
     {
         fprintf(stderr, "Memory allocation for Tokens failed!\n");
-        return 1;
+        freeFileContent(fileContents, fileCount);
+        exit(-1);
     }
 
     size_t tokenCount = 0;
@@ -38,7 +47,8 @@ int main()
     {
         fprintf(stderr, "Failed to create Lexer.\n");
         free(tokens);
-        return 1;
+        freeFileContent(fileContents, fileCount);
+        exit(-1);
     }
 
     printf("Input: %s\n", lexer->input);
@@ -52,7 +62,8 @@ int main()
             fprintf(stderr, "Error lexing input or end of input.\n");
             deleteLexer(lexer);
             deleteTokens(tokens, tokenCount);
-            return 1;
+            freeFileContent(fileContents, fileCount);
+            exit(-1);
         }
 
         if (tokenCount >= tokenCapacity)
@@ -64,7 +75,8 @@ int main()
                 fprintf(stderr, "Memory allocation for tokens array failed!\n");
                 deleteLexer(lexer);
                 deleteTokens(tokens, tokenCount);
-                return 1;
+                freeFileContent(fileContents, fileCount);
+                exit(-1);
             }
             tokens = newTokens;
         }
@@ -88,9 +100,10 @@ int main()
         }
     }
 
-    if (lexerTest)
+    if (onlyLexer)
     {
         deleteTokens(tokens, tokenCount);
+        freeFileContent(fileContents, fileCount);
         printf("END\n");
         return 0;
     }
@@ -110,6 +123,7 @@ int main()
     deleteASTNode(astNodeRoot);
 
     deleteTokens(tokens, tokenCount);
+    freeFileContent(fileContents, fileCount);
     printf("END\n");
     return 0;
 }
