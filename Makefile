@@ -15,7 +15,7 @@ lin: $(TARGET_LIN)
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
 
-main.o: src/main.c src/Lexer/lexer.h src/Parser/parser.h
+main.o: src/main.c src/Lexer/lexer.h src/Parser/parser.h src/utils/file_reading.h
 	$(CC) $(CFLAGS) -c src/main.c -o src/main.o
 
 lexer.o: src/Lexer/lexer.c src/Lexer/lexer.h src/utils/token.h src/utils/my_string.h
@@ -32,6 +32,9 @@ AST.o: src/utils/AST.c src/utils/AST.h
 
 my_string.o: src/utils/my_string.c src/utils/my_string.h
 	$(CC) $(CFLAGS) -c src/utils/my_string.c -o src/utils/my_string.o
+
+file_reading.o: src/utils/file_reading.c src/utils/file_reading.h
+	$(CC) $(CFLAGS) -c src/utils/file_reading.c -o src/utils/file_reading.o
 
 clean:
 	-del $(subst /,\,$(OBJS)) $(TARGET).exe
