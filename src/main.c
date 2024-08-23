@@ -29,6 +29,7 @@ int main(int argc, char *argv[])
     }
     
     char **fileContents = readFromFiles(files, fileCount);
+    free(files);
     const char *const input = fileContents[0];
 
     size_t tokenCapacity = INITIAL_TOKEN_CAPACITY;
