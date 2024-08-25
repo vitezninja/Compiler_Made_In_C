@@ -15,10 +15,10 @@ lin: $(TARGET_LIN)
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
 
-main.o: src/main.c src/Lexer/lexer.h src/Parser/parser.h src/utils/file_reading.h
+main.o: src/main.c src/Lexer/lexer.h src/Parser/parser.h src/utils/file_reading.h src/utils/error.h
 	$(CC) $(CFLAGS) -c src/main.c -o src/main.o
 
-lexer.o: src/Lexer/lexer.c src/Lexer/lexer.h src/utils/token.h src/utils/my_string.h
+lexer.o: src/Lexer/lexer.c src/Lexer/lexer.h src/utils/token.h src/utils/my_string.h src/utils/error.h
 	$(CC) $(CFLAGS) -c src/Lexer/lexer.c -o src/Lexer/lexer.o
 
 parser.o: src/Parser/parser.c src/Parser/parser.h src/utils/token.h src/utils/AST.h
@@ -35,6 +35,9 @@ my_string.o: src/utils/my_string.c src/utils/my_string.h
 
 file_reading.o: src/utils/file_reading.c src/utils/file_reading.h
 	$(CC) $(CFLAGS) -c src/utils/file_reading.c -o src/utils/file_reading.o
+
+error.o: src/utils/error.c src/utils/error.h
+	$(CC) $(CFLAGS) -c src/utils/error.c -o src/utils/error.o
 
 clean:
 	-del $(subst /,\,$(OBJS)) $(TARGET).exe

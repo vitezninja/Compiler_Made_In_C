@@ -9,7 +9,7 @@
  */
 #define KEYWORDS_COUNT (sizeof(keywords) / sizeof(keywords[0]))
 
-static Token *createToken(const char *const text, const TokenType type, const TokenValue value);
+static Token *createToken(const char *const text, const int start, const TokenType type, const TokenValue value);
 
 static const char *escapeCharToString(const char escapeChar);
 
@@ -36,7 +36,7 @@ static const char *escapeCharToString(const char escapeChar);
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-static Token *createToken(const char *const text, const TokenType type, const TokenValue value)
+static Token *createToken(const char *const text, const int start, const TokenType type, const TokenValue value)
 {
     Token *token = (Token *)malloc(sizeof(Token));
     if (token == NULL)
@@ -47,6 +47,15 @@ static Token *createToken(const char *const text, const TokenType type, const To
     }
 
     token->text = text;
+    token->start = start;
+    if (text != NULL)
+    {
+        token->length = strlen(text);
+    }
+    else
+    {
+        token->text = 0;
+    }
     token->type = type;
     token->value = value;
 
@@ -224,11 +233,11 @@ static const char *const tokenTypeStrings[] = {
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenNone(const char *const text, const TokenType type)
+Token *createTokenNone(const char *const text, const int start, const TokenType type)
 {
     TokenValue value = {0};
 
-    Token *token = createToken(text, type, value);
+    Token *token = createToken(text, start, type, value);
     if (token == NULL)
     {
         free((char *)text);
@@ -255,11 +264,11 @@ Token *createTokenNone(const char *const text, const TokenType type)
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenNumber(const char *const text, const TokenType type, const int number)
+Token *createTokenNumber(const char *const text, const int start, const TokenType type, const int number)
 {
     TokenValue value = {.number = number};
 
-    Token *token = createToken(text, type, value);
+    Token *token = createToken(text, start, type, value);
     if (token == NULL)
     {
         free((char *)text);
@@ -290,11 +299,11 @@ Token *createTokenNumber(const char *const text, const TokenType type, const int
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenString(const char *const text, const TokenType type, const char *const string)
+Token *createTokenString(const char *const text, const int start, const TokenType type, const char *const string)
 {
     TokenValue value = {.string = string};
 
-    Token *token = createToken(text, type, value);
+    Token *token = createToken(text, start, type, value);
     if (token == NULL)
     {
         if (value.string != NULL)
@@ -325,11 +334,11 @@ Token *createTokenString(const char *const text, const TokenType type, const cha
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenChar(const char *const text, const TokenType type, const char character)
+Token *createTokenChar(const char *const text, const int start, const TokenType type, const char character)
 {
     TokenValue value = {.character = character};
 
-    Token *token = createToken(text, type, value);
+    Token *token = createToken(text, start, type, value);
     if (token == NULL)
     {
         free((char *)text);
@@ -356,11 +365,11 @@ Token *createTokenChar(const char *const text, const TokenType type, const char 
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenFloat(const char *const text, const TokenType type, const double floatingPoint)
+Token *createTokenFloat(const char *const text, const int start, const TokenType type, const double floatingPoint)
 {
     TokenValue value = {.floatingPoint = floatingPoint};
 
-    Token *token = createToken(text, type, value);
+    Token *token = createToken(text, start, type, value);
     if (token == NULL)
     {
         free((char *)text);
@@ -425,6 +434,25 @@ void deleteTokens(Token **const tokens, const size_t count)
     free(tokens);
 }
 
+
+Token *duplicateToken(Token *const token)
+{
+    if (token == NULL)
+    {
+        fprintf(stderr, "Token is NULL!\n");
+        return NULL;
+    }
+
+    Token *newToken = createToken(token->text, token->start, token->type, token->value);
+    if (newToken == NULL)
+    {
+        fprintf(stderr, "Memory allocation for new Token failed!\n");
+        return NULL;
+    }
+    
+    return newToken;
+}
+
 /**
  * Prints the representation of a `Token` based on its type.
  * 
@@ -443,14 +471,7 @@ void printToken(const Token *const token)
         return;
     }
 
-    if (token->type >= 0 && token->type < TOKEN_TYPE_COUNT)
-    {
-        printf("%s token", tokenTypeStrings[token->type]);
-    }
-    else
-    {
-        printf("UNKNOWN token type");
-    }
+    printf("%s token", getType(token->type));
 
     const char *escape = escapeCharToString(token->value.character);
     switch (token->type)
@@ -494,6 +515,18 @@ void printToken(const Token *const token)
     default:
         printf("\n");
         return;
+    }
+}
+
+char *getType(TokenType type)
+{
+    if (type >= 0 && type < TOKEN_TYPE_COUNT)
+    {
+        return (char *)tokenTypeStrings[type];
+    }
+    else
+    {
+        return "UNKNOWN";
     }
 }
 

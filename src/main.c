@@ -7,7 +7,7 @@
 int main(int argc, char *argv[])
 {
     // 1 if we only want to run the lexer, 0 if we also want to parse
-    int onlyLexer = 1;
+    int onlyLexer = 0;
 
     int fileCount = argc - 1;
     if (fileCount < 1)
@@ -88,6 +88,18 @@ int main(int argc, char *argv[])
             break;
         }
     }
+
+    if (lexer->errorCount > 0)
+    {
+        for (size_t i = 0; i < lexer->errorCount; i++)
+        {
+            printError(lexer->errors[i]);
+        }
+        
+        deleteLexer(lexer);
+        return -1;    
+    }
+
     deleteLexer(lexer);
 
     printf("Lexer:\n");
@@ -116,6 +128,20 @@ int main(int argc, char *argv[])
         deleteParser(parser);
         deleteTokens(tokens, tokenCount);    
     }
+
+    if (parser->errorCount > 0)
+    {
+        for (size_t i = 0; i < parser->errorCount; i++)
+        {
+            printError(parser->errors[i]);
+        }
+        
+        deleteParser(parser);
+        deleteTokens(tokens, tokenCount);
+        freeFileContent(fileContents, fileCount);
+        return -1;    
+    }
+
     ASTNode *astNodeRoot = getCopyAST(parser);
 
     printParseTrees(parser);

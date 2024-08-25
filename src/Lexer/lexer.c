@@ -38,6 +38,10 @@ static Token *handleStrings(Lexer *const lexer);
 
 static Token *handleNumbers(Lexer *const lexer);
 
+static int addError(Lexer *lexer, Error *error);
+
+static void updateStartingPos(Lexer *lexer);
+
 /*****************************************************************************************************
                                 PRIVATE LEXER FUNCTIONS START HERE
  *****************************************************************************************************/
@@ -286,7 +290,9 @@ static Token *handleCommentsAndSlash(Lexer *const lexer)
         if (nextChar(lexer) == '\0')
         {
             text[pos] = '\0';
-            return createTokenNone(text, TOKEN_UNKNOWN);
+            Token *token = createTokenNone(text, lexer->tokenStartingPos, TOKEN_UNKNOWN);
+            addError(lexer, createError(ERROR_LEXING, "The multi-line comment was not closed!", duplicateToken(token)));
+            return token;
         }
 
         //Consume '*'
@@ -297,7 +303,7 @@ static Token *handleCommentsAndSlash(Lexer *const lexer)
         consumeChar(lexer, 1);
 
         text[pos] = '\0';
-        return createTokenNone(text, TOKEN_BLOCK_COMMENT);
+        return createTokenNone(text, lexer->tokenStartingPos, TOKEN_BLOCK_COMMENT);
     }
 
     //Single line comment
@@ -337,11 +343,11 @@ static Token *handleCommentsAndSlash(Lexer *const lexer)
         }
 
         text[pos] = '\0';
-        return createTokenNone(text, TOKEN_LINE_COMMENT);
+        return createTokenNone(text, lexer->tokenStartingPos, TOKEN_LINE_COMMENT);
     }
 
     //If not single line and not block comment it has to be a slash
-    return createTokenNone(text, TOKEN_SLASH);
+    return createTokenNone(text, lexer->tokenStartingPos, TOKEN_SLASH);
 }
 
 /**
@@ -401,7 +407,7 @@ static Token *handleWhitespace(Lexer *const lexer)
     }
 
     text[pos] = '\0';
-    return createTokenNone(text, TOKEN_WHITESPACE);
+    return createTokenNone(text, lexer->tokenStartingPos, TOKEN_WHITESPACE);
 }
 
 /**
@@ -466,11 +472,11 @@ static Token *handleIdentifiersAndKeywords(Lexer *const lexer)
     text[pos] = '\0';
     if (isKeyword(text))
     {
-        return createTokenNone(text, TOKEN_KEYWORD);
+        return createTokenNone(text, lexer->tokenStartingPos, TOKEN_KEYWORD);
     }
     else
     {
-        return createTokenNone(text, TOKEN_IDENTIFIER);
+        return createTokenNone(text, lexer->tokenStartingPos, TOKEN_IDENTIFIER);
     }
 }
 
@@ -542,7 +548,9 @@ static Token *handleStrings(Lexer *const lexer)
     if (nextChar(lexer) == '\0')
     {
         text[pos] = '\0';
-        return createTokenNone(text, TOKEN_UNKNOWN);
+        Token *token = createTokenNone(text, lexer->tokenStartingPos, TOKEN_UNKNOWN);
+        addError(lexer, createError(ERROR_LEXING, "The string wasn't closed!", duplicateToken(token)));
+        return token;
     }
 
     //Consume closing '\"'
@@ -550,7 +558,7 @@ static Token *handleStrings(Lexer *const lexer)
     consumeChar(lexer, 1);
 
     text[pos] = '\0';
-    return createTokenString(text, TOKEN_STRING, substring(text, 1, pos - 1));
+    return createTokenString(text, lexer->tokenStartingPos, TOKEN_STRING, substring(text, 1, pos - 1));
 }
 
 /**
@@ -612,7 +620,9 @@ static Token *handleCharacters(Lexer *const lexer)
     if (nextChar(lexer) == '\0')
     {
         text[pos] = '\0';
-        return createTokenNone(text, TOKEN_UNKNOWN);
+        Token *token = createTokenNone(text, lexer->tokenStartingPos, TOKEN_UNKNOWN);
+        addError(lexer, createError(ERROR_LEXING, "The character wasn't closed!", duplicateToken(token)));
+        return token;
     }
 
     //Consume character
@@ -624,7 +634,9 @@ static Token *handleCharacters(Lexer *const lexer)
         text[pos++] = nextChar(lexer);
         consumeChar(lexer, 1);
         text[pos] = '\0';
-        return createTokenNone(text, TOKEN_UNKNOWN);
+        Token *token = createTokenNone(text, lexer->tokenStartingPos, TOKEN_UNKNOWN);
+        addError(lexer, createError(ERROR_LEXING, "The character wasn't closed!", duplicateToken(token)));
+        return token;
     }
 
     //Consume closing '\''
@@ -639,7 +651,7 @@ static Token *handleCharacters(Lexer *const lexer)
         retChar = convertEscapeString(ss);
         free((char *)ss);
     }
-    return createTokenChar(text, TOKEN_CHARACTER, retChar);
+    return createTokenChar(text, lexer->tokenStartingPos, TOKEN_CHARACTER, retChar);
 }
 
 /**
@@ -742,11 +754,13 @@ static Token *handleNumbers(Lexer *const lexer)
             text[pos++] = nextChar(lexer);
             consumeChar(lexer, 1);
             text[pos] = '\0';
-            return createTokenNone(text, TOKEN_UNKNOWN);
+            Token *token = createTokenNone(text, lexer->tokenStartingPos, TOKEN_UNKNOWN);
+            addError(lexer, createError(ERROR_LEXING, "Invalid digit in an octal number", duplicateToken(token)));
+            return token;
         }
 
         text[pos] = '\0';
-        return createTokenNumber(text, TOKEN_OCTAL, value);
+        return createTokenNumber(text, lexer->tokenStartingPos, TOKEN_OCTAL, value);
     }
 
     //Hexadecimal numbers
@@ -778,11 +792,13 @@ static Token *handleNumbers(Lexer *const lexer)
             text[pos++] = nextChar(lexer);
             consumeChar(lexer, 1);
             text[pos] = '\0';
-            return createTokenNone(text, TOKEN_UNKNOWN);
+            Token *token = createTokenNone(text, lexer->tokenStartingPos, TOKEN_UNKNOWN);
+            addError(lexer, createError(ERROR_LEXING, "Invalid character in a hexadecimal number", duplicateToken(token)));
+            return token;
         }
 
         text[pos] = '\0';
-        return createTokenNumber(text, TOKEN_HEXADECIMAL, value);
+        return createTokenNumber(text, lexer->tokenStartingPos, TOKEN_HEXADECIMAL, value);
     }
 
     //Integer number part
@@ -810,7 +826,7 @@ static Token *handleNumbers(Lexer *const lexer)
     if (nextChar(lexer) != '.')
     {
         text[pos] = '\0';
-        return createTokenNumber(text, TOKEN_INTEGER, value);
+        return createTokenNumber(text, lexer->tokenStartingPos, TOKEN_INTEGER, value);
     }
 
     //Floating-Point number part
@@ -846,7 +862,7 @@ static Token *handleNumbers(Lexer *const lexer)
     }
     doubleValue += value;
     
-    return createTokenFloat(text, TOKEN_FLOATINGPOINT, doubleValue);
+    return createTokenFloat(text, lexer->tokenStartingPos, TOKEN_FLOATINGPOINT, doubleValue);
 }
 
 /**
@@ -1033,7 +1049,48 @@ static Token *handleSimpleCase(Lexer *const lexer)
 
     consumeChar(lexer, pos);
     text[pos] = '\0';
-    return createTokenNone(text, type);
+    return createTokenNone(text, lexer->tokenStartingPos, type);
+}
+
+static int addError(Lexer *lexer, Error *error)
+{
+    if (lexer == NULL)
+    {
+        fprintf(stderr, "Lexer is not initialized.\n");
+        return 0;
+    }
+
+    if (error == NULL)
+    {
+        fprintf(stderr, "Error is not initialized.\n");
+        return 0;
+    }
+
+    if (lexer->errorCount + 1 >= lexer->errorsSize)
+    {
+        lexer->errorsSize *= 2;
+        Error **newErrors = realloc(lexer->errors, lexer->errorsSize * sizeof(Error *));
+        if (newErrors == NULL)
+        {
+            fprintf(stderr, "Memory reallocation for Errors failed!\n");
+            return 0;
+        }
+        lexer->errors = newErrors;
+    }
+
+    lexer->errors[lexer->errorCount++] = error;
+    return 1;
+}
+
+static void updateStartingPos(Lexer *lexer)
+{
+    if (lexer == NULL)
+    {
+        fprintf(stderr, "Lexer is not initialized.\n");
+        return;
+    }
+
+    lexer->tokenStartingPos = lexer->position;
 }
 
 /*****************************************************************************************************
@@ -1067,6 +1124,7 @@ Lexer *createLexer(const char *const input)
         return NULL;
     }
 
+    lexer->tokenStartingPos = 0;
     lexer->input = strdup(input);
     if (lexer->input == NULL)
     {
@@ -1077,6 +1135,10 @@ Lexer *createLexer(const char *const input)
 
     lexer->charCount = strlen(lexer->input);
     lexer->position = 0;
+    
+    lexer->errorsSize = 10;
+    lexer->errors = malloc(lexer->errorsSize * sizeof(Error *));
+    lexer->errorCount = 0;
 
     return lexer;
 }
@@ -1094,6 +1156,9 @@ void deleteLexer(Lexer *const lexer)
         return;
     }
 
+    deleteErrors(lexer->errors, lexer->errorCount);
+    free(lexer->errors);
+    
     free((char *)lexer->input);
     free(lexer);
 }
@@ -1158,8 +1223,11 @@ Token *lex(Lexer *const lexer)
         text[0] = nextChar(lexer);
         consumeChar(lexer, 1);
         text[1] = '\0';
-        token = createTokenNone(text, TOKEN_UNKNOWN);
+        token = createTokenNone(text, lexer->tokenStartingPos, TOKEN_UNKNOWN);
+        addError(lexer, createError(ERROR_LEXING, "Unknown character found while lexing!", duplicateToken(token)));
     }
+
+    updateStartingPos(lexer);
 
     return token;
 }

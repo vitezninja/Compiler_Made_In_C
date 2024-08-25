@@ -68,6 +68,8 @@ static ASTNode *parsePrimaryExpression(Parser *parser);
 
 static ASTNode *parseLiteral(Parser *parser);
 
+static int addError(Parser *parser, Error *error);
+
 /*****************************************************************************************************
                                 PRIVATE PARSER FUNCTIONS START HERE
  *****************************************************************************************************/
@@ -257,7 +259,10 @@ static Token *matchToken(Parser *parser, const TokenType type)
         fprintf(stderr, "Memory allocation for Token text failed!\n");
         return NULL;
     }
-    return createTokenNone(text, TOKEN_UNKNOWN);
+    Token *token = createTokenNone(text, nextToken(parser)->start ,TOKEN_UNKNOWN);
+
+    addError(parser, createError(ERROR_PARSING, "Wrong token!", token));
+    return token;
 }
 
 static ASTNode *parseProgram(Parser *parser)
@@ -1661,6 +1666,35 @@ static ASTNode *parseLiteral(Parser *parser)
     return createASTNode(AST_LITERAL, tokens, tokenCount, children, childCount);
 }
 
+static int addError(Parser *parser, Error *error)
+{
+    if (parser == NULL)
+    {
+        fprintf(stderr, "Parser is not initialized.\n");
+        return 0;
+    }
+
+    if (error == NULL)
+    {
+        fprintf(stderr, "Error is not initialized.\n");
+        return 0;
+    }
+
+    if (parser->errorCount + 1 >= parser->errorsSize)
+    {
+        parser->errorsSize *= 2;
+        Error **newErrors = realloc(parser->errors, parser->errorsSize * sizeof(Error *));
+        if (newErrors == NULL)
+        {
+            fprintf(stderr, "Memory reallocation for Errors failed!\n");
+            return 0;
+        }
+        parser->errors = newErrors;
+    }
+
+    parser->errors[parser->errorCount++] = error;
+    return 1;
+}
 
 /*****************************************************************************************************
                                 PUBLIC PARSER FUNCTIONS START HERE                                
@@ -1736,6 +1770,10 @@ Parser *createParser(Token **const tokens, const size_t tokenCount)
     parser->tokenCount = newCount;
     parser->position = 0;
     parser->ASTroot = NULL;
+
+    parser->errorsSize = 10;
+    parser->errors = malloc(parser->errorsSize * sizeof(Error *));
+    parser->errorCount = 0;
 
     return parser;
 }

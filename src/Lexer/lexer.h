@@ -7,6 +7,7 @@
 #include <string.h>
 #include "../utils/token.h"
 #include "../utils/my_string.h"
+#include "../utils/error.h"
 
 /**
  * Represents a lexical analyzer (lexer) for processing input text.
@@ -28,9 +29,13 @@
  */
 typedef struct lexer
 {
-    const char *input; /**Pointer to the constant input string to be analyzed. */
-    size_t charCount;  /**Total number of characters in the input string. */
-    size_t position;   /**Current position (index) in the input string. */
+    int tokenStartingPos;
+    const char *input; /** Pointer to the constant input string to be analyzed. */
+    size_t charCount;  /** Total number of characters in the input string. */
+    size_t position;   /** Current position (index) in the input string. */
+    Error **errors;
+    size_t errorCount;
+    size_t errorsSize;
 } Lexer;
 
 Lexer *createLexer(const char *const input);

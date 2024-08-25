@@ -229,25 +229,31 @@ typedef union tokenValue
 typedef struct token
 {
     const char *text; /**The text of the token. */
+    int start;
+    size_t length;
     TokenType type;   /**The type of the token. */
     TokenValue value; /**The value associated with the token. */
 } Token;
 
-Token *createTokenNone(const char *const text, const TokenType type);
+Token *createTokenNone(const char *const text, const int start, const TokenType type);
 
-Token *createTokenNumber(const char *const text, const TokenType type, const int number);
+Token *createTokenNumber(const char *const text, const int start, const TokenType type, const int number);
 
-Token *createTokenString(const char *const text, const TokenType type, const char *const string);
+Token *createTokenString(const char *const text, const int start, const TokenType type, const char *const string);
 
-Token *createTokenChar(const char *const text, const TokenType type, const char character);
+Token *createTokenChar(const char *const text, const int start, const TokenType type, const char character);
 
-Token *createTokenFloat(const char *const text, const TokenType type, const double floatingPoint);
+Token *createTokenFloat(const char *const text, const int start, const TokenType type, const double floatingPoint);
 
 void deleteToken(Token *const token);
 
 void deleteTokens(Token **const tokens, const size_t count);
 
+Token *duplicateToken(Token *const token);
+
 void printToken(const Token *const token);
+
+char *getType(TokenType type);
 
 int isKeyword(const char *const input);
 
