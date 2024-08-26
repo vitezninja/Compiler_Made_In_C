@@ -6,23 +6,23 @@
 
 int main(int argc, char *argv[])
 {
-    // 1 if we only want to run the lexer, 0 if we also want to parse
     int onlyLexer = 0;
 
     if (argc < 2)
     {
         fprintf(stderr, "Usage: %s <path_to_file_to_compile>\n", argv[0]);
-        exit(-1);
+        return -1;
     }
 
     int fileCount = argc - 1;
     int fileOffset = 1;
+    //Only lexer mode
     if (strcmp(argv[1], "-l") == 0)
     {
         if (argc < 3)
         {
             fprintf(stderr, "Usage: %s -l <path_to_file_to_compile>\n", argv[0]);
-            exit(-1);
+            return -1;
         }
         fileCount -= 1;
         fileOffset += 1;
@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
     if (files == NULL)
     {
         fprintf(stderr, "Memory allocation for file paths failed!\n");
-        exit(-1);
+        return -1;
     }
 
     for (size_t i = 0; (int)i < fileCount; i++)
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
     {
         fprintf(stderr, "Memory allocation for Tokens failed!\n");
         freeFileContent(fileContents, fileCount);
-        exit(-1);
+        return -1;
     }
 
     size_t tokenCount = 0;
@@ -59,9 +59,9 @@ int main(int argc, char *argv[])
     if (lexer == NULL)
     {
         fprintf(stderr, "Failed to create Lexer.\n");
-        free(tokens);
         freeFileContent(fileContents, fileCount);
-        exit(-1);
+        free(tokens);
+        return -1;
     }
 
     printf("Input: %s\n", lexer->input);
@@ -73,10 +73,10 @@ int main(int argc, char *argv[])
         if (ctoken == NULL)
         {
             fprintf(stderr, "Error lexing input or end of input.\n");
-            deleteLexer(lexer);
-            deleteTokens(tokens, tokenCount);
             freeFileContent(fileContents, fileCount);
-            exit(-1);
+            deleteTokens(tokens, tokenCount);
+            deleteLexer(lexer);
+            return -1;
         }
 
         if (tokenCount >= tokenCapacity)
@@ -86,10 +86,10 @@ int main(int argc, char *argv[])
             if (newTokens == NULL)
             {
                 fprintf(stderr, "Memory allocation for tokens array failed!\n");
-                deleteLexer(lexer);
-                deleteTokens(tokens, tokenCount);
                 freeFileContent(fileContents, fileCount);
-                exit(-1);
+                deleteTokens(tokens, tokenCount);
+                deleteLexer(lexer);
+                return -1;
             }
             tokens = newTokens;
         }
@@ -109,13 +109,16 @@ int main(int argc, char *argv[])
             printError(lexer->errors[i]);
         }
         
+        freeFileContent(fileContents, fileCount);
+        deleteTokens(tokens, tokenCount);
         deleteLexer(lexer);
-        return -1;    
+        return -1;
     }
 
+    freeFileContent(fileContents, fileCount);
     deleteLexer(lexer);
 
-    printf("Lexer:\n");
+    printf("Tokens:\n");
     for (size_t i = 0; i < tokenCount; i++)
     {
         if(tokens[i]->type != TOKEN_WHITESPACE)
@@ -128,7 +131,6 @@ int main(int argc, char *argv[])
     if (onlyLexer)
     {
         deleteTokens(tokens, tokenCount);
-        freeFileContent(fileContents, fileCount);
         printf("END\n");
         return 0;
     }
@@ -138,8 +140,9 @@ int main(int argc, char *argv[])
     if (!err)
     {
         printf("Parsing failed!\n");
-        deleteParser(parser);
         deleteTokens(tokens, tokenCount);    
+        deleteParser(parser);
+        return -1;
     }
 
     if (parser->errorCount > 0)
@@ -149,20 +152,19 @@ int main(int argc, char *argv[])
             printError(parser->errors[i]);
         }
         
-        deleteParser(parser);
         deleteTokens(tokens, tokenCount);
-        freeFileContent(fileContents, fileCount);
+        deleteParser(parser);
         return -1;    
     }
 
     ASTNode *astNodeRoot = getCopyAST(parser);
-
     printParseTrees(parser);
-    deleteParser(parser);
-    deleteASTNode(astNodeRoot);
 
+    deleteParser(parser);
+
+    
     deleteTokens(tokens, tokenCount);
-    freeFileContent(fileContents, fileCount);
+    deleteASTNode(astNodeRoot);
     printf("END\n");
     return 0;
 }

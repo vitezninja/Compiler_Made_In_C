@@ -27,10 +27,3 @@ Update documentation:
  - my_string.c
 
  - my_string.h
-
-
-Fix up:
-
- - main.c
-
-Add comments to all the test files of what it test and what should be the expected output.
