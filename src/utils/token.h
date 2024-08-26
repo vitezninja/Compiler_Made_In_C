@@ -102,7 +102,7 @@ typedef enum tokenType
     TOKEN_PERCENT,
 
     // Compound Assignment Operators (Arithmetic):
-    TOKEN_PLUS_EQUAL,      
+    TOKEN_PLUS_EQUAL,
     TOKEN_MINUS_EQUAL,
     TOKEN_STAR_EQUAL,
     TOKEN_SLASH_EQUAL,
