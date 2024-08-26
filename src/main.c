@@ -9,11 +9,24 @@ int main(int argc, char *argv[])
     // 1 if we only want to run the lexer, 0 if we also want to parse
     int onlyLexer = 0;
 
-    int fileCount = argc - 1;
-    if (fileCount < 1)
+    if (argc < 2)
     {
         fprintf(stderr, "Usage: %s <path_to_file_to_compile>\n", argv[0]);
         exit(-1);
+    }
+
+    int fileCount = argc - 1;
+    int fileOffset = 1;
+    if (strcmp(argv[1], "-l") == 0)
+    {
+        if (argc < 3)
+        {
+            fprintf(stderr, "Usage: %s -l <path_to_file_to_compile>\n", argv[0]);
+            exit(-1);
+        }
+        fileCount -= 1;
+        fileOffset += 1;
+        onlyLexer = 1;
     }
 
     char **files = malloc(fileCount * sizeof(char *));
@@ -25,7 +38,7 @@ int main(int argc, char *argv[])
 
     for (size_t i = 0; (int)i < fileCount; i++)
     {
-        files[i] = argv[i + 1];
+        files[i] = argv[i + fileOffset];
     }
     
     char **fileContents = readFromFiles(files, fileCount);

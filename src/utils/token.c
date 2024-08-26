@@ -111,27 +111,41 @@ const char *escapeCharToString(const char escapeChar)
  */
 static const char *const keywords[] = 
 {
-    "break",
-    "continue",
-    "return",
+    "typedef",
+    "extern",
+    "static",
+    "auto",
+    "register",
     "void",
-    "int",
-    "float",
     "char",
     "string",
+    "short",
+    "int",
+    "long",
+    "float",
+    "double",
+    "signed",
+    "unsigned",
+    "struct",
+    "union",
     "const",
-    "do",
-    "while",
-    "for",
+    "restrict",
+    "volatile",
+    "sizeof",
+    "enum",
+    "inline",
+    "case",
+    "default",
     "if",
     "else",
     "switch",
-    "case",
-    "default",
+    "while",
+    "do",
+    "for",
     "goto",
-    "enum",
-    "struct",
-    "union",
+    "continue",
+    "break",
+    "return",
 };
 
 /**
@@ -146,6 +160,20 @@ static const char *const tokenTypeStrings[] = {
     "STAR",
     "SLASH",
     "PERCENT",
+
+    // Compound Assignment Operators (Arithmetic):
+    "PLUS_EQUAL" ,
+    "MINUS_EQUAL",
+    "STAR_EQUAL",
+    "SLASH_EQUAL",
+    "PERCENT_EQUAL",
+
+    // Compound Assignment Operators (Bitwise):
+    "BITWISE_LEFT_SHIFT_EQUAL",
+    "BITWISE_RIGHT_SHIFT_EQUAL",
+    "BITWISE_AND_EQUAL",
+    "BITWISE_XOR_EQUAL",
+    "BITWISE_OR_EQUAL",
 
     // Comparison Operators:
     "EQUALS",
@@ -197,6 +225,7 @@ static const char *const tokenTypeStrings[] = {
     "COLON",
     "DOT",
     "ARROW",
+    "QUESTION_MARK",
 
     // Whitespace:
     "WHITESPACE",
@@ -209,7 +238,7 @@ static const char *const tokenTypeStrings[] = {
     "EOF",
 
     // Unknown:
-    "UNKNOWN"
+    "UNKNOWN",
 };
 
 /*****************************************************************************************************
@@ -471,7 +500,13 @@ void printToken(const Token *const token)
         return;
     }
 
-    printf("%s token", getType(token->type));
+    if (token->type == TOKEN_EOF)
+    {
+        printf("%s token\n", getType(token->type));
+        return;
+    }
+
+    printf("%s token, text: %s", getType(token->type), token->text);
 
     const char *escape = escapeCharToString(token->value.character);
     switch (token->type)
@@ -500,17 +535,6 @@ void printToken(const Token *const token)
         break;
     case TOKEN_OCTAL:
         printf(", value: %#o\n", token->value.number);
-        break;
-    case TOKEN_IDENTIFIER:
-    case TOKEN_KEYWORD:
-        printf(", name: %s\n", token->text);
-        break;
-    case TOKEN_LINE_COMMENT:
-    case TOKEN_BLOCK_COMMENT:
-        printf(", comment text: %s\n", token->text);
-        break;
-    case TOKEN_UNKNOWN:
-        printf(", text found: %s\n", token->text);
         break;
     default:
         printf("\n");

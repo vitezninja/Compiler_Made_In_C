@@ -28,7 +28,7 @@ static char peekChar(const Lexer *const lexer);
 
 static void consumeChar(Lexer *const lexer, const int count);
 
-static Token *handleCommentsAndSlash(Lexer *const lexer);
+static Token *handleComments(Lexer *const lexer);
 
 static Token *handleWhitespace(Lexer *const lexer);
 
@@ -234,7 +234,7 @@ static void consumeChar(Lexer *const lexer, const int count)
  * 
  *         - `NULL`: If the lexer is NULL or if memory allocation fails.
  */
-static Token *handleCommentsAndSlash(Lexer *const lexer)
+static Token *handleComments(Lexer *const lexer)
 {
     if (lexer == NULL)
     {
@@ -346,8 +346,7 @@ static Token *handleCommentsAndSlash(Lexer *const lexer)
         return createTokenNone(text, lexer->tokenStartingPos, TOKEN_LINE_COMMENT);
     }
 
-    //If not single line and not block comment it has to be a slash
-    return createTokenNone(text, lexer->tokenStartingPos, TOKEN_SLASH);
+    return NULL;
 }
 
 /**
@@ -647,8 +646,12 @@ static Token *handleCharacters(Lexer *const lexer)
     char retChar = text[1];
     if (isEscaped)
     {
-        const char *ss = substring(text, 1, 4);
+        const char *ss = substring(text, 1, 3);
         retChar = convertEscapeString(ss);
+        if (retChar == '\0')
+        {
+            addError(lexer, createError(ERROR_LEXING, "Invalid escape string format.", NULL));
+        }
         free((char *)ss);
     }
     return createTokenChar(text, lexer->tokenStartingPos, TOKEN_CHARACTER, retChar);
@@ -910,8 +913,8 @@ static Token *handleSimpleCase(Lexer *const lexer)
     case '\0':
         type = TOKEN_EOF;
         break;
-    case '^':
-        type = TOKEN_BITWISE_XOR;
+    case '?':
+        type = TOKEN_QUESTION_MARK;
         break;
     case '~':
         type = TOKEN_BITWISE_NOT;
@@ -946,17 +949,19 @@ static Token *handleSimpleCase(Lexer *const lexer)
     case '.':
         type = TOKEN_DOT;
         break;
-    case '*':
-        type = TOKEN_STAR;
-        break;
-    case '%':
-        type = TOKEN_PERCENT;
-        break;
     case '+':
         if (peekChar(lexer) == '+')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
             type = TOKEN_DOUBLE_PLUS;
+            break;
+        }
+        else if (peekChar(lexer) == '=')
+        {
+            consumeChar(lexer, 1);
+            text[pos++] = nextChar(lexer);
+            type = TOKEN_PLUS_EQUAL;
             break;
         }
         type = TOKEN_PLUS;
@@ -964,21 +969,66 @@ static Token *handleSimpleCase(Lexer *const lexer)
     case '-':
         if (peekChar(lexer) == '-')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
             type = TOKEN_DOUBLE_MINUS;
             break;
         }
         else if (peekChar(lexer) == '>')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
             type = TOKEN_ARROW;
             break;
         }
+        else if (peekChar(lexer) == '=')
+        {
+            consumeChar(lexer, 1);
+            text[pos++] = nextChar(lexer);
+            type = TOKEN_MINUS_EQUAL;
+            break;
+        }
         type = TOKEN_MINUS;
+        break;
+    case '*':
+        if (peekChar(lexer) == '=')
+        {
+            consumeChar(lexer, 1);
+            text[pos++] = nextChar(lexer);
+            type = TOKEN_STAR_EQUAL;
+            break;
+        }
+        type = TOKEN_STAR;
+        break;
+    case '/':
+        if (peekChar(lexer) == '=')
+        {
+            consumeChar(lexer, 1);
+            text[pos++] = nextChar(lexer);
+            type = TOKEN_SLASH_EQUAL;
+            break;
+        }
+        else if (peekChar(lexer) == '/' || peekChar(lexer) == '*')
+        {
+            free(text);
+            return NULL;
+        }
+        type = TOKEN_SLASH;
+        break;
+    case '%':
+        if (peekChar(lexer) == '=')
+        {
+            consumeChar(lexer, 1);
+            text[pos++] = nextChar(lexer);
+            type = TOKEN_PERCENT_EQUAL;
+            break;
+        }
+        type = TOKEN_PERCENT;
         break;
     case '=':
         if (peekChar(lexer) == '=')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
             type = TOKEN_DOUBLE_EQUALS;
             break;
@@ -988,6 +1038,7 @@ static Token *handleSimpleCase(Lexer *const lexer)
     case '!':
         if (peekChar(lexer) == '=')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
             type = TOKEN_NOT_EQUALS;
             break;
@@ -997,13 +1048,22 @@ static Token *handleSimpleCase(Lexer *const lexer)
     case '<':
         if (peekChar(lexer) == '=')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
             type = TOKEN_LESS_THAN_OR_EQUAL;
             break;
         }
         else if (peekChar(lexer) == '<')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
+            if (peekChar(lexer) == '=')
+            {
+                consumeChar(lexer, 1);
+                text[pos++] = nextChar(lexer);
+                type = TOKEN_BITWISE_LEFT_SHIFT_EQUAL;
+                break;
+            }
             type = TOKEN_BITWISE_LEFT_SHIFT;
             break;
         }
@@ -1012,13 +1072,22 @@ static Token *handleSimpleCase(Lexer *const lexer)
     case '>':
         if (peekChar(lexer) == '=')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
             type = TOKEN_GREATER_THAN_OR_EQUAL;
             break;
         }
         else if (peekChar(lexer) == '>')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
+            if (peekChar(lexer) == '=')
+            {
+                consumeChar(lexer, 1);
+                text[pos++] = nextChar(lexer);
+                type = TOKEN_BITWISE_RIGHT_SHIFT_EQUAL;
+                break;
+            }
             type = TOKEN_BITWISE_RIGHT_SHIFT;
             break;
         }
@@ -1027,8 +1096,16 @@ static Token *handleSimpleCase(Lexer *const lexer)
     case '&':
         if (peekChar(lexer) == '&')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
             type = TOKEN_AND;
+            break;
+        }
+        else if (peekChar(lexer) == '=')
+        {
+            consumeChar(lexer, 1);
+            text[pos++] = nextChar(lexer);
+            type = TOKEN_BITWISE_AND_EQUAL;
             break;
         }
         type = TOKEN_BITWISE_AND;
@@ -1036,18 +1113,36 @@ static Token *handleSimpleCase(Lexer *const lexer)
     case '|':
         if (peekChar(lexer) == '|')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
             type = TOKEN_OR;
             break;
         }
+        else if (peekChar(lexer) == '=')
+        {
+            consumeChar(lexer, 1);
+            text[pos++] = nextChar(lexer);
+            type = TOKEN_BITWISE_OR_EQUAL;
+            break;
+        }
         type = TOKEN_BITWISE_OR;
+        break;
+    case '^':
+        if (peekChar(lexer) == '=')
+        {
+            consumeChar(lexer, 1);
+            text[pos++] = nextChar(lexer);
+            type = TOKEN_BITWISE_XOR_EQUAL;
+            break;
+        }
+        type = TOKEN_BITWISE_XOR;
         break;
     default:
         free(text);
         return NULL;
     }
 
-    consumeChar(lexer, pos);
+    consumeChar(lexer, 1);
     text[pos] = '\0';
     return createTokenNone(text, lexer->tokenStartingPos, type);
 }
@@ -1209,7 +1304,7 @@ Token *lex(Lexer *const lexer)
     if (token == NULL) token = handleStrings(lexer);
     if (token == NULL) token = handleIdentifiersAndKeywords(lexer);
     if (token == NULL) token = handleWhitespace(lexer);
-    if (token == NULL) token = handleCommentsAndSlash(lexer);
+    if (token == NULL) token = handleComments(lexer);
 
     //Unknown
     if(token == NULL)

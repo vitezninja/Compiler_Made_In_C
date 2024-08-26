@@ -101,6 +101,20 @@ typedef enum tokenType
     TOKEN_SLASH,
     TOKEN_PERCENT,
 
+    // Compound Assignment Operators (Arithmetic):
+    TOKEN_PLUS_EQUAL,      
+    TOKEN_MINUS_EQUAL,
+    TOKEN_STAR_EQUAL,
+    TOKEN_SLASH_EQUAL,
+    TOKEN_PERCENT_EQUAL,
+
+    // Compound Assignment Operators (Bitwise):
+    TOKEN_BITWISE_LEFT_SHIFT_EQUAL,
+    TOKEN_BITWISE_RIGHT_SHIFT_EQUAL,
+    TOKEN_BITWISE_AND_EQUAL,
+    TOKEN_BITWISE_XOR_EQUAL,
+    TOKEN_BITWISE_OR_EQUAL,
+
     // Comparison Operators:
     TOKEN_EQUALS,
     TOKEN_DOUBLE_EQUALS,
@@ -151,6 +165,7 @@ typedef enum tokenType
     TOKEN_COLON,
     TOKEN_DOT,
     TOKEN_ARROW,
+    TOKEN_QUESTION_MARK,
 
     // Whitespace:
     TOKEN_WHITESPACE,
@@ -164,7 +179,6 @@ typedef enum tokenType
 
     // Unknown:
     TOKEN_UNKNOWN,
-
 
     // Total number of token types
     TOKEN_TYPE_COUNT // Keep this last
