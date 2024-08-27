@@ -1,13 +1,10 @@
 # Grammar
 
-### referenc for myself: https://slebok.github.io/zoo/c/c99/iso-9899-1999/extracted/index.html
-
 ```ebnf
 <program> ::= <global_declaration>* "TOKEN_EOF"
 
 
-<global_declaration> ::= <declaration>
-                      |  <function_definition>
+<global_declaration> ::= <declaration> | <function_definition>
 
 
 <function_definition> ::= <declaration_specifiers> <declarator> <declaration_list>? <compound_statement>
@@ -296,6 +293,7 @@
                   |  "TOKEN_KEYWORD"[break] "TOKEN_SEMICOLON"
                   |  "TOKEN_KEYWORD"[return] <expression>? "TOKEN_SEMICOLON"
 ```
+
 ## Operator precedence
 
 <table>
