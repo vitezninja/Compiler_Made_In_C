@@ -210,6 +210,21 @@ static void consumeChar(Lexer *const lexer, const int count)
     lexer->position += count;
 }
 
+/**
+ * Adds an `Error` object to the `Lexer`'s error list.
+ * 
+ * This function appends a new error to the list of errors maintained by the `Lexer`.
+ * If necessary, it reallocates memory to expand the `errors` array to accommodate the new error.
+ * 
+ * @param lexer Pointer to the `Lexer` object to which the error should be added.
+ * 
+ * @param error Pointer to the `Error` object to be added to the `Lexer`'s error list.
+ * 
+ * @return `1` if the error was successfully added to the list; `0` otherwise.
+ * 
+ * @note The `Lexer` and `Error` pointers must be valid. The `Lexer`'s `errors` array will be expanded as needed, 
+ *       and the function handles memory reallocation internally.
+ */
 static int addError(Lexer *lexer, Error *error)
 {
     if (lexer == NULL)
@@ -240,6 +255,18 @@ static int addError(Lexer *lexer, Error *error)
     return 1;
 }
 
+/**
+ * Updates the starting position for tokenization in the `Lexer`.
+ * 
+ * This function sets the `tokenStartingPos` field of the `Lexer` to the current position.
+ * This is typically used to mark the beginning of a new token or to reset the starting position
+ * for subsequent tokenization processes.
+ * 
+ * @param lexer Pointer to the `Lexer` object whose starting position is to be updated.
+ * 
+ * @note The `Lexer` pointer must be valid. If the `Lexer` is `NULL`, an error message is printed,
+ *       and the function does nothing. Ensure that the `Lexer` is properly initialized before calling this function.
+ */
 static void updateStartingPos(Lexer *lexer)
 {
     if (lexer == NULL)
@@ -252,28 +279,30 @@ static void updateStartingPos(Lexer *lexer)
 }
 
 /**
- * Processes and tokenizes comments and slashes in the lexer input.
+ * Processes and tokenizes comments in the lexer input.
  * 
- * This function identifies and handles single-line comments (`//`), multi-line comments 
- * (`/ * ... * /`), or a single slash (`/`) in the input stream managed by the given `Lexer` object. 
- * It dynamically allocates memory for storing the comment text, resizing the buffer as needed 
- * to handle comments of arbitrary length.
+ * This function handles two types of comments in the input stream:
+ * - **Single-line comments** starting with `//`
+ * - **Multi-line comments** enclosed in `/ * ... * /`
  * 
- * If the lexer is NULL or memory allocation fails, an error message is printed, and the 
- * function returns NULL. 
+ * The function dynamically allocates and resizes memory as needed to store the entire comment text. 
+ * If the comment extends beyond the initially allocated buffer size, the buffer is resized to accommodate the comment's length.
  * 
- * @param lexer Pointer to the `Lexer` object that provides access to the input source code stream. 
- *              The lexer must be initialized before being passed to this function.
- *
- * @return Pointer to a `Token` object representing one of the following:
+ * - **Single-line comments** are terminated by a newline character.
+ * - **Multi-line comments** are terminated by `* /`. If the end of the input is reached without finding the closing `* /`, an error is generated.
+ * 
+ * If the `Lexer` is NULL, or if memory allocation or reallocation fails, an error message is printed, and the function returns `NULL`.
+ * 
+ * @param lexer Pointer to the `Lexer` object that manages the input text. The `Lexer` must be properly initialized before calling this function.
+ * 
+ * @return A pointer to a `Token` representing one of the following:
  * 
  *         - `TOKEN_BLOCK_COMMENT`: A multi-line comment (`/ * ... * /`).
- * 
  *         - `TOKEN_LINE_COMMENT`: A single-line comment (`//`).
+ *         - `NULL`: If the `Lexer` is NULL, or if memory allocation or reallocation fails, or if no comment is found.
  * 
- *         - `TOKEN_SLASH`: A single slash (`/`).
- * 
- *         - `NULL`: If the lexer is NULL or if memory allocation fails.
+ * @note The `text` buffer is dynamically allocated and managed by this function. If memory reallocation fails,
+ *       the allocated memory is freed, and `NULL` is returned.
  */
 static Token *handleComments(Lexer *const lexer)
 {
@@ -912,22 +941,34 @@ static Token *handleNumbers(Lexer *const lexer)
 /**
  * Processes and tokenizes single-character and multi-character operators from the lexer input.
  * 
- * This function identifies and creates tokens for various operators and delimiters, including:
+ * This function identifies and creates tokens for various operators and delimiters in the input stream:
  * 
- * - Single-character operators (e.g., '+', '-', '*', '(', ')', '{', '}', '[', ']', ',', ';', ':', '.')
+ * - **Single-character operators**: `+`, `-`, `*`, `/`, `%`, `(`, `)`, `[`, `]`, `{`, `}`, `,`, `;`, `:`, `.`, '!', '=', '?', '~', '<', '>', '&', '|', '^'
  * 
- * - Multi-character operators (e.g., '->', '==', '!=', '<=', '>=', '<<', '>>', '&&', '||')
+ * - **Multi-character operators**: `->`, `==`, `!=`, `<=`, `>=`, `<<`, `>>`, `&&`, `||`, `++`, `--`, `+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `^=`, `<<=`, `>>=`
  * 
- * The function dynamically allocates memory to store the token's text and determines the token type
- * based on the current and next characters in the lexer buffer. If a multi-character operator is detected,
- * both characters are included in the token.
+ * The function dynamically allocates memory to store the text of the token and determines the token type
+ * based on the current and next characters in the lexer buffer. For multi-character operators, both characters
+ * are included in the token.
+ * 
+ * If the `Lexer` is NULL or memory allocation fails, an error message is printed, and the function returns `NULL`.
  * 
  * @param lexer Pointer to the `Lexer` object that provides access to the input source code stream.
- *              The lexer must be initialized before being passed to this function.
+ *              The `Lexer` must be properly initialized before being passed to this function.
  * 
- * @return Pointer to a `Token` object representing the recognized operator or delimiter. If the lexer
- *         is NULL, memory allocation fails, or an unrecognized character is encountered, the function
- *         returns NULL.
+ * @return A pointer to a `Token` object representing the recognized operator or delimiter, or `NULL` if:
+ * 
+ *         - The `Lexer` is NULL.
+ * 
+ *         - Memory allocation fails.
+ * 
+ *         - An unrecognized character is encountered.
+ * 
+ *         - The current character does not match any known operator or delimiter.
+ * 
+ * @note The `text` buffer is dynamically allocated and managed by this function. If resizing the buffer fails,
+ *       the allocated memory is freed, and `NULL` is returned. Ensure to handle the returned `Token` appropriately,
+ *       and be cautious of any unrecognized characters.
  */
 static Token *handleSimpleCase(Lexer *const lexer)
 {
@@ -1192,19 +1233,6 @@ static Token *handleSimpleCase(Lexer *const lexer)
                                 PUBLIC LEXER FUNCTIONS START HERE                                
  *****************************************************************************************************/
 
-/**
- * Creates a new `Lexer` object.
- * 
- * Allocates memory for a `Lexer` structure and initializes it with a copy of the provided input.
- * The function takes ownership of the input string by duplicating it and calculates its length.
- *
- * @param input The input string for the lexer (owned by the `Lexer`).
- * 
- * @return A pointer to the newly created Lexer, or NULL if memory allocation fails.
- * 
- * @note The caller is responsible for cleaning up the `Lexer` object when it is no longer needed.
- *       This should be done using `deleteLexer`.
- */
 Lexer *createLexer(const char *const input)
 {
     if (input == NULL) {
@@ -1238,12 +1266,6 @@ Lexer *createLexer(const char *const input)
     return lexer;
 }
 
-/**
- * Deletes a `Lexer` object and frees its memory.
- * Frees the memory allocated for the Lexer structure and the input string.
- *
- * @param lexer The `Lexer` to be deleted.
- */
 void deleteLexer(Lexer *const lexer)
 {
     if (lexer == NULL)
@@ -1258,36 +1280,6 @@ void deleteLexer(Lexer *const lexer)
     free(lexer);
 }
 
-/**
- * Tokenizes the next input from the lexer.
- * 
- * This function attempts to create a token for various types of input, including:
- * 
- * - Simple cases (operators and delimiters)
- * 
- * - Numeric literals
- * 
- * - Characters
- * 
- * - Strings
- * 
- * - Identifiers and keywords
- * 
- * - Whitespace
- * 
- * - Comments and slashes
- * 
- * If none of these cases apply, it defaults to returning an unknown token.
- * 
- * @param lexer Pointer to the `Lexer` object that provides access to the input source code stream.
- *              The lexer must be initialized before being passed to this function.
- * 
- * @return Pointer to a `Token` object representing the next token in the input. If the lexer is NULL,
- *         or if memory allocation fails, or if no valid token is found, the function returns NULL.
- * 
- * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This should be
- *       done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
- */
 Token *lex(Lexer *const lexer)
 {
     if (lexer == NULL)
