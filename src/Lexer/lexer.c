@@ -28,6 +28,10 @@ static char peekChar(const Lexer *const lexer);
 
 static void consumeChar(Lexer *const lexer, const int count);
 
+static int addError(Lexer *lexer, Error *error);
+
+static void updateStartingPos(Lexer *lexer);
+
 static Token *handleComments(Lexer *const lexer);
 
 static Token *handleWhitespace(Lexer *const lexer);
@@ -37,10 +41,6 @@ static Token *handleIdentifiersAndKeywords(Lexer *const lexer);
 static Token *handleStrings(Lexer *const lexer);
 
 static Token *handleNumbers(Lexer *const lexer);
-
-static int addError(Lexer *lexer, Error *error);
-
-static void updateStartingPos(Lexer *lexer);
 
 /*****************************************************************************************************
                                 PRIVATE LEXER FUNCTIONS START HERE
@@ -208,6 +208,47 @@ static void consumeChar(Lexer *const lexer, const int count)
         return;
     }
     lexer->position += count;
+}
+
+static int addError(Lexer *lexer, Error *error)
+{
+    if (lexer == NULL)
+    {
+        fprintf(stderr, "Lexer is not initialized.\n");
+        return 0;
+    }
+
+    if (error == NULL)
+    {
+        fprintf(stderr, "Error is not initialized.\n");
+        return 0;
+    }
+
+    if (lexer->errorCount + 1 >= lexer->errorsSize)
+    {
+        lexer->errorsSize *= 2;
+        Error **newErrors = realloc(lexer->errors, lexer->errorsSize * sizeof(Error *));
+        if (newErrors == NULL)
+        {
+            fprintf(stderr, "Memory reallocation for Errors failed!\n");
+            return 0;
+        }
+        lexer->errors = newErrors;
+    }
+
+    lexer->errors[lexer->errorCount++] = error;
+    return 1;
+}
+
+static void updateStartingPos(Lexer *lexer)
+{
+    if (lexer == NULL)
+    {
+        fprintf(stderr, "Lexer is not initialized.\n");
+        return;
+    }
+
+    lexer->tokenStartingPos = lexer->position;
 }
 
 /**
@@ -1145,47 +1186,6 @@ static Token *handleSimpleCase(Lexer *const lexer)
     consumeChar(lexer, 1);
     text[pos] = '\0';
     return createTokenNone(text, lexer->tokenStartingPos, type);
-}
-
-static int addError(Lexer *lexer, Error *error)
-{
-    if (lexer == NULL)
-    {
-        fprintf(stderr, "Lexer is not initialized.\n");
-        return 0;
-    }
-
-    if (error == NULL)
-    {
-        fprintf(stderr, "Error is not initialized.\n");
-        return 0;
-    }
-
-    if (lexer->errorCount + 1 >= lexer->errorsSize)
-    {
-        lexer->errorsSize *= 2;
-        Error **newErrors = realloc(lexer->errors, lexer->errorsSize * sizeof(Error *));
-        if (newErrors == NULL)
-        {
-            fprintf(stderr, "Memory reallocation for Errors failed!\n");
-            return 0;
-        }
-        lexer->errors = newErrors;
-    }
-
-    lexer->errors[lexer->errorCount++] = error;
-    return 1;
-}
-
-static void updateStartingPos(Lexer *lexer)
-{
-    if (lexer == NULL)
-    {
-        fprintf(stderr, "Lexer is not initialized.\n");
-        return;
-    }
-
-    lexer->tokenStartingPos = lexer->position;
 }
 
 /*****************************************************************************************************

@@ -16,6 +16,8 @@ static void consumeToken(Parser *const parser, const size_t count);
 
 static Token *matchToken(Parser *parser, TokenType type);
 
+static int addError(Parser *parser, Error *error);
+
 static ASTNode *parseProgram(Parser *parser);
 
 static ASTNode *parseGlobalDeclaration(Parser *parser);
@@ -64,11 +66,11 @@ static ASTNode *parseTypeCastExpression(Parser *parser);
 
 static ASTNode *parseUnaryExpression(Parser *parser, int parentPrecedence);
 
+static ASTNode *parsePostfixExpression(Parser *parser);
+
 static ASTNode *parsePrimaryExpression(Parser *parser);
 
 static ASTNode *parseLiteral(Parser *parser);
-
-static int addError(Parser *parser, Error *error);
 
 /*****************************************************************************************************
                                 PRIVATE PARSER FUNCTIONS START HERE
@@ -265,6 +267,36 @@ static Token *matchToken(Parser *parser, const TokenType type)
     return token;
 }
 
+static int addError(Parser *parser, Error *error)
+{
+    if (parser == NULL)
+    {
+        fprintf(stderr, "Parser is not initialized.\n");
+        return 0;
+    }
+
+    if (error == NULL)
+    {
+        fprintf(stderr, "Error is not initialized.\n");
+        return 0;
+    }
+
+    if (parser->errorCount + 1 >= parser->errorsSize)
+    {
+        parser->errorsSize *= 2;
+        Error **newErrors = realloc(parser->errors, parser->errorsSize * sizeof(Error *));
+        if (newErrors == NULL)
+        {
+            fprintf(stderr, "Memory reallocation for Errors failed!\n");
+            return 0;
+        }
+        parser->errors = newErrors;
+    }
+
+    parser->errors[parser->errorCount++] = error;
+    return 1;
+}
+
 static ASTNode *parseProgram(Parser *parser)
 {
     if (parser == NULL)
@@ -286,6 +318,7 @@ static ASTNode *parseProgram(Parser *parser)
     {
         startingPos = parser->position;
         children[childCount++] = parseGlobalDeclaration(parser);
+
         if (childCount == childrenSize)
         {
             childrenSize *= 2;
@@ -302,7 +335,7 @@ static ASTNode *parseProgram(Parser *parser)
 
         if (parser->position == startingPos)
         {
-            fprintf(stderr, "Parsing failed and token position didn't advance!\n");
+            addError(parser, createError(ERROR_PARSING, "Parsing failed and token position didn't advance!", NULL));
             free(tokens);
             free(children);
             return NULL;
@@ -1610,6 +1643,27 @@ static ASTNode *parseUnaryExpression(Parser *parser, int parentPrecedence)
     return parsePrimaryExpression(parser);
 }
 
+static ASTNode *parsePostfixExpression(Parser *parser)
+{
+    if (parser == NULL)
+    {
+        fprintf(stderr, "Parser is not initialized.\n");
+        return NULL;
+    }
+
+    size_t tokensSize = 0;
+    Token **tokens = malloc(tokensSize * sizeof(Token *));
+    size_t tokenCount = 0;
+
+    size_t childrenSize = 0;
+    ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
+    size_t childCount = 0;
+
+    free(tokens);
+    free(children);
+    return NULL;
+}
+
 static ASTNode *parsePrimaryExpression(Parser *parser)
 {
     if (parser == NULL)
@@ -1626,12 +1680,14 @@ static ASTNode *parsePrimaryExpression(Parser *parser)
     ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
     size_t childCount = 0;
 
-    if (nextToken(parser)->type == TOKEN_IDENTIFIER)
+    Token *currentToken = nextToken(parser);
+
+    if (currentToken->type == TOKEN_IDENTIFIER)
     {
         tokens[tokenCount++] = matchToken(parser, TOKEN_IDENTIFIER);
         return createASTNode(AST_IDENTIFIER_EXPRESSION, tokens, tokenCount, children, childCount);
     }
-    else if (nextToken(parser)->type == TOKEN_OPEN_PARENTHESIS)
+    else if (currentToken->type == TOKEN_OPEN_PARENTHESIS)
     {
         tokens[tokenCount++] = matchToken(parser, TOKEN_OPEN_PARENTHESIS);
         children[childCount++] = parseExpression(parser);
@@ -1641,6 +1697,7 @@ static ASTNode *parsePrimaryExpression(Parser *parser)
 
     free(tokens);
     free(children);
+    //This can be NULL
     return parseLiteral(parser);
 }
 
@@ -1660,40 +1717,43 @@ static ASTNode *parseLiteral(Parser *parser)
     ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
     size_t childCount = 0;
 
-    tokens[tokenCount++] = nextToken(parser);
-    consumeToken(parser, 1);
+    Token *currentToken = nextToken(parser);
 
-    return createASTNode(AST_LITERAL, tokens, tokenCount, children, childCount);
-}
-
-static int addError(Parser *parser, Error *error)
-{
-    if (parser == NULL)
+    if(currentToken->type == TOKEN_INTEGER)
     {
-        fprintf(stderr, "Parser is not initialized.\n");
-        return 0;
+        tokens[tokenCount++] = matchToken(parser, TOKEN_INTEGER);
+        return createASTNode(AST_LITERAL, tokens, tokenCount, children, childCount);
+    }
+    else if (currentToken->type == TOKEN_FLOATINGPOINT)
+    {
+        tokens[tokenCount++] = matchToken(parser, TOKEN_FLOATINGPOINT);
+        return createASTNode(AST_LITERAL, tokens, tokenCount, children, childCount);
+    }
+    else if (currentToken->type == TOKEN_CHARACTER)
+    {
+        tokens[tokenCount++] = matchToken(parser, TOKEN_CHARACTER);
+        return createASTNode(AST_LITERAL, tokens, tokenCount, children, childCount);
+    }
+    else if (currentToken->type == TOKEN_STRING)
+    {
+        tokens[tokenCount++] = matchToken(parser, TOKEN_STRING);
+        return createASTNode(AST_LITERAL, tokens, tokenCount, children, childCount);
+    }
+    else if (currentToken->type == TOKEN_HEXADECIMAL)
+    {
+        tokens[tokenCount++] = matchToken(parser, TOKEN_HEXADECIMAL);
+        return createASTNode(AST_LITERAL, tokens, tokenCount, children, childCount);
+    }
+    else if (currentToken->type == TOKEN_OCTAL)
+    {
+        tokens[tokenCount++] = matchToken(parser, TOKEN_OCTAL);
+        return createASTNode(AST_LITERAL, tokens, tokenCount, children, childCount);
     }
 
-    if (error == NULL)
-    {
-        fprintf(stderr, "Error is not initialized.\n");
-        return 0;
-    }
-
-    if (parser->errorCount + 1 >= parser->errorsSize)
-    {
-        parser->errorsSize *= 2;
-        Error **newErrors = realloc(parser->errors, parser->errorsSize * sizeof(Error *));
-        if (newErrors == NULL)
-        {
-            fprintf(stderr, "Memory reallocation for Errors failed!\n");
-            return 0;
-        }
-        parser->errors = newErrors;
-    }
-
-    parser->errors[parser->errorCount++] = error;
-    return 1;
+    addError(parser, createError(ERROR_PARSING, "This token is not a literal.", duplicateToken(currentToken)));
+    free(tokens);
+    free(children);
+    return NULL;
 }
 
 /*****************************************************************************************************
