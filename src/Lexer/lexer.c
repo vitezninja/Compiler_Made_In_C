@@ -539,9 +539,10 @@ static Token *handleIdentifiersAndKeywords(Lexer *const lexer)
     }
 
     text[pos] = '\0';
-    if (isKeyword(text))
+    Keywords iskeyword = isKeyword(text);
+    if (iskeyword != -1)
     {
-        return createTokenNone(text, lexer->tokenStartingPos, TOKEN_KEYWORD);
+        return createTokenKeyword(text, lexer->tokenStartingPos, TOKEN_KEYWORD, iskeyword);
     }
     else
     {

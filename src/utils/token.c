@@ -116,41 +116,41 @@ const char *escapeCharToString(const char escapeChar)
  */
 static const char *const keywords[] = 
 {
-    "typedef",
-    "extern",
-    "static",
-    "auto",
-    "register",
-    "void",
-    "char",
-    "string",
-    "short",
-    "int",
-    "long",
-    "float",
-    "double",
-    "signed",
-    "unsigned",
-    "struct",
-    "union",
-    "const",
-    "restrict",
-    "volatile",
-    "sizeof",
-    "enum",
-    "inline",
-    "case",
-    "default",
-    "if",
-    "else",
-    "switch",
-    "while",
-    "do",
-    "for",
-    "goto",
-    "continue",
-    "break",
-    "return",
+    [TOKEN_KEYWORD_TYPEDEF] = "typedef",
+    [TOKEN_KEYWORD_EXTERN] = "extern",
+    [TOKEN_KEYWORD_STATIC] = "static",
+    [TOKEN_KEYWORD_AUTO] = "auto",
+    [TOKEN_KEYWORD_REGISTER] = "register",
+    [TOKEN_KEYWORD_VOID] = "void",
+    [TOKEN_KEYWORD_CHAR] = "char",
+    [TOKEN_KEYWORD_STRING] = "string",
+    [TOKEN_KEYWORD_SHORT] = "short",
+    [TOKEN_KEYWORD_INT] = "int",
+    [TOKEN_KEYWORD_LONG] = "long",
+    [TOKEN_KEYWORD_FLOAT] = "float",
+    [TOKEN_KEYWORD_DOUBLE] = "double",
+    [TOKEN_KEYWORD_SIGNED] = "signed",
+    [TOKEN_KEYWORD_UNSIGNED] = "unsigned",
+    [TOKEN_KEYWORD_STRUCT] = "struct",
+    [TOKEN_KEYWORD_UNION] = "union",
+    [TOKEN_KEYWORD_CONST] = "const",
+    [TOKEN_KEYWORD_RESTRICT] = "restrict",
+    [TOKEN_KEYWORD_VOLATILE] = "volatile",
+    [TOKEN_KEYWORD_SIZEOF] = "sizeof",
+    [TOKEN_KEYWORD_ENUM] = "enum",
+    [TOKEN_KEYWORD_INLINE] = "inline",
+    [TOKEN_KEYWORD_CASE] = "case",
+    [TOKEN_KEYWORD_DEFAULT] = "default",
+    [TOKEN_KEYWORD_IF] = "if",
+    [TOKEN_KEYWORD_ELSE] = "else",
+    [TOKEN_KEYWORD_SWITCH] = "switch",
+    [TOKEN_KEYWORD_WHILE] = "while",
+    [TOKEN_KEYWORD_DO] = "do",
+    [TOKEN_KEYWORD_FOR] = "for",
+    [TOKEN_KEYWORD_GOTO] = "goto",
+    [TOKEN_KEYWORD_CONTINUE] = "continue",
+    [TOKEN_KEYWORD_BREAK] = "break",
+    [TOKEN_KEYWORD_RETURN] = "return",
 };
 
 /**
@@ -319,6 +319,19 @@ Token *createTokenFloat(const char *const text, const int start, const TokenType
     return token;
 }
 
+Token *createTokenKeyword(const char *const text, const int start, const TokenType type, const Keywords keyword)
+{
+    TokenValue value = {.keyword = keyword};
+
+    Token *token = createToken(text, start, type, value);
+    if (token == NULL)
+    {
+        free((char *)text);
+    }
+
+    return token;
+}
+
 void deleteToken(Token *const token)
 {
     if (token == NULL)
@@ -416,6 +429,9 @@ void printToken(const Token *const token)
     case TOKEN_OCTAL:
         printf(", value: %#o\n", token->value.number);
         break;
+    case TOKEN_KEYWORD:
+        printf(", value: %s\n", keywords[token->value.keyword]);
+        break;
     default:
         printf("\n");
         return;
@@ -434,7 +450,7 @@ char *getType(TokenType type)
     }
 }
 
-int isKeyword(const char *const input)
+Keywords isKeyword(const char *const input)
 {
     if (input == NULL)
     {
@@ -445,9 +461,9 @@ int isKeyword(const char *const input)
     {
         if (strcmp(input, keywords[i]) == 0)
         {
-            return 1;
+            return (Keywords)i;
         }
     }
     
-    return 0;
+    return (Keywords)-1;
 }

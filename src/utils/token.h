@@ -200,6 +200,96 @@ typedef enum tokenType
 } TokenType;
 
 /**
+ * Enum representing various reserved keywords in the language.
+ * 
+ * The `Keywords` enum defines a set of reserved keywords that are used in the language's syntax. 
+ * Each value in this enum corresponds to a specific keyword that has a predefined meaning in the language. 
+ * Keywords are fundamental components of the language and cannot be used as identifiers or variable names.
+ * 
+ * The enum values are categorized into different groups based on their usage:
+ * 
+ * - **Storage Class Specifiers**: Keywords that specify the storage duration and visibility of variables.
+ *   - `TOKEN_KEYWORD_TYPEDEF`   // Defines a new type name.
+ *   - `TOKEN_KEYWORD_EXTERN`    // Declares variables or functions that are defined in other translation units.
+ *   - `TOKEN_KEYWORD_STATIC`    // Defines variables with static storage duration.
+ *   - `TOKEN_KEYWORD_AUTO`      // Declares automatic variables (default storage class).
+ *   - `TOKEN_KEYWORD_REGISTER`  // Requests that a variable be stored in a CPU register.
+ * 
+ * - **Type Specifiers**: Keywords that define various data types.
+ *   - `TOKEN_KEYWORD_VOID`      // Represents an absence of type.
+ *   - `TOKEN_KEYWORD_CHAR`      // Represents character type.
+ *   - `TOKEN_KEYWORD_STRING`    // Represents string type.
+ *   - `TOKEN_KEYWORD_SHORT`     // Represents short integer type.
+ *   - `TOKEN_KEYWORD_INT`       // Represents integer type.
+ *   - `TOKEN_KEYWORD_LONG`      // Represents long integer type.
+ *   - `TOKEN_KEYWORD_FLOAT`     // Represents floating-point type.
+ *   - `TOKEN_KEYWORD_DOUBLE`    // Represents double-precision floating-point type.
+ *   - `TOKEN_KEYWORD_SIGNED`    // Specifies signed integers.
+ *   - `TOKEN_KEYWORD_UNSIGNED`  // Specifies unsigned integers.
+ *   - `TOKEN_KEYWORD_STRUCT`    // Defines a structure.
+ *   - `TOKEN_KEYWORD_UNION`     // Defines a union.
+ *   - `TOKEN_KEYWORD_CONST`     // Indicates that a variable's value cannot be changed.
+ *   - `TOKEN_KEYWORD_RESTRICT`  // Indicates that a pointer is the only reference to an object.
+ *   - `TOKEN_KEYWORD_VOLATILE`  // Indicates that a variable may be changed by external factors.
+ *   - `TOKEN_KEYWORD_SIZEOF`    // Returns the size of a data type or object.
+ *   - `TOKEN_KEYWORD_ENUM`      // Defines an enumeration.
+ *   - `TOKEN_KEYWORD_INLINE`    // Suggests that a function should be inlined.
+ * 
+ * - **Control Flow Keywords**: Keywords used for controlling the flow of execution.
+ *   - `TOKEN_KEYWORD_CASE`      // Marks a branch in a switch statement.
+ *   - `TOKEN_KEYWORD_DEFAULT`   // Specifies the default branch in a switch statement.
+ *   - `TOKEN_KEYWORD_IF`        // Starts a conditional statement.
+ *   - `TOKEN_KEYWORD_ELSE`      // Specifies an alternative branch in an if statement.
+ *   - `TOKEN_KEYWORD_SWITCH`    // Starts a switch statement.
+ *   - `TOKEN_KEYWORD_WHILE`     // Starts a while loop.
+ *   - `TOKEN_KEYWORD_DO`        // Starts a do-while loop.
+ *   - `TOKEN_KEYWORD_FOR`       // Starts a for loop.
+ *   - `TOKEN_KEYWORD_GOTO`      // Transfers control to a labeled statement.
+ *   - `TOKEN_KEYWORD_CONTINUE`  // Skips the remaining statements in a loop iteration.
+ *   - `TOKEN_KEYWORD_BREAK`     // Exits from a loop or switch statement.
+ *   - `TOKEN_KEYWORD_RETURN`    // Exits from a function and optionally returns a value.
+ */
+typedef enum keywords
+{
+    TOKEN_KEYWORD_TYPEDEF,
+    TOKEN_KEYWORD_EXTERN,
+    TOKEN_KEYWORD_STATIC,
+    TOKEN_KEYWORD_AUTO,
+    TOKEN_KEYWORD_REGISTER,
+    TOKEN_KEYWORD_VOID,
+    TOKEN_KEYWORD_CHAR,
+    TOKEN_KEYWORD_STRING,
+    TOKEN_KEYWORD_SHORT,
+    TOKEN_KEYWORD_INT,
+    TOKEN_KEYWORD_LONG,
+    TOKEN_KEYWORD_FLOAT,
+    TOKEN_KEYWORD_DOUBLE,
+    TOKEN_KEYWORD_SIGNED,
+    TOKEN_KEYWORD_UNSIGNED,
+    TOKEN_KEYWORD_STRUCT,
+    TOKEN_KEYWORD_UNION,
+    TOKEN_KEYWORD_CONST,
+    TOKEN_KEYWORD_RESTRICT,
+    TOKEN_KEYWORD_VOLATILE,
+    TOKEN_KEYWORD_SIZEOF,
+    TOKEN_KEYWORD_ENUM,
+    TOKEN_KEYWORD_INLINE,
+    TOKEN_KEYWORD_CASE,
+    TOKEN_KEYWORD_DEFAULT,
+    TOKEN_KEYWORD_IF,
+    TOKEN_KEYWORD_ELSE,
+    TOKEN_KEYWORD_SWITCH,
+    TOKEN_KEYWORD_WHILE,
+    TOKEN_KEYWORD_DO,
+    TOKEN_KEYWORD_FOR,
+    TOKEN_KEYWORD_GOTO,
+    TOKEN_KEYWORD_CONTINUE,
+    TOKEN_KEYWORD_BREAK,
+    TOKEN_KEYWORD_RETURN,
+    TOKEN_KEYWORD_NOT_KEYWORD = -1,
+} Keywords;
+
+/**
  * Represents the value associated with a token.
  * 
  * The `TokenValue` union is used to store different types of data that a token can hold,
@@ -217,6 +307,8 @@ typedef enum tokenType
  * - `floatingPoint`: A constant double precision floating-point value for tokens that represent
  *                     floating-point numbers.
  * 
+ * - `keyword`: A constant value from the `Keywords` enumeration representing keyword tokens.
+ * 
  * The exact member to be used depends on the `TokenType` and the specific needs of the
  * token being represented.
  * 
@@ -229,6 +321,7 @@ typedef union tokenValue
     const char *string;   /**Pointer to a constant string for text-based tokens. */
     char character;       /**Constant single character for character tokens. */
     double floatingPoint; /**Constant floating-point value for floating-point tokens. */
+    Keywords keyword;     /**Constant keyword value for keyword tokens. */
 } TokenValue;
 
 /**
@@ -404,6 +497,35 @@ Token *createTokenChar(const char *const text, const int start, const TokenType 
 Token *createTokenFloat(const char *const text, const int start, const TokenType type, const double floatingPoint);
 
 /**
+ * Creates a new `Token` with the given text, start position, type, and keyword value.
+ * 
+ * This function creates a `Token` specifically for keywords. It assumes that `text` is dynamically
+ * allocated by the caller and takes ownership of it. The `Token` will be responsible for freeing 
+ * the `text` when it is no longer needed.
+ * 
+ * The `keyword` value is directly assigned to the `Token` structure as part of its `TokenValue`.
+ * 
+ * If the allocation for the `Token` fails, the function will free the `text` and return `NULL`.
+ * 
+ * @param text     The text to be associated with the token (assumed to be dynamically allocated).
+ * 
+ * @param start    The starting position of the token in the source code.
+ * 
+ * @param type     The type of the token, which should be `TOKEN_KEYWORD` for keyword tokens.
+ * 
+ * @param keyword  The `Keywords` enum value representing the specific keyword for the token.
+ * 
+ * @return A pointer to the created `Token`, or `NULL` if allocation fails.
+ * 
+ * @note If the allocation for the `Token` structure fails, this function will free the dynamically 
+ *       allocated `text` to avoid memory leaks.
+ * 
+ * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. 
+ *       This should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
+ */
+Token *createTokenKeyword(const char *const text, const int start, const TokenType type, const Keywords keyword);
+
+/**
  * Frees the memory associated with a `Token`.
  * 
  * This function assumes that `token` is a valid pointer to a dynamically allocated `Token` structure.
@@ -479,15 +601,20 @@ void printToken(const Token *const token);
 char *getType(TokenType type);
 
 /**
- * Checks if the given input string is a keyword.
- *
- * This function compares the input string against a pre-defined list of keywords.
- * It returns 1 if the input matches any of the keywords, and 0 otherwise.
- *
- * @param input The string to be checked. It should be non-NULL.
+ * Checks if the given input string is a reserved keyword.
  * 
- * @return 1 if the input is a keyword, 0 otherwise.
+ * This function compares the input string against a pre-defined list of reserved keywords. 
+ * It determines if the input string matches any of the keywords and returns the corresponding 
+ * `Keywords` enum value if a match is found. If the input does not match any keyword, it returns 
+ * `TOKEN_KEYWORD_NOT_KEYWORD` to indicate that the string is not a recognized keyword.
+ * 
+ * @param input The string to be checked. It should not be NULL.
+ * 
+ * @return A `Keywords` enum value representing the matched keyword if the input is a keyword; 
+ *         `TOKEN_KEYWORD_NOT_KEYWORD` if the input does not match any keyword.
+ * 
+ * @note If the input string is NULL, the function returns `TOKEN_KEYWORD_NOT_KEYWORD`.
  */
-int isKeyword(const char *const input);
+Keywords isKeyword(const char *const input);
 
 #endif
