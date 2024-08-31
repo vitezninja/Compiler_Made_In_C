@@ -140,6 +140,17 @@ int main(int argc, char *argv[])
     if (!err)
     {
         printf("Parsing failed!\n");
+        if (parser->errorCount > 0)
+        {
+            for (size_t i = 0; i < parser->errorCount; i++)
+            {
+                printError(parser->errors[i]);
+            }
+            
+            deleteTokens(tokens, tokenCount);
+            deleteParser(parser);
+            return -1;    
+        }
         deleteTokens(tokens, tokenCount);    
         deleteParser(parser);
         return -1;

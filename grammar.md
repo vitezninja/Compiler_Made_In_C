@@ -4,16 +4,13 @@
 <program> ::= <global_declaration>* "TOKEN_EOF"
 
 
-<global_declaration> ::= <declaration> | <function_definition>
+<global_declaration> ::= <function_definition> | <declaration>
 
 
-<function_definition> ::= <declaration_specifiers> <declarator> <declaration_list>? <compound_statement>
+<function_definition> ::= <declaration_specifiers> <declarator> <declaration>* <compound_statement>
 
 
-<declaration_specifiers> ::= <storage_class_specifier> <declaration_specifiers>?
-                          |  <type_specifier> <declaration_specifiers>?
-                          |  <type_qualifier> <declaration_specifiers>?
-                          |  "TOKEN_KEYWORD"[inline] <declaration_specifiers>?
+<declaration_specifiers> ::= (<storage_class_specifier> | <specifier_qualifier> | "TOKEN_KEYWORD"[inline])+
 
 
 <storage_class_specifier> ::= "TOKEN_KEYWORD"[typedef]
@@ -23,7 +20,10 @@
                            |  "TOKEN_KEYWORD"[register]
 
 
-<type_specifier> ::= "TOKEN_KEYWORD"[void]
+<type_specifier> ::= <struct_or_union_specifier>
+                  |  <enum_specifier>
+                  |  "TOKEN_IDENTIFIER"
+                  |  "TOKEN_KEYWORD"[void]
                   |  "TOKEN_KEYWORD"[char]
                   |  "TOKEN_KEYWORD"[short]
                   |  "TOKEN_KEYWORD"[int]
@@ -33,9 +33,6 @@
                   |  "TOKEN_KEYWORD"[signed]
                   |  "TOKEN_KEYWORD"[unsigned]
                   |  "TOKEN_KEYWORD"[string]
-                  |  <struct_or_union_specifier>
-                  |  <enum_specifier>
-                  |  "TOKEN_IDENTIFIER"
 
 
 <struct_or_union_specifier> ::= ("TOKEN_KEYWORD"[struct] | "TOKEN_KEYWORD"[union]) "TOKEN_IDENTIFIER"? "TOKEN_OPEN_CURLY" <struct_declaration>+ "TOKEN_CLOSE_CURLY"
@@ -62,16 +59,16 @@
 <declarator> ::= <pointer>? <direct_declarator>
 
 
-<pointer> ::= "TOKEN_STAR" <type_qualifier>* <pointer>?
+<pointer> ::= ("TOKEN_STAR" <type_qualifier>*)+
 
 
 <direct_declarator> ::= "TOKEN_IDENTIFIER" <direct_declarator_prime>*
                      |  "TOKEN_OPEN_PARENTHESIS" <declarator> "TOKEN_CLOSED_PARENTHESIS" <direct_declarator_prime>*
 
-<direct_declarator_prime> ::= "TOKEN_OPEN_BRACKET" <type_qualifier_list>? <assignment_expression>? "TOKEN_CLOSED_BRACKET"
-	                       |  "TOKEN_OPEN_BRACKET" "TOKEN_KEYWORD"[static] <type_qualifier_list>? <assignment_expression> "TOKEN_CLOSED_BRACKET"
+<direct_declarator_prime> ::= "TOKEN_OPEN_BRACKET" "TOKEN_KEYWORD"[static] <type_qualifier_list>? <assignment_expression> "TOKEN_CLOSED_BRACKET"
 	                       |  "TOKEN_OPEN_BRACKET" <type_qualifier_list> "TOKEN_KEYWORD"[static] <assignment_expression> "TOKEN_CLOSED_BRACKET"
-	                       |  "TOKEN_OPEN_BRACKET" <type_qualifier_list>? "TOKEN_STAR" "TOKEN_CLOSED_BRACKET"
+                           |  "TOKEN_OPEN_BRACKET" <type_qualifier_list>? "TOKEN_STAR" "TOKEN_CLOSED_BRACKET"
+                           |  "TOKEN_OPEN_BRACKET" <type_qualifier_list>? <assignment_expression>? "TOKEN_CLOSED_BRACKET"
 	                       |  "TOKEN_OPEN_PARENTHESIS" <parameter_list> "TOKEN_CLOSED_PARENTHESIS"
 	                       |  "TOKEN_OPEN_PARENTHESIS" <identifier_list>? "TOKEN_CLOSED_PARENTHESIS"
 
@@ -168,7 +165,7 @@
                       |  "TOKEN_OPEN_PARENTHESIS" <type_name> "TOKEN_CLOSE_PARENTHESIS" "TOKEN_OPEN_CURLY" <initializer_list> "TOKEN_COLON"? "TOKEN_CLOSE_CURLY" <postfix_expression_prime>*
 
 <postfix_expression_prime> ::= "TOKEN_OPEN_BRACKET" <expression> "TOKEN_CLOSED_BRACKET"
-                            |  "TOKEN_OPEN_PARENTHESIS" <argument_expression>? "TOKEN_CLOSE_PARENTHESIS"
+                            |  "TOKEN_OPEN_PARENTHESIS" <expression>? "TOKEN_CLOSE_PARENTHESIS"
                             |  <postfix_operator>
 
 <postfix_operator> ::= "TOKEN_DOT" "TOKEN_IDENTIFIER"
@@ -204,11 +201,10 @@
 
 
 <direct_abstract_declarator> ::= "TOKEN_OPEN_PARENTHESIS" <abstract_declarator> "TOKEN_CLOSE_PARENTHESIS" <direct_abstract_declarator_prime>*
-                              |  <direct_abstract_declarator_prime>*
 
-<direct_abstract_declarator_prime> ::= "TOKEN_OPEN_BRACKET" <assignment_expression>? "TOKEN_CLOSED_BRACKET"
+<direct_abstract_declarator_prime> ::= "TOKEN_OPEN_PARENTHESIS" <parameter_list>? "TOKEN_CLOSE_PARENTHESIS"
                                     |  "TOKEN_OPEN_BRACKET" "TOKEN_STAR" "TOKEN_CLOSED_BRACKET"
-                                    |  "TOKEN_OPEN_PARENTHESIS" <parameter_list>? "TOKEN_CLOSE_PARENTHESIS"
+                                    |  "TOKEN_OPEN_BRACKET" <assignment_expression>? "TOKEN_CLOSED_BRACKET"
 
 <parameter_list> ::= <parameter_declaration> ("TOKEN_COMMA" <parameter_declaration>)*
 
@@ -237,15 +233,13 @@
 <identifier_list> ::= "TOKEN_IDENTIFIER" ("TOKEN_COMMA", "TOKEN_IDENTIFIER")*
 
 
-<enum_specifier> ::= "TOKEN_KEYWORD"[enum] "TOKEN_IDENTIFIER"? "TOKEN_OPEN_CURLY" <enumerator_list> "TOKEN_COMMA"? "TOKEN_CLOSE_CURLY"
-                  |  "TOKEN_KEYWORD"[enum] "TOKEN_IDENTIFIER"
+<enum_specifier> ::= "TOKEN_KEYWORD"[enum] "TOKEN_IDENTIFIER"
+                  |  "TOKEN_KEYWORD"[enum] "TOKEN_IDENTIFIER"? "TOKEN_OPEN_CURLY" <enumerator_list> "TOKEN_COMMA"? "TOKEN_CLOSE_CURLY"
 
 <enumerator_list> ::= <enumerator> ("TOKEN_COMMA" <enumerator>)*
 
 <enumerator> ::= "TOKEN_IDENTIFIER" ("TOKEN_EQUALS" <constant_expression>)?
 
-
-<declaration_list> ::= <declaration>+
 
 <declaration> ::= <declaration_specifiers> <init_declarator_list>? "TOKEN_SEMICOLON"
 
@@ -284,8 +278,8 @@
                        |  "TOKEN_KEYWORD"[do] <statement> "TOKEN_KEYWORD"[while] "TOKEN_OPEN_PARENTHESIS" <expression> "TOKEN_CLOSE_PARENTHESIS" "TOKEN_SEMICOLON"
 
 
-<for_control> ::= <expression>? "TOKEN_SEMICOLON" <expression>? "TOKEN_SEMICOLON" <expression>?
-               |  <declaration> <expression>? "TOKEN_SEMICOLON" <expression>?
+<for_control> ::= <declaration> <expression>? "TOKEN_SEMICOLON" <expression>?
+               |  <expression>? "TOKEN_SEMICOLON" <expression>? "TOKEN_SEMICOLON" <expression>?
 
 
 <jump_statement> ::= "TOKEN_KEYWORD"[goto] "TOKEN_IDENTIFIER" "TOKEN_SEMICOLON"
