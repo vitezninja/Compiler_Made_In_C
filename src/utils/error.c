@@ -80,6 +80,15 @@ void printError(const Error *const error)
     printf("Error: %s\n", error->message);
     if (error->errorToken != NULL)
     {
-        printf("\tfrom: %d to %d\n", error->errorToken->start, (int)(error->errorToken->start + error->errorToken->length));
+        if (error->type == ERROR_PARSING)
+        {
+            printf("\t");
+            printToken(error->errorToken);
+            printf("\t\tfrom: %d to %d\n", error->errorToken->start, (int)(error->errorToken->start + error->errorToken->length));  
+        }
+        else
+        {
+            printf("\tfrom: %d to %d\n", error->errorToken->start, (int)(error->errorToken->start + error->errorToken->length));
+        }
     }
 }

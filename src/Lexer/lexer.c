@@ -1044,7 +1044,7 @@ static Token *handleSimpleCase(Lexer *const lexer)
         {
             consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
-            type = TOKEN_PLUS_EQUAL;
+            type = TOKEN_PLUS_EQUALS;
             break;
         }
         type = TOKEN_PLUS;
@@ -1068,7 +1068,7 @@ static Token *handleSimpleCase(Lexer *const lexer)
         {
             consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
-            type = TOKEN_MINUS_EQUAL;
+            type = TOKEN_MINUS_EQUALS;
             break;
         }
         type = TOKEN_MINUS;
@@ -1078,7 +1078,7 @@ static Token *handleSimpleCase(Lexer *const lexer)
         {
             consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
-            type = TOKEN_STAR_EQUAL;
+            type = TOKEN_STAR_EQUALS;
             break;
         }
         type = TOKEN_STAR;
@@ -1088,7 +1088,7 @@ static Token *handleSimpleCase(Lexer *const lexer)
         {
             consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
-            type = TOKEN_SLASH_EQUAL;
+            type = TOKEN_SLASH_EQUALS;
             break;
         }
         else if (peekChar(lexer) == '/' || peekChar(lexer) == '*')
@@ -1103,7 +1103,7 @@ static Token *handleSimpleCase(Lexer *const lexer)
         {
             consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
-            type = TOKEN_PERCENT_EQUAL;
+            type = TOKEN_PERCENT_EQUALS;
             break;
         }
         type = TOKEN_PERCENT;
@@ -1133,7 +1133,7 @@ static Token *handleSimpleCase(Lexer *const lexer)
         {
             consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
-            type = TOKEN_LESS_THAN_OR_EQUAL;
+            type = TOKEN_LESS_THAN_OR_EQUALS;
             break;
         }
         else if (peekChar(lexer) == '<')
@@ -1144,7 +1144,7 @@ static Token *handleSimpleCase(Lexer *const lexer)
             {
                 consumeChar(lexer, 1);
                 text[pos++] = nextChar(lexer);
-                type = TOKEN_BITWISE_LEFT_SHIFT_EQUAL;
+                type = TOKEN_BITWISE_LEFT_SHIFT_EQUALS;
                 break;
             }
             type = TOKEN_BITWISE_LEFT_SHIFT;
@@ -1157,7 +1157,7 @@ static Token *handleSimpleCase(Lexer *const lexer)
         {
             consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
-            type = TOKEN_GREATER_THAN_OR_EQUAL;
+            type = TOKEN_GREATER_THAN_OR_EQUALS;
             break;
         }
         else if (peekChar(lexer) == '>')
@@ -1168,7 +1168,7 @@ static Token *handleSimpleCase(Lexer *const lexer)
             {
                 consumeChar(lexer, 1);
                 text[pos++] = nextChar(lexer);
-                type = TOKEN_BITWISE_RIGHT_SHIFT_EQUAL;
+                type = TOKEN_BITWISE_RIGHT_SHIFT_EQUALS;
                 break;
             }
             type = TOKEN_BITWISE_RIGHT_SHIFT;
@@ -1188,7 +1188,7 @@ static Token *handleSimpleCase(Lexer *const lexer)
         {
             consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
-            type = TOKEN_BITWISE_AND_EQUAL;
+            type = TOKEN_BITWISE_AND_EQUALS;
             break;
         }
         type = TOKEN_BITWISE_AND;
@@ -1205,7 +1205,7 @@ static Token *handleSimpleCase(Lexer *const lexer)
         {
             consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
-            type = TOKEN_BITWISE_OR_EQUAL;
+            type = TOKEN_BITWISE_OR_EQUALS;
             break;
         }
         type = TOKEN_BITWISE_OR;
@@ -1215,7 +1215,7 @@ static Token *handleSimpleCase(Lexer *const lexer)
         {
             consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
-            type = TOKEN_BITWISE_XOR_EQUAL;
+            type = TOKEN_BITWISE_XOR_EQUALS;
             break;
         }
         type = TOKEN_BITWISE_XOR;

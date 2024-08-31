@@ -24,18 +24,18 @@
  *   - `TOKEN_PERCENT`      // Modulus (remainder of division) (%)
  * 
  * - Compound Assignment Operators (Arithmetic): Operators for arithmetic operations with assignment.
- *   - `TOKEN_PLUS_EQUAL`   // Addition assignment (+=)
- *   - `TOKEN_MINUS_EQUAL`  // Subtraction assignment (-=)
- *   - `TOKEN_STAR_EQUAL`   // Multiplication assignment (*=)
- *   - `TOKEN_SLASH_EQUAL`  // Division assignment (/=)
- *   - `TOKEN_PERCENT_EQUAL`// Modulus assignment (%=)
+ *   - `TOKEN_PLUS_EQUALS`   // Addition assignment (+=)
+ *   - `TOKEN_MINUS_EQUALS`  // Subtraction assignment (-=)
+ *   - `TOKEN_STAR_EQUALS`   // Multiplication assignment (*=)
+ *   - `TOKEN_SLASH_EQUALS`  // Division assignment (/=)
+ *   - `TOKEN_PERCENT_EQUALS`// Modulus assignment (%=)
  * 
  * - Compound Assignment Operators (Bitwise): Operators for bitwise operations with assignment.
- *   - `TOKEN_BITWISE_LEFT_SHIFT_EQUAL` // Bitwise left shift assignment (<<=)
- *   - `TOKEN_BITWISE_RIGHT_SHIFT_EQUAL`// Bitwise right shift assignment (>>=)
- *   - `TOKEN_BITWISE_AND_EQUAL`        // Bitwise AND assignment (&=)
- *   - `TOKEN_BITWISE_XOR_EQUAL`         // Bitwise XOR assignment (^=)
- *   - `TOKEN_BITWISE_OR_EQUAL`          // Bitwise OR assignment (|=)
+ *   - `TOKEN_BITWISE_LEFT_SHIFT_EQUALS` // Bitwise left shift assignment (<<=)
+ *   - `TOKEN_BITWISE_RIGHT_SHIFT_EQUALS`// Bitwise right shift assignment (>>=)
+ *   - `TOKEN_BITWISE_AND_EQUALS`        // Bitwise AND assignment (&=)
+ *   - `TOKEN_BITWISE_XOR_EQUALS`         // Bitwise XOR assignment (^=)
+ *   - `TOKEN_BITWISE_OR_EQUALS`          // Bitwise OR assignment (|=)
  * 
  * - Comparison Operators: Operators for comparing values.
  *   - `TOKEN_EQUALS`                // Assignment (=)
@@ -43,8 +43,8 @@
  *   - `TOKEN_NOT_EQUALS`            // Inequality (!=)
  *   - `TOKEN_LESS_THAN`             // Less than (<)
  *   - `TOKEN_GREATER_THAN`          // Greater than (>)
- *   - `TOKEN_LESS_THAN_OR_EQUAL`    // Less than or equal (<=)
- *   - `TOKEN_GREATER_THAN_OR_EQUAL` // Greater than or equal (>=)
+ *   - `TOKEN_LESS_THAN_OR_EQUALS`    // Less than or equal (<=)
+ *   - `TOKEN_GREATER_THAN_OR_EQUALS` // Greater than or equal (>=)
  * 
  * - Logical Operators: Operators for logical operations.
  *   - `TOKEN_AND`  // Logical AND (&&)
@@ -117,18 +117,18 @@ typedef enum tokenType
     TOKEN_PERCENT,
 
     // Compound Assignment Operators (Arithmetic):
-    TOKEN_PLUS_EQUAL,
-    TOKEN_MINUS_EQUAL,
-    TOKEN_STAR_EQUAL,
-    TOKEN_SLASH_EQUAL,
-    TOKEN_PERCENT_EQUAL,
+    TOKEN_PLUS_EQUALS,
+    TOKEN_MINUS_EQUALS,
+    TOKEN_STAR_EQUALS,
+    TOKEN_SLASH_EQUALS,
+    TOKEN_PERCENT_EQUALS,
 
     // Compound Assignment Operators (Bitwise):
-    TOKEN_BITWISE_LEFT_SHIFT_EQUAL,
-    TOKEN_BITWISE_RIGHT_SHIFT_EQUAL,
-    TOKEN_BITWISE_AND_EQUAL,
-    TOKEN_BITWISE_XOR_EQUAL,
-    TOKEN_BITWISE_OR_EQUAL,
+    TOKEN_BITWISE_LEFT_SHIFT_EQUALS,
+    TOKEN_BITWISE_RIGHT_SHIFT_EQUALS,
+    TOKEN_BITWISE_AND_EQUALS,
+    TOKEN_BITWISE_XOR_EQUALS,
+    TOKEN_BITWISE_OR_EQUALS,
 
     // Comparison Operators:
     TOKEN_EQUALS,
@@ -136,8 +136,8 @@ typedef enum tokenType
     TOKEN_NOT_EQUALS,
     TOKEN_LESS_THAN,
     TOKEN_GREATER_THAN,
-    TOKEN_LESS_THAN_OR_EQUAL,
-    TOKEN_GREATER_THAN_OR_EQUAL,
+    TOKEN_LESS_THAN_OR_EQUALS,
+    TOKEN_GREATER_THAN_OR_EQUALS,
 
     // Logical Operators:
     TOKEN_AND,
@@ -251,42 +251,42 @@ typedef enum tokenType
  */
 typedef enum keywords
 {
-    TOKEN_KEYWORD_TYPEDEF,
-    TOKEN_KEYWORD_EXTERN,
-    TOKEN_KEYWORD_STATIC,
-    TOKEN_KEYWORD_AUTO,
-    TOKEN_KEYWORD_REGISTER,
-    TOKEN_KEYWORD_VOID,
-    TOKEN_KEYWORD_CHAR,
-    TOKEN_KEYWORD_STRING,
-    TOKEN_KEYWORD_SHORT,
-    TOKEN_KEYWORD_INT,
-    TOKEN_KEYWORD_LONG,
-    TOKEN_KEYWORD_FLOAT,
-    TOKEN_KEYWORD_DOUBLE,
-    TOKEN_KEYWORD_SIGNED,
-    TOKEN_KEYWORD_UNSIGNED,
-    TOKEN_KEYWORD_STRUCT,
-    TOKEN_KEYWORD_UNION,
-    TOKEN_KEYWORD_CONST,
-    TOKEN_KEYWORD_RESTRICT,
-    TOKEN_KEYWORD_VOLATILE,
-    TOKEN_KEYWORD_SIZEOF,
-    TOKEN_KEYWORD_ENUM,
-    TOKEN_KEYWORD_INLINE,
-    TOKEN_KEYWORD_CASE,
-    TOKEN_KEYWORD_DEFAULT,
-    TOKEN_KEYWORD_IF,
-    TOKEN_KEYWORD_ELSE,
-    TOKEN_KEYWORD_SWITCH,
-    TOKEN_KEYWORD_WHILE,
-    TOKEN_KEYWORD_DO,
-    TOKEN_KEYWORD_FOR,
-    TOKEN_KEYWORD_GOTO,
-    TOKEN_KEYWORD_CONTINUE,
-    TOKEN_KEYWORD_BREAK,
-    TOKEN_KEYWORD_RETURN,
-    TOKEN_KEYWORD_NOT_KEYWORD = -1,
+    KEYWORD_TYPEDEF,
+    KEYWORD_EXTERN,
+    KEYWORD_STATIC,
+    KEYWORD_AUTO,
+    KEYWORD_REGISTER,
+    KEYWORD_VOID,
+    KEYWORD_CHAR,
+    KEYWORD_STRING,
+    KEYWORD_SHORT,
+    KEYWORD_INT,
+    KEYWORD_LONG,
+    KEYWORD_FLOAT,
+    KEYWORD_DOUBLE,
+    KEYWORD_SIGNED,
+    KEYWORD_UNSIGNED,
+    KEYWORD_STRUCT,
+    KEYWORD_UNION,
+    KEYWORD_CONST,
+    KEYWORD_RESTRICT,
+    KEYWORD_VOLATILE,
+    KEYWORD_SIZEOF,
+    KEYWORD_ENUM,
+    KEYWORD_INLINE,
+    KEYWORD_CASE,
+    KEYWORD_DEFAULT,
+    KEYWORD_IF,
+    KEYWORD_ELSE,
+    KEYWORD_SWITCH,
+    KEYWORD_WHILE,
+    KEYWORD_DO,
+    KEYWORD_FOR,
+    KEYWORD_GOTO,
+    KEYWORD_CONTINUE,
+    KEYWORD_BREAK,
+    KEYWORD_RETURN,
+    KEYWORD_NOT_KEYWORD = -1,
 } Keywords;
 
 /**
