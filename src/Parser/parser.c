@@ -6768,7 +6768,7 @@ static int isIterationStatement(Parser *parser, const int resetOnSucces)
     {
         if (isNextTokenTypeOf(parser, TOKEN_OPEN_PARENTHESIS, 1))
         {
-            if (isStatement(parser, 0))
+            if (isExpression(parser, 0))
             {
                 if (isNextTokenTypeOf(parser, TOKEN_CLOSE_PARENTHESIS, 1))
                 {

@@ -64,9 +64,6 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    printf("Input: %s\n", lexer->input);
-    printf("Input chararcter count: %d\n", (int)lexer->charCount);
-
     while (1)
     {
         Token *ctoken = lex(lexer);
@@ -117,16 +114,6 @@ int main(int argc, char *argv[])
 
     freeFileContent(fileContents, fileCount);
     deleteLexer(lexer);
-
-    printf("Tokens:\n");
-    for (size_t i = 0; i < tokenCount; i++)
-    {
-        if(tokens[i]->type != TOKEN_WHITESPACE)
-        {
-            printf("%d ", (int)i);
-            printToken(tokens[i]);
-        }
-    }
 
     if (onlyLexer)
     {
