@@ -855,14 +855,6 @@ static int isTypeSpecifier(Parser *parser, const int resetOnSuccess)
         }
         return 1;
     }
-    else if (isNextTokenTypeOf(parser, TOKEN_IDENTIFIER, 1))
-    {
-        if (resetOnSuccess)
-        {
-            parser->position = lookaheadPosition;
-        }
-        return 1;
-    }
     else if (isNextTokenTypeOf(parser, TOKEN_KEYWORD, 0))
     {
         switch (nextToken(parser)->value.keyword)
@@ -888,6 +880,18 @@ static int isTypeSpecifier(Parser *parser, const int resetOnSuccess)
             return 1;
         default:
             break;
+        }
+    }
+    else
+    {
+        if (isNextTokenTypeOf(parser, TOKEN_IDENTIFIER, 0) && !isDeclarator(parser, 0))
+        {
+            consumeToken(parser, 1);
+            if (resetOnSuccess)
+            {
+                parser->position = lookaheadPosition;
+            }
+            return 1;
         }
     }
 
@@ -985,7 +989,7 @@ static int isStructOrUnionSpecifier(Parser *parser, const int resetOnSuccess)
     {
         if (isNextTokenTypeOf(parser, TOKEN_IDENTIFIER, 1))
         {
-            if (!isNextTokenTypeOf(parser, TOKEN_OPEN_BRACKET, 0))
+            if (!isNextTokenTypeOf(parser, TOKEN_OPEN_CURLY, 0))
             {
                 if (resetOnSuccess)
                 {
@@ -995,13 +999,13 @@ static int isStructOrUnionSpecifier(Parser *parser, const int resetOnSuccess)
             }
         }
 
-        if (isNextTokenTypeOf(parser, TOKEN_OPEN_BRACKET, 1))
+        if (isNextTokenTypeOf(parser, TOKEN_OPEN_CURLY, 1))
         {
-            if (isStructDeclaration(parser, 1))
+            if (isStructDeclaration(parser, 0))
             {
-                while (isStructDeclaration(parser, 1));
+                while (isStructDeclaration(parser, 0));
 
-                if (isNextTokenTypeOf(parser, TOKEN_CLOSE_BRACKET, 1))
+                if (isNextTokenTypeOf(parser, TOKEN_CLOSE_CURLY, 1))
                 {
                     if (resetOnSuccess)
                     {
@@ -1039,7 +1043,7 @@ static ASTNode *parseStructOrUnionSpecifier(Parser *parser)
         fprintf(stderr, "Memory allocation for tokens failed.\n");
         return NULL;
     }
-    size_t tokenCount = 2;
+    size_t tokenCount = 0;
     size_t childrenSize = 2;
     ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
     if (children == NULL)
@@ -1057,13 +1061,14 @@ static ASTNode *parseStructOrUnionSpecifier(Parser *parser)
         if (isNextTokenTypeOf(parser, TOKEN_IDENTIFIER, 0))
         {
             tokens[tokenCount++] = matchToken(parser, TOKEN_IDENTIFIER);
-            if (!isNextTokenTypeOf(parser, TOKEN_OPEN_BRACKET, 0))
+            if (!isNextTokenTypeOf(parser, TOKEN_OPEN_CURLY, 0))
             {
+                printf("Here\n");
                 return createASTNode(AST_STRUCT_OR_UNION_SPECIFIER, tokens, tokenCount, children, childCount);
             }
         }
 
-        tokens[tokenCount++] = matchToken(parser, TOKEN_OPEN_BRACKET);
+        tokens[tokenCount++] = matchToken(parser, TOKEN_OPEN_CURLY);
         children[childCount++] = parseStructDeclaration(parser);
 
         while (isStructDeclaration(parser, 1))
@@ -1085,7 +1090,7 @@ static ASTNode *parseStructOrUnionSpecifier(Parser *parser)
             children[childCount++] = parseStructDeclaration(parser);
         }
 
-        tokens[tokenCount++] = matchToken(parser, TOKEN_CLOSE_BRACKET);
+        tokens[tokenCount++] = matchToken(parser, TOKEN_CLOSE_CURLY);
         return createASTNode(AST_STRUCT_OR_UNION_SPECIFIER, tokens, tokenCount, children, childCount);
     }
 
@@ -1237,7 +1242,7 @@ static ASTNode *parseSpecifierQualifier(Parser *parser)
         return NULL;
     }
 
-    if (!isTypeSpecifier(parser, 1))
+    if (!isSpecifierQualifier(parser, 1))
     {
         addError(parser, createError(ERROR_PARSING, "Expected a Specifier Qualifier but found:", duplicateToken(nextToken(parser))));
         return NULL;
@@ -1862,7 +1867,7 @@ static int isDirectDeclaratorPrime(Parser *parser, const int resetOnSuccess)
     {
         if (isNextTokenKeywordWord(parser, KEYWORD_STATIC, 1))
         {
-            isTypeQualifier(parser, 1);
+            while (isTypeQualifier(parser, 1));
 
             if (isAssignmentExpression(parser, 0))
             {
@@ -1882,6 +1887,8 @@ static int isDirectDeclaratorPrime(Parser *parser, const int resetOnSuccess)
 
         if (isTypeQualifier(parser, 1))
         {
+            while (isTypeQualifier(parser, 1));
+
             if (isNextTokenKeywordWord(parser, KEYWORD_STATIC, 1))
             {
                 if (isAssignmentExpression(parser, 0))
@@ -2000,8 +2007,22 @@ static ASTNode *parseDirectDeclaratorPrime(Parser *parser)
         {
             tokens[tokenCount++] = matchToken(parser, TOKEN_KEYWORD);
 
-            if (isTypeQualifier(parser, 0))
+            while (isTypeQualifier(parser, 0))
             {
+                if (tokenCount + 2 >= tokensSize)
+                {
+                    tokensSize *= 2;
+                    Token **newTokens = realloc(tokens, tokensSize * sizeof(Token *));
+                    if (newTokens == NULL)
+                    {
+                        fprintf(stderr, "Memory reallocation for tokens failed!\n");
+                        free(tokens);
+                        free(children);
+                        return NULL;
+                    }
+                    tokens = newTokens;
+                }
+                
                 tokens[tokenCount++] = matchToken(parser, nextToken(parser)->type);
             }
 
@@ -2013,6 +2034,26 @@ static ASTNode *parseDirectDeclaratorPrime(Parser *parser)
         if (isTypeQualifier(parser, 0))
         {
             tokens[tokenCount++] = matchToken(parser, nextToken(parser)->type);
+
+            while (isTypeQualifier(parser, 0))
+            {
+                if (tokenCount + 2 >= tokensSize)
+                {
+                    tokensSize *= 2;
+                    Token **newTokens = realloc(tokens, tokensSize * sizeof(Token *));
+                    if (newTokens == NULL)
+                    {
+                        fprintf(stderr, "Memory reallocation for tokens failed!\n");
+                        free(tokens);
+                        free(children);
+                        return NULL;
+                    }
+                    tokens = newTokens;
+                }
+                
+                tokens[tokenCount++] = matchToken(parser, nextToken(parser)->type);
+            }
+
             if (isNextTokenKeywordWord(parser, KEYWORD_STATIC, 0))
             {
                 tokens[tokenCount++] = matchToken(parser, TOKEN_KEYWORD);
@@ -2033,8 +2074,12 @@ static ASTNode *parseDirectDeclaratorPrime(Parser *parser)
         {
             children[childCount++] = parseAssignmentExpression(parser);
         }
-        tokens[tokenCount++] = matchToken(parser, TOKEN_CLOSE_BRACKET);
-        return createASTNode(AST_DIRECT_DECLARATOR_PRIME, tokens, tokenCount, children, childCount);
+
+        if (isNextTokenTypeOf(parser, TOKEN_CLOSE_BRACKET, 0))
+        {
+            tokens[tokenCount++] = matchToken(parser, TOKEN_CLOSE_BRACKET);
+            return createASTNode(AST_DIRECT_DECLARATOR_PRIME, tokens, tokenCount, children, childCount);
+        }
     }
     else if (isNextTokenTypeOf(parser, TOKEN_OPEN_PARENTHESIS, 0))
     {
@@ -2070,15 +2115,7 @@ static int isAssignmentExpression(Parser *parser, const int resetOnSuccess)
     }
 
     int lookaheadPosition = parser->position;
-    if (isConditionalExpression(parser, 0))
-    {
-        if (resetOnSuccess)
-        {
-            parser->position = lookaheadPosition;
-        }
-        return 1;
-    }
-    else if (isUnaryExpression(parser, 0))
+    if (isUnaryExpression(parser, 0))
     {
         if (isAssignmentOperator(parser, 1))
         {
@@ -2090,7 +2127,23 @@ static int isAssignmentExpression(Parser *parser, const int resetOnSuccess)
                 }
                 return 1;
             }
+
+            parser->position = lookaheadPosition;
+            return 0;
         }
+        else 
+        {
+            parser->position = lookaheadPosition;
+        }
+    }
+
+    if (isConditionalExpression(parser, 0))
+    {
+        if (resetOnSuccess)
+        {
+            parser->position = lookaheadPosition;
+        }
+        return 1;
     }
 
     parser->position = lookaheadPosition;
@@ -2162,21 +2215,25 @@ static ASTNode *parseAssignmentExpression(Parser *parser)
     size_t childCount = 0;
 
     //Parsing
+    int lookaheadPosition = parser->position;
+    if (isUnaryExpression(parser, 0))
+    {
+        if (isAssignmentOperator(parser, 0))
+        {
+            parser->position = lookaheadPosition;
+            children[childCount++] = parseUnaryExpression(parser);
+            tokens[tokenCount++] = matchToken(parser, nextToken(parser)->type);
+            children[childCount++] = parseAssignmentExpression(parser);
+            return createASTNode(AST_ASSIGNMENT_EXPRESSION, tokens, tokenCount, children, childCount);
+        }
+    }
+    parser->position = lookaheadPosition;
+
     if (isConditionalExpression(parser, 1))
     {
         free(tokens);
         free(children);
         return parseConditionalExpression(parser);
-    }
-    else if (isUnaryExpression(parser, 1))
-    {
-        children[childCount++] = parseUnaryExpression(parser);
-        if (isAssignmentOperator(parser, 0))
-        {
-            tokens[tokenCount++] = matchToken(parser, nextToken(parser)->type);
-            children[childCount++] = parseAssignmentExpression(parser);
-            return createASTNode(AST_ASSIGNMENT_EXPRESSION, tokens, tokenCount, children, childCount);
-        }
     }
 
     //Error
@@ -2299,7 +2356,7 @@ static int isLogicalORExpression(Parser *parser, const int resetOnSuccess)
     int lookaheadPosition = parser->position;
     if (isLogicalANDExpression(parser, 0))
     {
-        while (isNextTokenTypeOf(parser, TOKEN_OR, 0))
+        while (isNextTokenTypeOf(parser, TOKEN_OR, 1))
         {
             if (!isLogicalANDExpression(parser, 0))
             {
@@ -3156,6 +3213,8 @@ static ASTNode *parseRelationalExpression(Parser *parser)
             tokens[tokenCount++] = matchToken(parser, nextToken(parser)->type);
             children[childCount++] = parseShiftExpression(parser);
         }
+
+        return createASTNode(AST_RELATIONAL_EXPRESSION, tokens, tokenCount, children, childCount);
     }
 
     //Error

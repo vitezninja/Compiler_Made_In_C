@@ -65,10 +65,10 @@
 <direct_declarator> ::= "TOKEN_IDENTIFIER" <direct_declarator_prime>*
                      |  "TOKEN_OPEN_PARENTHESIS" <declarator> "TOKEN_CLOSED_PARENTHESIS" <direct_declarator_prime>*
 
-<direct_declarator_prime> ::= "TOKEN_OPEN_BRACKET" "TOKEN_KEYWORD"[static] <type_qualifier_list>? <assignment_expression> "TOKEN_CLOSED_BRACKET"
-	                       |  "TOKEN_OPEN_BRACKET" <type_qualifier_list> "TOKEN_KEYWORD"[static] <assignment_expression> "TOKEN_CLOSED_BRACKET"
-                           |  "TOKEN_OPEN_BRACKET" <type_qualifier_list>? "TOKEN_STAR" "TOKEN_CLOSED_BRACKET"
-                           |  "TOKEN_OPEN_BRACKET" <type_qualifier_list>? <assignment_expression>? "TOKEN_CLOSED_BRACKET"
+<direct_declarator_prime> ::= "TOKEN_OPEN_BRACKET" "TOKEN_KEYWORD"[static] <type_qualifier>* <assignment_expression> "TOKEN_CLOSED_BRACKET"
+	                       |  "TOKEN_OPEN_BRACKET" <type_qualifier>+ "TOKEN_KEYWORD"[static] <assignment_expression> "TOKEN_CLOSED_BRACKET"
+                           |  "TOKEN_OPEN_BRACKET" <type_qualifier>* "TOKEN_STAR" "TOKEN_CLOSED_BRACKET"
+                           |  "TOKEN_OPEN_BRACKET" <type_qualifier>* <assignment_expression>? "TOKEN_CLOSED_BRACKET"
 	                       |  "TOKEN_OPEN_PARENTHESIS" <parameter_list> "TOKEN_CLOSED_PARENTHESIS"
 	                       |  "TOKEN_OPEN_PARENTHESIS" <identifier_list>? "TOKEN_CLOSED_PARENTHESIS"
 
