@@ -169,20 +169,22 @@ void printASTNode(const ASTNode *const astNode, char *indent, int isLast)
 
     for (size_t i = 0; i < astNode->tokenCount; i++)
     {
-        if (i + 1 >= astNode->tokenCount)
+        if (astNode->childCount == 0)
         {
-            if (astNode->childCount == 0)
-            {
-                printf("%s    └── ", newIndent);
-            }
-            else
-            {
-                printf("%s│   └── ", newIndent);
-            }
+            printf("%s    ", newIndent);
         }
         else
         {
-            printf("%s│   ├── ", newIndent);
+            printf("%s│   ", newIndent);
+        }
+        
+        if (i + 1 >= astNode->tokenCount)
+        {
+            printf("└── ");
+        }
+        else
+        {
+            printf("├── ");
         }
         
         printToken(astNode->tokens[i]);
