@@ -6,26 +6,39 @@
 
 int main(int argc, char *argv[])
 {
-    // 1 if we only want to run the lexer, 0 if we also want to parse
-    int onlyLexer = 1;
+    int onlyLexer = 0;
 
-    int fileCount = argc - 1;
-    if (fileCount < 1)
+    if (argc < 2)
     {
         fprintf(stderr, "Usage: %s <path_to_file_to_compile>\n", argv[0]);
-        exit(-1);
+        return -1;
+    }
+
+    int fileCount = argc - 1;
+    int fileOffset = 1;
+    //Only lexer mode
+    if (strcmp(argv[1], "-l") == 0)
+    {
+        if (argc < 3)
+        {
+            fprintf(stderr, "Usage: %s -l <path_to_file_to_compile>\n", argv[0]);
+            return -1;
+        }
+        fileCount -= 1;
+        fileOffset += 1;
+        onlyLexer = 1;
     }
 
     char **files = malloc(fileCount * sizeof(char *));
     if (files == NULL)
     {
         fprintf(stderr, "Memory allocation for file paths failed!\n");
-        exit(-1);
+        return -1;
     }
 
     for (size_t i = 0; (int)i < fileCount; i++)
     {
-        files[i] = argv[i + 1];
+        files[i] = argv[i + fileOffset];
     }
     
     char **fileContents = readFromFiles(files, fileCount);
@@ -38,7 +51,7 @@ int main(int argc, char *argv[])
     {
         fprintf(stderr, "Memory allocation for Tokens failed!\n");
         freeFileContent(fileContents, fileCount);
-        exit(-1);
+        return -1;
     }
 
     size_t tokenCount = 0;
@@ -46,13 +59,10 @@ int main(int argc, char *argv[])
     if (lexer == NULL)
     {
         fprintf(stderr, "Failed to create Lexer.\n");
-        free(tokens);
         freeFileContent(fileContents, fileCount);
-        exit(-1);
+        free(tokens);
+        return -1;
     }
-
-    printf("Input: %s\n", lexer->input);
-    printf("Input chararcter count: %d\n", (int)lexer->charCount);
 
     while (1)
     {
@@ -60,10 +70,10 @@ int main(int argc, char *argv[])
         if (ctoken == NULL)
         {
             fprintf(stderr, "Error lexing input or end of input.\n");
-            deleteLexer(lexer);
-            deleteTokens(tokens, tokenCount);
             freeFileContent(fileContents, fileCount);
-            exit(-1);
+            deleteTokens(tokens, tokenCount);
+            deleteLexer(lexer);
+            return -1;
         }
 
         if (tokenCount >= tokenCapacity)
@@ -73,10 +83,10 @@ int main(int argc, char *argv[])
             if (newTokens == NULL)
             {
                 fprintf(stderr, "Memory allocation for tokens array failed!\n");
-                deleteLexer(lexer);
-                deleteTokens(tokens, tokenCount);
                 freeFileContent(fileContents, fileCount);
-                exit(-1);
+                deleteTokens(tokens, tokenCount);
+                deleteLexer(lexer);
+                return -1;
             }
             tokens = newTokens;
         }
@@ -88,22 +98,26 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    deleteLexer(lexer);
 
-    printf("Lexer:\n");
-    for (size_t i = 0; i < tokenCount; i++)
+    if (lexer->errorCount > 0)
     {
-        if(tokens[i]->type != TOKEN_WHITESPACE)
+        for (size_t i = 0; i < lexer->errorCount; i++)
         {
-            printf("%d ", (int)i);
-            printToken(tokens[i]);
+            printError(lexer->errors[i]);
         }
+        
+        freeFileContent(fileContents, fileCount);
+        deleteTokens(tokens, tokenCount);
+        deleteLexer(lexer);
+        return -1;
     }
+
+    freeFileContent(fileContents, fileCount);
+    deleteLexer(lexer);
 
     if (onlyLexer)
     {
         deleteTokens(tokens, tokenCount);
-        freeFileContent(fileContents, fileCount);
         printf("END\n");
         return 0;
     }
@@ -113,17 +127,42 @@ int main(int argc, char *argv[])
     if (!err)
     {
         printf("Parsing failed!\n");
-        deleteParser(parser);
+        if (parser->errorCount > 0)
+        {
+            for (size_t i = 0; i < parser->errorCount; i++)
+            {
+                printError(parser->errors[i]);
+            }
+            
+            deleteTokens(tokens, tokenCount);
+            deleteParser(parser);
+            return -1;    
+        }
         deleteTokens(tokens, tokenCount);    
+        deleteParser(parser);
+        return -1;
     }
+
+    if (parser->errorCount > 0)
+    {
+        for (size_t i = 0; i < parser->errorCount; i++)
+        {
+            printError(parser->errors[i]);
+        }
+        
+        deleteTokens(tokens, tokenCount);
+        deleteParser(parser);
+        return -1;    
+    }
+
     ASTNode *astNodeRoot = getCopyAST(parser);
-
     printParseTrees(parser);
-    deleteParser(parser);
-    deleteASTNode(astNodeRoot);
 
+    deleteParser(parser);
+
+    
     deleteTokens(tokens, tokenCount);
-    freeFileContent(fileContents, fileCount);
+    deleteASTNode(astNodeRoot);
     printf("END\n");
     return 0;
 }

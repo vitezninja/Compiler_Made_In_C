@@ -5,8 +5,9 @@ void hello();
 
 int main()
 {
-    main:
     int x = 5;
+    main:
+    x = 2;
     return 0;
 }
 

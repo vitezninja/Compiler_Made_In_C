@@ -28,7 +28,11 @@ static char peekChar(const Lexer *const lexer);
 
 static void consumeChar(Lexer *const lexer, const int count);
 
-static Token *handleCommentsAndSlash(Lexer *const lexer);
+static int addError(Lexer *lexer, Error *error);
+
+static void updateStartingPos(Lexer *lexer);
+
+static Token *handleComments(Lexer *const lexer);
 
 static Token *handleWhitespace(Lexer *const lexer);
 
@@ -207,30 +211,100 @@ static void consumeChar(Lexer *const lexer, const int count)
 }
 
 /**
- * Processes and tokenizes comments and slashes in the lexer input.
+ * Adds an `Error` object to the `Lexer`'s error list.
  * 
- * This function identifies and handles single-line comments (`//`), multi-line comments 
- * (`/ * ... * /`), or a single slash (`/`) in the input stream managed by the given `Lexer` object. 
- * It dynamically allocates memory for storing the comment text, resizing the buffer as needed 
- * to handle comments of arbitrary length.
+ * This function appends a new error to the list of errors maintained by the `Lexer`.
+ * If necessary, it reallocates memory to expand the `errors` array to accommodate the new error.
  * 
- * If the lexer is NULL or memory allocation fails, an error message is printed, and the 
- * function returns NULL. 
+ * @param lexer Pointer to the `Lexer` object to which the error should be added.
  * 
- * @param lexer Pointer to the `Lexer` object that provides access to the input source code stream. 
- *              The lexer must be initialized before being passed to this function.
- *
- * @return Pointer to a `Token` object representing one of the following:
+ * @param error Pointer to the `Error` object to be added to the `Lexer`'s error list.
+ * 
+ * @return `1` if the error was successfully added to the list; `0` otherwise.
+ * 
+ * @note The `Lexer` and `Error` pointers must be valid. The `Lexer`'s `errors` array will be expanded as needed, 
+ *       and the function handles memory reallocation internally.
+ */
+static int addError(Lexer *lexer, Error *error)
+{
+    if (lexer == NULL)
+    {
+        fprintf(stderr, "Lexer is not initialized.\n");
+        return 0;
+    }
+
+    if (error == NULL)
+    {
+        fprintf(stderr, "Error is not initialized.\n");
+        return 0;
+    }
+
+    if (lexer->errorCount + 1 >= lexer->errorsSize)
+    {
+        lexer->errorsSize *= 2;
+        Error **newErrors = realloc(lexer->errors, lexer->errorsSize * sizeof(Error *));
+        if (newErrors == NULL)
+        {
+            fprintf(stderr, "Memory reallocation for Errors failed!\n");
+            return 0;
+        }
+        lexer->errors = newErrors;
+    }
+
+    lexer->errors[lexer->errorCount++] = error;
+    return 1;
+}
+
+/**
+ * Updates the starting position for tokenization in the `Lexer`.
+ * 
+ * This function sets the `tokenStartingPos` field of the `Lexer` to the current position.
+ * This is typically used to mark the beginning of a new token or to reset the starting position
+ * for subsequent tokenization processes.
+ * 
+ * @param lexer Pointer to the `Lexer` object whose starting position is to be updated.
+ * 
+ * @note The `Lexer` pointer must be valid. If the `Lexer` is `NULL`, an error message is printed,
+ *       and the function does nothing. Ensure that the `Lexer` is properly initialized before calling this function.
+ */
+static void updateStartingPos(Lexer *lexer)
+{
+    if (lexer == NULL)
+    {
+        fprintf(stderr, "Lexer is not initialized.\n");
+        return;
+    }
+
+    lexer->tokenStartingPos = lexer->position;
+}
+
+/**
+ * Processes and tokenizes comments in the lexer input.
+ * 
+ * This function handles two types of comments in the input stream:
+ * - **Single-line comments** starting with `//`
+ * - **Multi-line comments** enclosed in `/ * ... * /`
+ * 
+ * The function dynamically allocates and resizes memory as needed to store the entire comment text. 
+ * If the comment extends beyond the initially allocated buffer size, the buffer is resized to accommodate the comment's length.
+ * 
+ * - **Single-line comments** are terminated by a newline character.
+ * - **Multi-line comments** are terminated by `* /`. If the end of the input is reached without finding the closing `* /`, an error is generated.
+ * 
+ * If the `Lexer` is NULL, or if memory allocation or reallocation fails, an error message is printed, and the function returns `NULL`.
+ * 
+ * @param lexer Pointer to the `Lexer` object that manages the input text. The `Lexer` must be properly initialized before calling this function.
+ * 
+ * @return A pointer to a `Token` representing one of the following:
  * 
  *         - `TOKEN_BLOCK_COMMENT`: A multi-line comment (`/ * ... * /`).
- * 
  *         - `TOKEN_LINE_COMMENT`: A single-line comment (`//`).
+ *         - `NULL`: If the `Lexer` is NULL, or if memory allocation or reallocation fails, or if no comment is found.
  * 
- *         - `TOKEN_SLASH`: A single slash (`/`).
- * 
- *         - `NULL`: If the lexer is NULL or if memory allocation fails.
+ * @note The `text` buffer is dynamically allocated and managed by this function. If memory reallocation fails,
+ *       the allocated memory is freed, and `NULL` is returned.
  */
-static Token *handleCommentsAndSlash(Lexer *const lexer)
+static Token *handleComments(Lexer *const lexer)
 {
     if (lexer == NULL)
     {
@@ -286,7 +360,9 @@ static Token *handleCommentsAndSlash(Lexer *const lexer)
         if (nextChar(lexer) == '\0')
         {
             text[pos] = '\0';
-            return createTokenNone(text, TOKEN_UNKNOWN);
+            Token *token = createTokenNone(text, lexer->tokenStartingPos, TOKEN_UNKNOWN);
+            addError(lexer, createError(ERROR_LEXING, "The multi-line comment was not closed!", duplicateToken(token)));
+            return token;
         }
 
         //Consume '*'
@@ -297,7 +373,7 @@ static Token *handleCommentsAndSlash(Lexer *const lexer)
         consumeChar(lexer, 1);
 
         text[pos] = '\0';
-        return createTokenNone(text, TOKEN_BLOCK_COMMENT);
+        return createTokenNone(text, lexer->tokenStartingPos, TOKEN_BLOCK_COMMENT);
     }
 
     //Single line comment
@@ -337,11 +413,10 @@ static Token *handleCommentsAndSlash(Lexer *const lexer)
         }
 
         text[pos] = '\0';
-        return createTokenNone(text, TOKEN_LINE_COMMENT);
+        return createTokenNone(text, lexer->tokenStartingPos, TOKEN_LINE_COMMENT);
     }
 
-    //If not single line and not block comment it has to be a slash
-    return createTokenNone(text, TOKEN_SLASH);
+    return NULL;
 }
 
 /**
@@ -401,7 +476,7 @@ static Token *handleWhitespace(Lexer *const lexer)
     }
 
     text[pos] = '\0';
-    return createTokenNone(text, TOKEN_WHITESPACE);
+    return createTokenNone(text, lexer->tokenStartingPos, TOKEN_WHITESPACE);
 }
 
 /**
@@ -464,13 +539,14 @@ static Token *handleIdentifiersAndKeywords(Lexer *const lexer)
     }
 
     text[pos] = '\0';
-    if (isKeyword(text))
+    Keywords iskeyword = isKeyword(text);
+    if (iskeyword != -1)
     {
-        return createTokenNone(text, TOKEN_KEYWORD);
+        return createTokenKeyword(text, lexer->tokenStartingPos, TOKEN_KEYWORD, iskeyword);
     }
     else
     {
-        return createTokenNone(text, TOKEN_IDENTIFIER);
+        return createTokenNone(text, lexer->tokenStartingPos, TOKEN_IDENTIFIER);
     }
 }
 
@@ -542,7 +618,9 @@ static Token *handleStrings(Lexer *const lexer)
     if (nextChar(lexer) == '\0')
     {
         text[pos] = '\0';
-        return createTokenNone(text, TOKEN_UNKNOWN);
+        Token *token = createTokenNone(text, lexer->tokenStartingPos, TOKEN_UNKNOWN);
+        addError(lexer, createError(ERROR_LEXING, "The string wasn't closed!", duplicateToken(token)));
+        return token;
     }
 
     //Consume closing '\"'
@@ -550,7 +628,7 @@ static Token *handleStrings(Lexer *const lexer)
     consumeChar(lexer, 1);
 
     text[pos] = '\0';
-    return createTokenString(text, TOKEN_STRING, substring(text, 1, pos - 1));
+    return createTokenString(text, lexer->tokenStartingPos, TOKEN_STRING, substring(text, 1, pos - 1));
 }
 
 /**
@@ -612,7 +690,9 @@ static Token *handleCharacters(Lexer *const lexer)
     if (nextChar(lexer) == '\0')
     {
         text[pos] = '\0';
-        return createTokenNone(text, TOKEN_UNKNOWN);
+        Token *token = createTokenNone(text, lexer->tokenStartingPos, TOKEN_UNKNOWN);
+        addError(lexer, createError(ERROR_LEXING, "The character wasn't closed!", duplicateToken(token)));
+        return token;
     }
 
     //Consume character
@@ -624,7 +704,9 @@ static Token *handleCharacters(Lexer *const lexer)
         text[pos++] = nextChar(lexer);
         consumeChar(lexer, 1);
         text[pos] = '\0';
-        return createTokenNone(text, TOKEN_UNKNOWN);
+        Token *token = createTokenNone(text, lexer->tokenStartingPos, TOKEN_UNKNOWN);
+        addError(lexer, createError(ERROR_LEXING, "The character wasn't closed!", duplicateToken(token)));
+        return token;
     }
 
     //Consume closing '\''
@@ -635,11 +717,15 @@ static Token *handleCharacters(Lexer *const lexer)
     char retChar = text[1];
     if (isEscaped)
     {
-        const char *ss = substring(text, 1, 4);
+        const char *ss = substring(text, 1, 3);
         retChar = convertEscapeString(ss);
+        if (retChar == '\0')
+        {
+            addError(lexer, createError(ERROR_LEXING, "Invalid escape string format.", NULL));
+        }
         free((char *)ss);
     }
-    return createTokenChar(text, TOKEN_CHARACTER, retChar);
+    return createTokenChar(text, lexer->tokenStartingPos, TOKEN_CHARACTER, retChar);
 }
 
 /**
@@ -742,11 +828,13 @@ static Token *handleNumbers(Lexer *const lexer)
             text[pos++] = nextChar(lexer);
             consumeChar(lexer, 1);
             text[pos] = '\0';
-            return createTokenNone(text, TOKEN_UNKNOWN);
+            Token *token = createTokenNone(text, lexer->tokenStartingPos, TOKEN_UNKNOWN);
+            addError(lexer, createError(ERROR_LEXING, "Invalid digit in an octal number", duplicateToken(token)));
+            return token;
         }
 
         text[pos] = '\0';
-        return createTokenNumber(text, TOKEN_OCTAL, value);
+        return createTokenNumber(text, lexer->tokenStartingPos, TOKEN_OCTAL, value);
     }
 
     //Hexadecimal numbers
@@ -778,11 +866,13 @@ static Token *handleNumbers(Lexer *const lexer)
             text[pos++] = nextChar(lexer);
             consumeChar(lexer, 1);
             text[pos] = '\0';
-            return createTokenNone(text, TOKEN_UNKNOWN);
+            Token *token = createTokenNone(text, lexer->tokenStartingPos, TOKEN_UNKNOWN);
+            addError(lexer, createError(ERROR_LEXING, "Invalid character in a hexadecimal number", duplicateToken(token)));
+            return token;
         }
 
         text[pos] = '\0';
-        return createTokenNumber(text, TOKEN_HEXADECIMAL, value);
+        return createTokenNumber(text, lexer->tokenStartingPos, TOKEN_HEXADECIMAL, value);
     }
 
     //Integer number part
@@ -810,7 +900,7 @@ static Token *handleNumbers(Lexer *const lexer)
     if (nextChar(lexer) != '.')
     {
         text[pos] = '\0';
-        return createTokenNumber(text, TOKEN_INTEGER, value);
+        return createTokenNumber(text, lexer->tokenStartingPos, TOKEN_INTEGER, value);
     }
 
     //Floating-Point number part
@@ -846,28 +936,40 @@ static Token *handleNumbers(Lexer *const lexer)
     }
     doubleValue += value;
     
-    return createTokenFloat(text, TOKEN_FLOATINGPOINT, doubleValue);
+    return createTokenFloat(text, lexer->tokenStartingPos, TOKEN_FLOATINGPOINT, doubleValue);
 }
 
 /**
  * Processes and tokenizes single-character and multi-character operators from the lexer input.
  * 
- * This function identifies and creates tokens for various operators and delimiters, including:
+ * This function identifies and creates tokens for various operators and delimiters in the input stream:
  * 
- * - Single-character operators (e.g., '+', '-', '*', '(', ')', '{', '}', '[', ']', ',', ';', ':', '.')
+ * - **Single-character operators**: `+`, `-`, `*`, `/`, `%`, `(`, `)`, `[`, `]`, `{`, `}`, `,`, `;`, `:`, `.`, '!', '=', '?', '~', '<', '>', '&', '|', '^'
  * 
- * - Multi-character operators (e.g., '->', '==', '!=', '<=', '>=', '<<', '>>', '&&', '||')
+ * - **Multi-character operators**: `->`, `==`, `!=`, `<=`, `>=`, `<<`, `>>`, `&&`, `||`, `++`, `--`, `+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `^=`, `<<=`, `>>=`
  * 
- * The function dynamically allocates memory to store the token's text and determines the token type
- * based on the current and next characters in the lexer buffer. If a multi-character operator is detected,
- * both characters are included in the token.
+ * The function dynamically allocates memory to store the text of the token and determines the token type
+ * based on the current and next characters in the lexer buffer. For multi-character operators, both characters
+ * are included in the token.
+ * 
+ * If the `Lexer` is NULL or memory allocation fails, an error message is printed, and the function returns `NULL`.
  * 
  * @param lexer Pointer to the `Lexer` object that provides access to the input source code stream.
- *              The lexer must be initialized before being passed to this function.
+ *              The `Lexer` must be properly initialized before being passed to this function.
  * 
- * @return Pointer to a `Token` object representing the recognized operator or delimiter. If the lexer
- *         is NULL, memory allocation fails, or an unrecognized character is encountered, the function
- *         returns NULL.
+ * @return A pointer to a `Token` object representing the recognized operator or delimiter, or `NULL` if:
+ * 
+ *         - The `Lexer` is NULL.
+ * 
+ *         - Memory allocation fails.
+ * 
+ *         - An unrecognized character is encountered.
+ * 
+ *         - The current character does not match any known operator or delimiter.
+ * 
+ * @note The `text` buffer is dynamically allocated and managed by this function. If resizing the buffer fails,
+ *       the allocated memory is freed, and `NULL` is returned. Ensure to handle the returned `Token` appropriately,
+ *       and be cautious of any unrecognized characters.
  */
 static Token *handleSimpleCase(Lexer *const lexer)
 {
@@ -894,8 +996,8 @@ static Token *handleSimpleCase(Lexer *const lexer)
     case '\0':
         type = TOKEN_EOF;
         break;
-    case '^':
-        type = TOKEN_BITWISE_XOR;
+    case '?':
+        type = TOKEN_QUESTION_MARK;
         break;
     case '~':
         type = TOKEN_BITWISE_NOT;
@@ -930,17 +1032,19 @@ static Token *handleSimpleCase(Lexer *const lexer)
     case '.':
         type = TOKEN_DOT;
         break;
-    case '*':
-        type = TOKEN_STAR;
-        break;
-    case '%':
-        type = TOKEN_PERCENT;
-        break;
     case '+':
         if (peekChar(lexer) == '+')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
             type = TOKEN_DOUBLE_PLUS;
+            break;
+        }
+        else if (peekChar(lexer) == '=')
+        {
+            consumeChar(lexer, 1);
+            text[pos++] = nextChar(lexer);
+            type = TOKEN_PLUS_EQUALS;
             break;
         }
         type = TOKEN_PLUS;
@@ -948,21 +1052,66 @@ static Token *handleSimpleCase(Lexer *const lexer)
     case '-':
         if (peekChar(lexer) == '-')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
             type = TOKEN_DOUBLE_MINUS;
             break;
         }
         else if (peekChar(lexer) == '>')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
             type = TOKEN_ARROW;
             break;
         }
+        else if (peekChar(lexer) == '=')
+        {
+            consumeChar(lexer, 1);
+            text[pos++] = nextChar(lexer);
+            type = TOKEN_MINUS_EQUALS;
+            break;
+        }
         type = TOKEN_MINUS;
+        break;
+    case '*':
+        if (peekChar(lexer) == '=')
+        {
+            consumeChar(lexer, 1);
+            text[pos++] = nextChar(lexer);
+            type = TOKEN_STAR_EQUALS;
+            break;
+        }
+        type = TOKEN_STAR;
+        break;
+    case '/':
+        if (peekChar(lexer) == '=')
+        {
+            consumeChar(lexer, 1);
+            text[pos++] = nextChar(lexer);
+            type = TOKEN_SLASH_EQUALS;
+            break;
+        }
+        else if (peekChar(lexer) == '/' || peekChar(lexer) == '*')
+        {
+            free(text);
+            return NULL;
+        }
+        type = TOKEN_SLASH;
+        break;
+    case '%':
+        if (peekChar(lexer) == '=')
+        {
+            consumeChar(lexer, 1);
+            text[pos++] = nextChar(lexer);
+            type = TOKEN_PERCENT_EQUALS;
+            break;
+        }
+        type = TOKEN_PERCENT;
         break;
     case '=':
         if (peekChar(lexer) == '=')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
             type = TOKEN_DOUBLE_EQUALS;
             break;
@@ -972,6 +1121,7 @@ static Token *handleSimpleCase(Lexer *const lexer)
     case '!':
         if (peekChar(lexer) == '=')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
             type = TOKEN_NOT_EQUALS;
             break;
@@ -981,13 +1131,22 @@ static Token *handleSimpleCase(Lexer *const lexer)
     case '<':
         if (peekChar(lexer) == '=')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
-            type = TOKEN_LESS_THAN_OR_EQUAL;
+            type = TOKEN_LESS_THAN_OR_EQUALS;
             break;
         }
         else if (peekChar(lexer) == '<')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
+            if (peekChar(lexer) == '=')
+            {
+                consumeChar(lexer, 1);
+                text[pos++] = nextChar(lexer);
+                type = TOKEN_BITWISE_LEFT_SHIFT_EQUALS;
+                break;
+            }
             type = TOKEN_BITWISE_LEFT_SHIFT;
             break;
         }
@@ -996,13 +1155,22 @@ static Token *handleSimpleCase(Lexer *const lexer)
     case '>':
         if (peekChar(lexer) == '=')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
-            type = TOKEN_GREATER_THAN_OR_EQUAL;
+            type = TOKEN_GREATER_THAN_OR_EQUALS;
             break;
         }
         else if (peekChar(lexer) == '>')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
+            if (peekChar(lexer) == '=')
+            {
+                consumeChar(lexer, 1);
+                text[pos++] = nextChar(lexer);
+                type = TOKEN_BITWISE_RIGHT_SHIFT_EQUALS;
+                break;
+            }
             type = TOKEN_BITWISE_RIGHT_SHIFT;
             break;
         }
@@ -1011,8 +1179,16 @@ static Token *handleSimpleCase(Lexer *const lexer)
     case '&':
         if (peekChar(lexer) == '&')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
             type = TOKEN_AND;
+            break;
+        }
+        else if (peekChar(lexer) == '=')
+        {
+            consumeChar(lexer, 1);
+            text[pos++] = nextChar(lexer);
+            type = TOKEN_BITWISE_AND_EQUALS;
             break;
         }
         type = TOKEN_BITWISE_AND;
@@ -1020,39 +1196,44 @@ static Token *handleSimpleCase(Lexer *const lexer)
     case '|':
         if (peekChar(lexer) == '|')
         {
+            consumeChar(lexer, 1);
             text[pos++] = nextChar(lexer);
             type = TOKEN_OR;
             break;
         }
+        else if (peekChar(lexer) == '=')
+        {
+            consumeChar(lexer, 1);
+            text[pos++] = nextChar(lexer);
+            type = TOKEN_BITWISE_OR_EQUALS;
+            break;
+        }
         type = TOKEN_BITWISE_OR;
+        break;
+    case '^':
+        if (peekChar(lexer) == '=')
+        {
+            consumeChar(lexer, 1);
+            text[pos++] = nextChar(lexer);
+            type = TOKEN_BITWISE_XOR_EQUALS;
+            break;
+        }
+        type = TOKEN_BITWISE_XOR;
         break;
     default:
         free(text);
         return NULL;
     }
 
-    consumeChar(lexer, pos);
+    consumeChar(lexer, 1);
     text[pos] = '\0';
-    return createTokenNone(text, type);
+    return createTokenNone(text, lexer->tokenStartingPos, type);
 }
 
 /*****************************************************************************************************
                                 PUBLIC LEXER FUNCTIONS START HERE                                
  *****************************************************************************************************/
 
-/**
- * Creates a new `Lexer` object.
- * 
- * Allocates memory for a `Lexer` structure and initializes it with a copy of the provided input.
- * The function takes ownership of the input string by duplicating it and calculates its length.
- *
- * @param input The input string for the lexer (owned by the `Lexer`).
- * 
- * @return A pointer to the newly created Lexer, or NULL if memory allocation fails.
- * 
- * @note The caller is responsible for cleaning up the `Lexer` object when it is no longer needed.
- *       This should be done using `deleteLexer`.
- */
 Lexer *createLexer(const char *const input)
 {
     if (input == NULL) {
@@ -1067,6 +1248,7 @@ Lexer *createLexer(const char *const input)
         return NULL;
     }
 
+    lexer->tokenStartingPos = 0;
     lexer->input = strdup(input);
     if (lexer->input == NULL)
     {
@@ -1077,16 +1259,14 @@ Lexer *createLexer(const char *const input)
 
     lexer->charCount = strlen(lexer->input);
     lexer->position = 0;
+    
+    lexer->errorsSize = 10;
+    lexer->errors = malloc(lexer->errorsSize * sizeof(Error *));
+    lexer->errorCount = 0;
 
     return lexer;
 }
 
-/**
- * Deletes a `Lexer` object and frees its memory.
- * Frees the memory allocated for the Lexer structure and the input string.
- *
- * @param lexer The `Lexer` to be deleted.
- */
 void deleteLexer(Lexer *const lexer)
 {
     if (lexer == NULL)
@@ -1094,40 +1274,13 @@ void deleteLexer(Lexer *const lexer)
         return;
     }
 
+    deleteErrors(lexer->errors, lexer->errorCount);
+    free(lexer->errors);
+    
     free((char *)lexer->input);
     free(lexer);
 }
 
-/**
- * Tokenizes the next input from the lexer.
- * 
- * This function attempts to create a token for various types of input, including:
- * 
- * - Simple cases (operators and delimiters)
- * 
- * - Numeric literals
- * 
- * - Characters
- * 
- * - Strings
- * 
- * - Identifiers and keywords
- * 
- * - Whitespace
- * 
- * - Comments and slashes
- * 
- * If none of these cases apply, it defaults to returning an unknown token.
- * 
- * @param lexer Pointer to the `Lexer` object that provides access to the input source code stream.
- *              The lexer must be initialized before being passed to this function.
- * 
- * @return Pointer to a `Token` object representing the next token in the input. If the lexer is NULL,
- *         or if memory allocation fails, or if no valid token is found, the function returns NULL.
- * 
- * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This should be
- *       done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
- */
 Token *lex(Lexer *const lexer)
 {
     if (lexer == NULL)
@@ -1144,7 +1297,7 @@ Token *lex(Lexer *const lexer)
     if (token == NULL) token = handleStrings(lexer);
     if (token == NULL) token = handleIdentifiersAndKeywords(lexer);
     if (token == NULL) token = handleWhitespace(lexer);
-    if (token == NULL) token = handleCommentsAndSlash(lexer);
+    if (token == NULL) token = handleComments(lexer);
 
     //Unknown
     if(token == NULL)
@@ -1158,8 +1311,11 @@ Token *lex(Lexer *const lexer)
         text[0] = nextChar(lexer);
         consumeChar(lexer, 1);
         text[1] = '\0';
-        token = createTokenNone(text, TOKEN_UNKNOWN);
+        token = createTokenNone(text, lexer->tokenStartingPos, TOKEN_UNKNOWN);
+        addError(lexer, createError(ERROR_LEXING, "Unknown character found while lexing!", duplicateToken(token)));
     }
+
+    updateStartingPos(lexer);
 
     return token;
 }

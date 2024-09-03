@@ -9,7 +9,7 @@
  */
 #define KEYWORDS_COUNT (sizeof(keywords) / sizeof(keywords[0]))
 
-static Token *createToken(const char *const text, const TokenType type, const TokenValue value);
+static Token *createToken(const char *const text, const int start, const TokenType type, const TokenValue value);
 
 static const char *escapeCharToString(const char escapeChar);
 
@@ -18,25 +18,30 @@ static const char *escapeCharToString(const char escapeChar);
  *****************************************************************************************************/
 
 /**
- * Creates a new `Token` with the given text, type, and value.
- * The function allocates memory for the Token structure.
- * 
- * This function assumes that `text` is dynamically allocated 
- * by the caller and takes ownership of it. The `Token` will 
- * be responsible for freeing the `text` when it is no longer needed.
- * 
+ * Creates a new `Token` with the given text, start position, type, and value.
+ * The function allocates memory for the `Token` structure.
+ *
+ * This function assumes that `text` is dynamically allocated by the caller 
+ * and takes ownership of it. The `Token` will be responsible for freeing 
+ * the `text` when it is no longer needed.
+ *
  * @param text The text to be associated with the token (assumed to be dynamically allocated).
- * 
- * @param type The type of the token.
- * 
- * @param value The value of the token.
- * 
- * @return A pointer to the created `Token`, or NULL if allocation fails.
- * 
+ *             If `text` is `NULL`, the `length` field of the token will be set to `0`.
+ *
+ * @param start The starting position of the token in the source code.
+ *
+ * @param type The type of the token, indicating its category in the lexical analysis.
+ *
+ * @param value The value of the token, representing additional information like numeric values.
+ *
+ * @return A pointer to the created `Token`, or `NULL` if allocation fails.
+ *
+ * @note If memory allocation for the `Token` fails, the function will free the provided `text` to avoid memory leaks.
+ *
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-static Token *createToken(const char *const text, const TokenType type, const TokenValue value)
+static Token *createToken(const char *const text, const int start, const TokenType type, const TokenValue value)
 {
     Token *token = (Token *)malloc(sizeof(Token));
     if (token == NULL)
@@ -47,6 +52,15 @@ static Token *createToken(const char *const text, const TokenType type, const To
     }
 
     token->text = text;
+    token->start = start;
+    if (text != NULL)
+    {
+        token->length = strlen(text);
+    }
+    else
+    {
+        token->text = 0;
+    }
     token->type = type;
     token->value = value;
 
@@ -102,27 +116,41 @@ const char *escapeCharToString(const char escapeChar)
  */
 static const char *const keywords[] = 
 {
-    "break",
-    "continue",
-    "return",
-    "void",
-    "int",
-    "float",
-    "char",
-    "string",
-    "const",
-    "do",
-    "while",
-    "for",
-    "if",
-    "else",
-    "switch",
-    "case",
-    "default",
-    "goto",
-    "enum",
-    "struct",
-    "union",
+    [KEYWORD_TYPEDEF] = "typedef",
+    [KEYWORD_EXTERN] = "extern",
+    [KEYWORD_STATIC] = "static",
+    [KEYWORD_AUTO] = "auto",
+    [KEYWORD_REGISTER] = "register",
+    [KEYWORD_VOID] = "void",
+    [KEYWORD_CHAR] = "char",
+    [KEYWORD_STRING] = "string",
+    [KEYWORD_SHORT] = "short",
+    [KEYWORD_INT] = "int",
+    [KEYWORD_LONG] = "long",
+    [KEYWORD_FLOAT] = "float",
+    [KEYWORD_DOUBLE] = "double",
+    [KEYWORD_SIGNED] = "signed",
+    [KEYWORD_UNSIGNED] = "unsigned",
+    [KEYWORD_STRUCT] = "struct",
+    [KEYWORD_UNION] = "union",
+    [KEYWORD_CONST] = "const",
+    [KEYWORD_RESTRICT] = "restrict",
+    [KEYWORD_VOLATILE] = "volatile",
+    [KEYWORD_SIZEOF] = "sizeof",
+    [KEYWORD_ENUM] = "enum",
+    [KEYWORD_INLINE] = "inline",
+    [KEYWORD_CASE] = "case",
+    [KEYWORD_DEFAULT] = "default",
+    [KEYWORD_IF] = "if",
+    [KEYWORD_ELSE] = "else",
+    [KEYWORD_SWITCH] = "switch",
+    [KEYWORD_WHILE] = "while",
+    [KEYWORD_DO] = "do",
+    [KEYWORD_FOR] = "for",
+    [KEYWORD_GOTO] = "goto",
+    [KEYWORD_CONTINUE] = "continue",
+    [KEYWORD_BREAK] = "break",
+    [KEYWORD_RETURN] = "return",
 };
 
 /**
@@ -130,105 +158,103 @@ static const char *const keywords[] =
  */
 static const char *const tokenTypeStrings[] = {
     // Arithmetic Operators:
-    "PLUS",
-    "DOUBLE_PLUS",
-    "MINUS",
-    "DOUBLE_MINUS",
-    "STAR",
-    "SLASH",
-    "PERCENT",
+    [TOKEN_PLUS] = "PLUS",
+    [TOKEN_DOUBLE_PLUS] = "DOUBLE_PLUS",
+    [TOKEN_MINUS] = "MINUS",
+    [TOKEN_DOUBLE_MINUS] = "DOUBLE_MINUS",
+    [TOKEN_STAR] = "STAR",
+    [TOKEN_SLASH] = "SLASH",
+    [TOKEN_PERCENT] = "PERCENT",
+
+    // Compound Assignment Operators (Arithmetic):
+    [TOKEN_PLUS_EQUALS] = "PLUS_EQUAL" ,
+    [TOKEN_MINUS_EQUALS] = "MINUS_EQUAL",
+    [TOKEN_STAR_EQUALS] = "STAR_EQUAL",
+    [TOKEN_SLASH_EQUALS] = "SLASH_EQUAL",
+    [TOKEN_PERCENT_EQUALS] = "PERCENT_EQUAL",
+
+    // Compound Assignment Operators (Bitwise):
+    [TOKEN_BITWISE_LEFT_SHIFT_EQUALS] = "BITWISE_LEFT_SHIFT_EQUAL",
+    [TOKEN_BITWISE_RIGHT_SHIFT_EQUALS] = "BITWISE_RIGHT_SHIFT_EQUAL",
+    [TOKEN_BITWISE_AND_EQUALS] = "BITWISE_AND_EQUAL",
+    [TOKEN_BITWISE_XOR_EQUALS] = "BITWISE_XOR_EQUAL",
+    [TOKEN_BITWISE_OR_EQUALS] = "BITWISE_OR_EQUAL",
 
     // Comparison Operators:
-    "EQUALS",
-    "DOUBLE_EQUALS",
-    "NOT_EQUALS",
-    "LESS_THAN",
-    "GREATER_THAN",
-    "LESS_THAN_OR_EQUAL",
-    "GREATER_THAN_OR_EQUAL",
+    [TOKEN_EQUALS] = "EQUALS",
+    [TOKEN_DOUBLE_EQUALS] = "DOUBLE_EQUALS",
+    [TOKEN_NOT_EQUALS] = "NOT_EQUALS",
+    [TOKEN_LESS_THAN] = "LESS_THAN",
+    [TOKEN_GREATER_THAN] = "GREATER_THAN",
+    [TOKEN_LESS_THAN_OR_EQUALS] = "LESS_THAN_OR_EQUAL",
+    [TOKEN_GREATER_THAN_OR_EQUALS] = "GREATER_THAN_OR_EQUAL",
 
     // Logical Operators:
-    "AND",
-    "OR",
-    "NOT",
+    [TOKEN_AND] = "AND",
+    [TOKEN_OR] = "OR",
+    [TOKEN_NOT] = "NOT",
 
     // Bitwise Operators:
-    "BITWISE_AND",
-    "BITWISE_OR",
-    "BITWISE_XOR",
-    "BITWISE_NOT",
-    "BITWISE_LEFT_SHIFT",
-    "BITWISE_RIGHT_SHIFT",
+    [TOKEN_BITWISE_AND] = "BITWISE_AND",
+    [TOKEN_BITWISE_OR] = "BITWISE_OR",
+    [TOKEN_BITWISE_XOR] = "BITWISE_XOR",
+    [TOKEN_BITWISE_NOT] = "BITWISE_NOT",
+    [TOKEN_BITWISE_LEFT_SHIFT] = "BITWISE_LEFT_SHIFT",
+    [TOKEN_BITWISE_RIGHT_SHIFT] = "BITWISE_RIGHT_SHIFT",
 
     // Parentheses and Brackets:
-    "OPEN_PARENTHESIS",
-    "CLOSE_PARENTHESIS",
-    "OPEN_BRACKET",
-    "CLOSE_BRACKET",
-    "OPEN_CURLY",
-    "CLOSE_CURLY",
+    [TOKEN_OPEN_PARENTHESIS] = "OPEN_PARENTHESIS",
+    [TOKEN_CLOSE_PARENTHESIS] = "CLOSE_PARENTHESIS",
+    [TOKEN_OPEN_BRACKET] = "OPEN_BRACKET",
+    [TOKEN_CLOSE_BRACKET] = "CLOSE_BRACKET",
+    [TOKEN_OPEN_CURLY] = "OPEN_CURLY",
+    [TOKEN_CLOSE_CURLY] = "CLOSE_CURLY",
 
     // Literals:
-    "INTEGER",
-    "FLOATINGPOINT",
-    "CHARACTER",
-    "STRING",
-    "HEXADECIMAL",
-    "OCTAL",
+    [TOKEN_INTEGER] = "INTEGER",
+    [TOKEN_FLOATINGPOINT] = "FLOATINGPOINT",
+    [TOKEN_CHARACTER] = "CHARACTER",
+    [TOKEN_STRING] = "STRING",
+    [TOKEN_HEXADECIMAL] = "HEXADECIMAL",
+    [TOKEN_OCTAL] = "OCTAL",
 
     // Identifier:
-    "IDENTIFIER",
+    [TOKEN_IDENTIFIER] = "IDENTIFIER",
 
     // Keywords:
-    "KEYWORD",
+    [TOKEN_KEYWORD] = "KEYWORD",
 
     // Punctuation:
-    "COMMA",
-    "SEMICOLON",
-    "COLON",
-    "DOT",
-    "ARROW",
+    [TOKEN_COMMA] = "COMMA",
+    [TOKEN_SEMICOLON] = "SEMICOLON",
+    [TOKEN_COLON] = "COLON",
+    [TOKEN_DOT] = "DOT",
+    [TOKEN_ARROW] = "ARROW",
+    [TOKEN_QUESTION_MARK] = "QUESTION_MARK",
 
     // Whitespace:
-    "WHITESPACE",
+    [TOKEN_WHITESPACE] = "WHITESPACE",
 
     // Comments:
-    "LINE_COMMENT",
-    "BLOCK_COMMENT",
+    [TOKEN_LINE_COMMENT] = "LINE_COMMENT",
+    [TOKEN_BLOCK_COMMENT] = "BLOCK_COMMENT",
 
     // End of File:
-    "EOF",
+    [TOKEN_EOF] = "EOF",
 
     // Unknown:
-    "UNKNOWN"
+    [TOKEN_UNKNOWN] = "UNKNOWN",
 };
 
 /*****************************************************************************************************
                                 PUBLIC TOKEN FUNCTIONS START HERE                                
  *****************************************************************************************************/
 
-/**
- * Creates a new `Token` with the given text and type. 
- * The token's value is initialized to a default state.
- * 
- * This function assumes that `text` is dynamically allocated 
- * by the caller and takes ownership of it. The `Token` will 
- * be responsible for freeing the `text` when it is no longer needed.
- * 
- * @param text The text to be associated with the token (assumed to be dynamically allocated).
- * 
- * @param type The type of the token.
- * 
- * @return A pointer to the created `Token`, or NULL if allocation fails.
- * 
- * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
- *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
- */
-Token *createTokenNone(const char *const text, const TokenType type)
+Token *createTokenNone(const char *const text, const int start, const TokenType type)
 {
     TokenValue value = {0};
 
-    Token *token = createToken(text, type, value);
+    Token *token = createToken(text, start, type, value);
     if (token == NULL)
     {
         free((char *)text);
@@ -237,29 +263,11 @@ Token *createTokenNone(const char *const text, const TokenType type)
     return token;
 }
 
-/**
- * Creates a new `Token` with the given text, type, and integer value.
- * 
- * This function assumes that `text` is dynamically allocated 
- * by the caller and takes ownership of it. The `Token` will 
- * be responsible for freeing the `text` when it is no longer needed.
- * 
- * @param text The text to be associated with the token (assumed to be dynamically allocated).
- * 
- * @param type The type of the token.
- * 
- * @param number The integer value to be associated with the token.
- * 
- * @return A pointer to the created `Token`, or NULL if allocation fails.
- * 
- * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
- *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
- */
-Token *createTokenNumber(const char *const text, const TokenType type, const int number)
+Token *createTokenNumber(const char *const text, const int start, const TokenType type, const int number)
 {
     TokenValue value = {.number = number};
 
-    Token *token = createToken(text, type, value);
+    Token *token = createToken(text, start, type, value);
     if (token == NULL)
     {
         free((char *)text);
@@ -268,33 +276,11 @@ Token *createTokenNumber(const char *const text, const TokenType type, const int
     return token;
 }
 
-/**
- * Creates a new `Token` with the given text, type, and string value.
- * 
- * This function assumes that `text` is dynamically allocated 
- * by the caller and takes ownership of it. The `Token` will 
- * be responsible for freeing the `text` when it is no longer needed.
- * The function also allocates memory for a copy of the `string` value.
- * 
- * If the allocation for the `string` fails, the function will 
- * free the `text` and return NULL.
- * 
- * @param text The text to be associated with the token (assumed to be dynamically allocated).
- * 
- * @param type The type of the token.
- * 
- * @param string The string value to be associated with the token (assumed to be dynamically allocated).
- * 
- * @return A pointer to the created `Token`, or NULL if allocation fails.
- * 
- * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
- *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
- */
-Token *createTokenString(const char *const text, const TokenType type, const char *const string)
+Token *createTokenString(const char *const text, const int start, const TokenType type, const char *const string)
 {
     TokenValue value = {.string = string};
 
-    Token *token = createToken(text, type, value);
+    Token *token = createToken(text, start, type, value);
     if (token == NULL)
     {
         if (value.string != NULL)
@@ -307,29 +293,11 @@ Token *createTokenString(const char *const text, const TokenType type, const cha
     return token;
 }
 
-/**
- * Creates a new `Token` with the given text, type, and character value.
- * 
- * This function assumes that `text` is dynamically allocated 
- * by the caller and takes ownership of it. The `Token` will 
- * be responsible for freeing the `text` when it is no longer needed.
- * 
- * @param text The text to be associated with the token (assumed to be dynamically allocated).
- * 
- * @param type The type of the token.
- * 
- * @param character The character value to be associated with the token.
- * 
- * @return A pointer to the created `Token`, or NULL if allocation fails.
- * 
- * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
- *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
- */
-Token *createTokenChar(const char *const text, const TokenType type, const char character)
+Token *createTokenChar(const char *const text, const int start, const TokenType type, const char character)
 {
     TokenValue value = {.character = character};
 
-    Token *token = createToken(text, type, value);
+    Token *token = createToken(text, start, type, value);
     if (token == NULL)
     {
         free((char *)text);
@@ -338,29 +306,11 @@ Token *createTokenChar(const char *const text, const TokenType type, const char 
     return token;
 }
 
-/**
- * Creates a new `Token` with the given text, type, and floating-point value.
- * 
- * This function assumes that `text` is dynamically allocated 
- * by the caller and takes ownership of it. The `Token` will 
- * be responsible for freeing the `text` when it is no longer needed.
- * 
- * @param text The text to be associated with the token (assumed to be dynamically allocated).
- * 
- * @param type The type of the token.
- * 
- * @param floatingPoint The floating-point value to be associated with the token.
- * 
- * @return A pointer to the created `Token`, or NULL if allocation fails.
- * 
- * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
- *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
- */
-Token *createTokenFloat(const char *const text, const TokenType type, const double floatingPoint)
+Token *createTokenFloat(const char *const text, const int start, const TokenType type, const double floatingPoint)
 {
     TokenValue value = {.floatingPoint = floatingPoint};
 
-    Token *token = createToken(text, type, value);
+    Token *token = createToken(text, start, type, value);
     if (token == NULL)
     {
         free((char *)text);
@@ -369,16 +319,19 @@ Token *createTokenFloat(const char *const text, const TokenType type, const doub
     return token;
 }
 
-/**
- * Frees the memory associated with a `Token`.
- * 
- * This function assumes that `token` is a valid pointer to a dynamically allocated `Token` structure.
- * It frees the memory allocated for the `text` field and, if the token type is `TOKEN_STRING`,
- * it also frees the memory allocated for the `value.string` field. Finally, it frees the memory
- * allocated for the `Token` structure itself.
- * 
- * @param token A pointer to the `Token` to be freed. If the pointer is NULL, no action is taken.
- */
+Token *createTokenKeyword(const char *const text, const int start, const TokenType type, const Keywords keyword)
+{
+    TokenValue value = {.keyword = keyword};
+
+    Token *token = createToken(text, start, type, value);
+    if (token == NULL)
+    {
+        free((char *)text);
+    }
+
+    return token;
+}
+
 void deleteToken(Token *const token)
 {
     if (token == NULL)
@@ -395,17 +348,6 @@ void deleteToken(Token *const token)
     free(token);
 }
 
-/**
- * Frees an array of dynamically allocated Tokens.
- * 
- * This function assumes that `tokens` is a valid pointer to an array of dynamically allocated `Token`
- * pointers. It iterates over each element of the array and calls `deleteToken` to free each individual
- * Token. After all Tokens have been freed, it frees the memory allocated for the array itself.
- * 
- * @param tokens A pointer to an array of `Token` pointers. If the pointer is NULL, no action is taken.
- * 
- * @param count The number of Tokens in the array.
- */
 void deleteTokens(Token **const tokens, const size_t count)
 {
     if (tokens == NULL)
@@ -425,16 +367,24 @@ void deleteTokens(Token **const tokens, const size_t count)
     free(tokens);
 }
 
-/**
- * Prints the representation of a `Token` based on its type.
- * 
- * This function handles various token types and prints their
- * associated values. If the token type is not recognized or if 
- * there is a NULL pointer where it shouldn't be, it prints an 
- * error message.
- * 
- * @param token The `Token` to be printed. This should be a valid pointer to a `Token` structure.
- */
+Token *duplicateToken(Token *const token)
+{
+    if (token == NULL)
+    {
+        fprintf(stderr, "Token is NULL!\n");
+        return NULL;
+    }
+
+    Token *newToken = createToken(token->text, token->start, token->type, token->value);
+    if (newToken == NULL)
+    {
+        fprintf(stderr, "Memory allocation for new Token failed!\n");
+        return NULL;
+    }
+    
+    return newToken;
+}
+
 void printToken(const Token *const token)
 {
     if (token == NULL)
@@ -443,14 +393,13 @@ void printToken(const Token *const token)
         return;
     }
 
-    if (token->type >= 0 && token->type < TOKEN_TYPE_COUNT)
+    if (token->type == TOKEN_EOF)
     {
-        printf("%s token", tokenTypeStrings[token->type]);
+        printf("%s token\n", getType(token->type));
+        return;
     }
-    else
-    {
-        printf("UNKNOWN token type");
-    }
+
+    printf("%s token, text: %s", getType(token->type), token->text);
 
     const char *escape = escapeCharToString(token->value.character);
     switch (token->type)
@@ -480,16 +429,8 @@ void printToken(const Token *const token)
     case TOKEN_OCTAL:
         printf(", value: %#o\n", token->value.number);
         break;
-    case TOKEN_IDENTIFIER:
     case TOKEN_KEYWORD:
-        printf(", name: %s\n", token->text);
-        break;
-    case TOKEN_LINE_COMMENT:
-    case TOKEN_BLOCK_COMMENT:
-        printf(", comment text: %s\n", token->text);
-        break;
-    case TOKEN_UNKNOWN:
-        printf(", text found: %s\n", token->text);
+        printf(", value: %s\n", keywords[token->value.keyword]);
         break;
     default:
         printf("\n");
@@ -497,17 +438,19 @@ void printToken(const Token *const token)
     }
 }
 
-/**
- * Checks if the given input string is a keyword.
- *
- * This function compares the input string against a pre-defined list of keywords.
- * It returns 1 if the input matches any of the keywords, and 0 otherwise.
- *
- * @param input The string to be checked. It should be non-NULL.
- * 
- * @return 1 if the input is a keyword, 0 otherwise.
- */
-int isKeyword(const char *const input)
+char *getType(TokenType type)
+{
+    if (type >= 0 && type < TOKEN_TYPE_COUNT)
+    {
+        return (char *)tokenTypeStrings[type];
+    }
+    else
+    {
+        return "UNKNOWN";
+    }
+}
+
+Keywords isKeyword(const char *const input)
 {
     if (input == NULL)
     {
@@ -518,9 +461,9 @@ int isKeyword(const char *const input)
     {
         if (strcmp(input, keywords[i]) == 0)
         {
-            return 1;
+            return (Keywords)i;
         }
     }
     
-    return 0;
+    return (Keywords)-1;
 }
