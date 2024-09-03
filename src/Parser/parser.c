@@ -637,12 +637,12 @@ static ASTNode *parseFunctionDefinition(Parser *parser)
     size_t childCount = 0;
 
     //Parsing
-    if (isDeclarationSpecifiers(parser, 0))
+    if (isDeclarationSpecifiers(parser, 1))
     {
         children[childCount++] = parseDeclarationSpecifiers(parser);
         children[childCount++] = parseDeclarator(parser);
 
-        while (isDeclaration(parser, 0))
+        while (isDeclaration(parser, 1))
         {
             if (childCount + 2 >= childrenSize)
             {
