@@ -155,7 +155,7 @@ int runVM(int argc, char **argv)
     deleteParser(parser);
 
     //Print the AST
-    printParseTrees(parser);
+    printASTNode(root, "", 0);
 
     //TODO:
     //Do things with the AST
