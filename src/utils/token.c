@@ -114,8 +114,7 @@ const char *escapeCharToString(const char escapeChar)
 /**
  * Lookup table for keywords
  */
-static const char *const keywords[] = 
-{
+static const char *const keywords[] = {
     [KEYWORD_TYPEDEF] = "typedef",
     [KEYWORD_EXTERN] = "extern",
     [KEYWORD_STATIC] = "static",
