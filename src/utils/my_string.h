@@ -33,4 +33,4 @@ char *substring(const char *const string, const int start, const int end);
  */
 char convertEscapeString(const char *const input);
 
-#endif
+#endif // MY_STRING_H

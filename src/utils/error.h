@@ -84,4 +84,4 @@ void deleteErrors(Error **errors, const size_t count);
  */
 void printError(const Error *const error);
 
-#endif
+#endif // ERROR_H
