@@ -130,4 +130,4 @@ void deleteLexer(Lexer *const lexer);
  */
 Token *lex(Lexer *const lexer);
 
-#endif
+#endif // LEXER_H

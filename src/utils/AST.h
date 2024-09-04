@@ -176,4 +176,4 @@ ASTNode *duplicateASTNode(ASTNode *const astNode);
  */
 void printASTNode(const ASTNode *const astNode, char *indent, int isLast);
 
-#endif
+#endif // AST_H

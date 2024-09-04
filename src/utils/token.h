@@ -617,4 +617,4 @@ char *getType(TokenType type);
  */
 Keywords isKeyword(const char *const input);
 
-#endif
+#endif // TOKEN_H

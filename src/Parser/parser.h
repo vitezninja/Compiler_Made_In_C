@@ -175,4 +175,4 @@ int parse(Parser *parser);
  */
 void printParseTrees(const Parser *const parser);
 
-#endif
+#endif // PARSER_H
