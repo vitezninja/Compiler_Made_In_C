@@ -6,9 +6,9 @@ ifeq ($(OS),Windows_NT)
 	TARGET = cmc.exe
 else 
 	UNAME_S := $(shell uname -s)
-	ifeq ($(UNAME_S),Linux)
-		TARGET = cmc.out
-	endif
+ifeq ($(UNAME_S),Linux)
+	TARGET = cmc.out
+endif
 endif
 
 INCLUDES = -I./src -I./src/Lexer -I./src/Parser -I./src/VM -I./src/utils
@@ -52,25 +52,25 @@ clean:
 ifeq ($(OS),Windows_NT)
 	-del $(subst /,\,$(OBJS)) $(TARGET)
 else 
-	ifeq ($(UNAME_S),Linux)
-		rm -f $(OBJS) $(TARGET)
-	endif
+ifeq ($(UNAME_S),Linux)
+	rm -f $(OBJS) $(TARGET)
+endif
 endif
 
 # Valgrind check only on Linux
 valgrind: $(TARGET)
 ifneq ($(OS),Windows_NT)
-	ifeq ($(UNAME_S),Linux)
-		valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1 ./$(TARGET) tests/parser_tests/test3.c
-	endif
+ifeq ($(UNAME_S),Linux)
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1 ./$(TARGET) tests/parser_tests/test3.c
+endif
 endif
 
 # Debug only on Linux
 debug: $(TARGET)
 ifneq ($(OS),Windows_NT)
-	ifeq ($(UNAME_S),Linux)
-		gf2 ./$(TARGET) &
-	endif
+ifeq ($(UNAME_S),Linux)
+	gf2 ./$(TARGET) &
+endif
 endif
 
 .PHONY: all clean valgrind debug

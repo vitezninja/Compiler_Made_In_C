@@ -687,6 +687,7 @@ static Token **lexFile(const char *const fileContents, size_t *tokenCount)
         return NULL;
     }
 
+    deleteLexer(lexer);
     return tokens;
 }
 
