@@ -1,8 +1,8 @@
 CC = gcc
 CFLAGS = -g -Og -Wall -Wextra -std=gnu99
 
-TARGET = main
-TARGET_LIN = main.out
+TARGET = cmc.exe
+TARGET_LIN = cmc.out
 
 INCLUDES = -I./src -I./src/Lexer -I./src/Parser -I./src/VM -I./src/utils
 CFLAGS += $(INCLUDES)
@@ -23,11 +23,8 @@ $(TARGET): $(OBJS)
 main.o: src/main.c src/VM/vm.h
 	$(CC) $(CFLAGS) -c src/main.c -o src/main.o
 
-vm.o: src/VM/vm.c src/VM/vm.h src/utils/file_reading.h src/utils/token.h src/Lexer/lexer.h src/Parser/parser.h src/utils/AST.h
+vm.o: src/VM/vm.c src/VM/vm.h src/utils/token.h src/Lexer/lexer.h src/Parser/parser.h src/utils/AST.h
 	$(CC) $(CFLAGS) -c src/VM/vm.c -o src/VM/vm.o
-
-file_reading.o: src/utils/file_reading.c src/utils/file_reading.h src/utils/my_string.h
-	$(CC) $(CFLAGS) -c src/utils/file_reading.c -o src/utils/file_reading.o
 
 my_string.o: src/utils/my_string.c src/utils/my_string.h
 	$(CC) $(CFLAGS) -c src/utils/my_string.c -o src/utils/my_string.o
@@ -49,7 +46,7 @@ AST.o: src/utils/AST.c src/utils/AST.h
 
 # Clean on windows
 clean:
-	-del $(subst /,\,$(OBJS)) $(TARGET).exe
+	-del $(subst /,\,$(OBJS)) $(TARGET)
 
 # Clean on linux
 clean_lin:
