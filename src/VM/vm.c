@@ -52,17 +52,7 @@
  * - `headerFiles`: An array of strings representing header file paths specified by the user.
  * 
  * - `headerCount`: The number of header files specified in the `headerFiles` array.
- * 
- * - `libraryFiles`: An array of strings representing library file paths specified by the user.
- * 
- * - `libraryCount`: The number of library files specified in the `libraryFiles` array.
- * 
- * - `macros`: An array of strings representing macros defined by the user.
- * 
- * - `macroCount`: The number of macros specified in the `macros` array.
- * 
- * - `standard`: A string representing the specified C standard (e.g., `-std=` flag).
- * 
+ *
  * The `Flags` structure is used by various functions to manage the state and configuration of the compiler based on user input.
  * 
  * @note The caller is responsible for managing the lifecycle of the `Flags` object. After use, the memory allocated for the
@@ -83,11 +73,6 @@ typedef struct flags
     int optimization;        /** Flag to enable optimization. */
     char **headerFiles;      /** Array of strings representing header file paths. */
     size_t headerCount;      /** Number of header files. */
-    char **libraryFiles;     /** Array of strings representing library file paths. */
-    size_t libraryCount;     /** Number of library files. */
-    char **macros;           /** Array of strings representing macros defined by the user. */
-    size_t macroCount;       /** Number of macros. */
-    char *standard;          /** String representing the specified C standard. */
 } Flags;
 
 static int getFileSize(FILE *file);
@@ -368,23 +353,6 @@ static Flags *parseArgs(int argc, char **argv)
         return NULL;
     }
     flags->headerCount = 0;
-    flags->libraryFiles = malloc(sizeof(char *));
-    if (flags->libraryFiles == NULL)
-    {
-        fprintf(stderr, "Memory allocation for library files failed!\n");
-        freeFlags(flags);
-        return NULL;
-    }
-    flags->libraryCount = 0;
-    flags->macros = malloc(sizeof(char *));
-    if (flags->macros == NULL)
-    {
-        fprintf(stderr, "Memory allocation for macros failed!\n");
-        freeFlags(flags);
-        return NULL;
-    }
-    flags->macroCount = 0;
-    flags->standard = NULL;
 
     for (size_t i = 1; (int)i < argc; i++)
     {
@@ -438,7 +406,7 @@ static Flags *parseArgs(int argc, char **argv)
             }
             else if (strlen(argv[i]) > 2)
             {
-                if (strncmp(argv[i], "-I.", 2) == 0)
+                if (strncmp(argv[i], "-I", 2) == 0)
                 {
                     flags->headerFiles[flags->headerCount++] = substring(argv[i], 2, strlen(argv[i]));
                     char **newHeaderFiles = realloc(flags->headerFiles, flags->headerCount * sizeof(char *));
@@ -449,34 +417,6 @@ static Flags *parseArgs(int argc, char **argv)
                         return NULL;
                     }
                     flags->headerFiles = newHeaderFiles;
-                }
-                else if (strncmp(argv[i], "-L", 2) == 0)
-                {
-                    flags->libraryFiles[flags->libraryCount++] = substring(argv[i], 2, strlen(argv[i]));
-                    char **newLibraryFiles = realloc(flags->libraryFiles, flags->libraryCount * sizeof(char *));
-                    if (newLibraryFiles == NULL)
-                    {
-                        fprintf(stderr, "Memory reallocation for library files failed!\n");
-                        freeFlags(flags);
-                        return NULL;
-                    }
-                    flags->libraryFiles = newLibraryFiles;
-                }
-                else if (strncmp(argv[i], "-D", 2) == 0)
-                {
-                    flags->macros[flags->macroCount++] = substring(argv[i], 2, strlen(argv[i]));
-                    char **newMacros = realloc(flags->macros, flags->macroCount * sizeof(char *));
-                    if (newMacros == NULL)
-                    {
-                        fprintf(stderr, "Memory reallocation for macros failed!\n");
-                        freeFlags(flags);
-                        return NULL;
-                    }
-                    flags->macros = newMacros;
-                }
-                else if (strncmp(argv[i], "-std=", 5) == 0)
-                {
-                    flags->standard = substring(argv[i], 5, strlen(argv[i]));
                 }
                 else
                 {
@@ -542,24 +482,6 @@ static void freeFlags(Flags *flags)
             free(flags->headerFiles[i]);
         }
         free(flags->headerFiles);
-    }
-
-    if (flags->libraryFiles != NULL)
-    {
-        for (size_t i = 0; i < flags->libraryCount; i++)
-        {
-            free(flags->libraryFiles[i]);
-        }
-        free(flags->libraryFiles);
-    }
-
-    if (flags->macros != NULL)
-    {
-        for (size_t i = 0; i < flags->macroCount; i++)
-        {
-            free(flags->macros[i]);
-        }
-        free(flags->macros);
     }
 
     free(flags);
@@ -666,9 +588,6 @@ static void printHelp()
     printf("  -g \t\t\tInclude debugging information\n");
     printf("  -O \t\t\tEnable optimization\n");
     printf("  -I<path> \t\tAdd a directory to the header file search path\n");
-    printf("  -L<path> \t\tAdd a directory to the library file search path\n");
-    printf("  -D<macro> \t\tDefine a macro\n");
-    printf("  -std=<standard> \tSpecify the C standard to use\n");
 }
 
 /**
