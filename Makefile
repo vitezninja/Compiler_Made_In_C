@@ -1,8 +1,15 @@
 CC = gcc
 CFLAGS = -g -Og -Wall -Wextra -std=gnu99
 
-TARGET = main
-TARGET_LIN = main.out
+# Detect OS
+ifeq ($(OS),Windows_NT)
+	TARGET = cmc.exe
+else 
+	UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	TARGET = cmc.out
+endif
+endif
 
 INCLUDES = -I./src -I./src/Lexer -I./src/Parser -I./src/VM -I./src/utils
 CFLAGS += $(INCLUDES)
@@ -11,11 +18,7 @@ SRCS = $(wildcard src/*.c src/Lexer/*.c src/Parser/*.c src/VM/*.c src/utils/*.c)
 
 OBJS = $(SRCS:.c=.o)
 
-# Windows
 all: $(TARGET)
-
-# Linux
-lin: $(TARGET_LIN)
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
@@ -23,11 +26,8 @@ $(TARGET): $(OBJS)
 main.o: src/main.c src/VM/vm.h
 	$(CC) $(CFLAGS) -c src/main.c -o src/main.o
 
-vm.o: src/VM/vm.c src/VM/vm.h src/utils/file_reading.h src/utils/token.h src/Lexer/lexer.h src/Parser/parser.h src/utils/AST.h
+vm.o: src/VM/vm.c src/VM/vm.h src/utils/token.h src/Lexer/lexer.h src/Parser/parser.h src/utils/AST.h
 	$(CC) $(CFLAGS) -c src/VM/vm.c -o src/VM/vm.o
-
-file_reading.o: src/utils/file_reading.c src/utils/file_reading.h src/utils/my_string.h
-	$(CC) $(CFLAGS) -c src/utils/file_reading.c -o src/utils/file_reading.o
 
 my_string.o: src/utils/my_string.c src/utils/my_string.h
 	$(CC) $(CFLAGS) -c src/utils/my_string.c -o src/utils/my_string.o
@@ -47,20 +47,30 @@ parser.o: src/Parser/parser.c src/Parser/parser.h src/utils/token.h src/utils/AS
 AST.o: src/utils/AST.c src/utils/AST.h
 	$(CC) $(CFLAGS) -c src/utils/AST.c -o src/utils/AST.o
 
-# Clean on windows
+# Cleanup object files and executables
 clean:
-	-del $(subst /,\,$(OBJS)) $(TARGET).exe
+ifeq ($(OS),Windows_NT)
+	-del $(subst /,\,$(OBJS)) $(TARGET)
+else 
+ifeq ($(UNAME_S),Linux)
+	rm -f $(OBJS) $(TARGET)
+endif
+endif
 
-# Clean on linux
-clean_lin:
-	rm -f $(OBJS) $(TARGET_LIN)
+# Valgrind check only on Linux
+valgrind: $(TARGET)
+ifneq ($(OS),Windows_NT)
+ifeq ($(UNAME_S),Linux)
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1 ./$(TARGET) tests/parser_tests/test3.c
+endif
+endif
 
-# Valgrind check
-valgrind: $(TARGET_LIN)
-	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1 ./$(TARGET_LIN) tests/parser_tests/test3.c
+# Debug only on Linux
+debug: $(TARGET)
+ifneq ($(OS),Windows_NT)
+ifeq ($(UNAME_S),Linux)
+	gf2 ./$(TARGET) &
+endif
+endif
 
-# Debug on Linux with gdb with gf2 frontend
-debug: $(TARGET_LIN)
-	gf2 ./$(TARGET_LIN) &
-
-.PHONY: all lin clean clean_lin valgrind debug
+.PHONY: all clean valgrind debug

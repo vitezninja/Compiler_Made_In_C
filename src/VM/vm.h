@@ -3,7 +3,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "../utils/file_reading.h"
+#include <string.h>
+#include "../utils/my_string.h"
 #include "../utils/token.h"
 #include "../Lexer/lexer.h"
 #include "../Parser/parser.h"
