@@ -795,6 +795,11 @@ static Token *handleNumbers(Lexer *const lexer)
         }
         else
         {
+            if (!isOctalDigit(nextChar(lexer)))
+            {
+                text[pos] = '\0';
+                return createTokenNumber(text, lexer->tokenStartingPos, TOKEN_INTEGER, value);
+            }
             isOctal = 1;
         }
     }
