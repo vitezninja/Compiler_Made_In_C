@@ -359,8 +359,7 @@ static Token *matchToken(Parser *parser, const TokenType type)
         return token;
     }
 
-    const char *text = (char *)malloc(1 * sizeof(char));
-    text = "";
+    char *text = strdup(nextToken(parser)->text);
     if (text == NULL)
     {
         fprintf(stderr, "Memory allocation for Token text failed!\n");
@@ -368,7 +367,11 @@ static Token *matchToken(Parser *parser, const TokenType type)
     }
     Token *token = createTokenNone(text, nextToken(parser)->start ,TOKEN_UNKNOWN);
 
-    addError(parser, createError(ERROR_PARSING, "Wrong token!", token));
+    char message[128] = "Expected token of type, ";
+    strcat(message, getType(type));
+    strcat(message, " but found:");
+    strcat(message, getType(nextToken(parser)->type));
+    addError(parser, createError(ERROR_PARSING, message, token));
     return token;
 }
 
@@ -554,6 +557,12 @@ static ASTNode *parseProgram(Parser *parser)
         children[childCount++] = parseGlobalDeclaration(parser);
     }
 
+    if (nextToken(parser)->type != TOKEN_EOF)
+    {
+        addError(parser, createError(ERROR_PARSING, "Expected a Global Declaration but found:", duplicateToken(nextToken(parser))));
+        return NULL;
+    }
+
     tokens[tokenCount++] = matchToken(parser, TOKEN_EOF);
     return createASTNode(AST_PROGRAM, tokens, tokenCount, children, childCount);
 }
@@ -593,12 +602,6 @@ static ASTNode *parseGlobalDeclaration(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isGlobalDeclaration(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Global Declaration but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -655,27 +658,12 @@ static ASTNode *parseFunctionDefinition(Parser *parser)
         return NULL;
     }
 
-    if (!isFunctionDefinition(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Function Definition but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
-    size_t tokensSize = 2;
-    Token **tokens = malloc(tokensSize * sizeof(Token *));
-    if (tokens == NULL)
-    {
-        fprintf(stderr, "Memory allocation for tokens failed.\n");
-        return NULL;
-    }
-    size_t tokenCount = 0;
     size_t childrenSize = 3;
     ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
     if (children == NULL)
     {
         fprintf(stderr, "Memory allocation for children failed.\n");
-        free(tokens);
         return NULL;
     }
     size_t childCount = 0;
@@ -695,7 +683,6 @@ static ASTNode *parseFunctionDefinition(Parser *parser)
                 if (newChildren == NULL)
                 {
                     fprintf(stderr, "Memory reallocation for ASTNode children failed!\n");
-                    free(tokens);
                     free(children);
                     return NULL;
                 }
@@ -707,12 +694,11 @@ static ASTNode *parseFunctionDefinition(Parser *parser)
 
         children[childCount++] = parseCompoundStatement(parser);
 
-        return createASTNode(AST_FUNCTION_DEFINITION, tokens, tokenCount, children, childCount);
+        return createASTNode(AST_FUNCTION_DEFINITION, NULL, 0, children, childCount);
     }
 
     //Error
     addError(parser, createError(ERROR_PARSING, "Expected a Function Definition but found:", duplicateToken(nextToken(parser))));
-    free(tokens);
     free(children);
     return NULL;
 }
@@ -752,12 +738,6 @@ static ASTNode *parseDeclarationSpecifiers(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isDeclarationSpecifiers(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected Declaration Specifiers but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -951,12 +931,6 @@ static ASTNode *parseTypeSpecifier(Parser *parser)
         return NULL;
     }
 
-    if (!isTypeSpecifier(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Type Specifier but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 1;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -1073,12 +1047,6 @@ static ASTNode *parseStructOrUnionSpecifier(Parser *parser)
         return NULL;
     }
 
-    if (!isStructOrUnionSpecifier(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Struct or Union Specifier but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 4;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -1183,12 +1151,6 @@ static ASTNode *parseStructDeclaration(Parser *parser)
         return NULL;
     }
 
-    if (!isStructDeclaration(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Struct Declaration but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 1;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -1283,12 +1245,6 @@ static ASTNode *parseSpecifierQualifier(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isSpecifierQualifier(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Specifier Qualifier but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -1392,12 +1348,6 @@ static ASTNode *parseStructDeclaratorList(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isStructDeclaratorList(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Struct Declarator List but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -1512,12 +1462,6 @@ static ASTNode *parseStructDeclarator(Parser *parser)
         return NULL;
     }
 
-    if (!isStructDeclarator(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Struct Declarator but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 1;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -1590,27 +1534,12 @@ static ASTNode *parseDeclarator(Parser *parser)
         return NULL;
     }
 
-    if (!isDeclarator(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Declarator but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
-    size_t tokensSize = 1;
-    Token **tokens = malloc(tokensSize * sizeof(Token *));
-    if (tokens == NULL)
-    {
-        fprintf(stderr, "Memory allocation for tokens failed.\n");
-        return NULL;
-    }
-    size_t tokenCount = 0;
     size_t childrenSize = 2;
     ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
     if (children == NULL)
     {
         fprintf(stderr, "Memory allocation for children failed.\n");
-        free(tokens);
         return NULL;
     }
     size_t childCount = 0;
@@ -1624,12 +1553,11 @@ static ASTNode *parseDeclarator(Parser *parser)
     if (isDirectDeclarator(parser, 1))
     {
         children[childCount++] = parseDirectDeclarator(parser);
-        return createASTNode(AST_DECLARATOR, tokens, tokenCount, children, childCount);
+        return createASTNode(AST_DECLARATOR, NULL, 0, children, childCount);
     }
 
     //Error
     addError(parser, createError(ERROR_PARSING, "Expected a Declarator but found:", duplicateToken(nextToken(parser))));
-    free(tokens);
     free(children);
     return NULL;
 }
@@ -1671,12 +1599,6 @@ static ASTNode *parsePointer(Parser *parser)
         return NULL;
     }
 
-    if (!isPointer(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Pointer but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 2;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -1686,15 +1608,6 @@ static ASTNode *parsePointer(Parser *parser)
         return NULL;
     }
     size_t tokenCount = 0;
-    size_t childrenSize = 1;
-    ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
-    if (children == NULL)
-    {
-        fprintf(stderr, "Memory allocation for children failed.\n");
-        free(tokens);
-        return NULL;
-    }
-    size_t childCount = 0;
 
     //Parsing
     if (isNextTokenTypeOf(parser, TOKEN_STAR, 0))
@@ -1710,7 +1623,6 @@ static ASTNode *parsePointer(Parser *parser)
                 {
                     fprintf(stderr, "Memory reallocation for Tokens failed!\n");
                     free(tokens);
-                    free(children);
                     return NULL;
                 }
                 tokens = newTokens;
@@ -1729,7 +1641,6 @@ static ASTNode *parsePointer(Parser *parser)
                 {
                     fprintf(stderr, "Memory reallocation for tokens failed!\n");
                     free(tokens);
-                    free(children);
                     return NULL;
                 }
                 tokens = newTokens;
@@ -1746,7 +1657,6 @@ static ASTNode *parsePointer(Parser *parser)
                     {
                         fprintf(stderr, "Memory reallocation for Tokens failed!\n");
                         free(tokens);
-                        free(children);
                         return NULL;
                     }
                     tokens = newTokens;
@@ -1756,13 +1666,12 @@ static ASTNode *parsePointer(Parser *parser)
             }
         }
 
-        return createASTNode(AST_POINTER, tokens, tokenCount, children, childCount);
+        return createASTNode(AST_POINTER, tokens, tokenCount, NULL, 0);
     }
 
     //Error
     addError(parser, createError(ERROR_PARSING, "Expected a Pointer but found:", duplicateToken(nextToken(parser))));
     free(tokens);
-    free(children);
     return NULL;
 }
 
@@ -1811,12 +1720,6 @@ static ASTNode *parseDirectDeclarator(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isDirectDeclarator(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Direct Declarator but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -2015,12 +1918,6 @@ static ASTNode *parseDirectDeclaratorPrime(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isDirectDeclaratorPrime(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Direct Declarator Prime but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -2233,12 +2130,6 @@ static ASTNode *parseAssignmentExpression(Parser *parser)
         return NULL;
     }
 
-    if (!isAssignmentExpression(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected an Assignment Expression but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 1;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -2338,12 +2229,6 @@ static ASTNode *parseConditionalExpression(Parser *parser)
         return NULL;
     }
 
-    if (!isConditionalExpression(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Conditional Expression but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 2;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -2425,12 +2310,6 @@ static ASTNode *parseLogicalORExpression(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isLogicalORExpression(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Logical OR Expression but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -2547,12 +2426,6 @@ static ASTNode *parseLogicalANDExpression(Parser *parser)
         return NULL;
     }
 
-    if (!isLogicalANDExpression(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Logical AND Expression but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 1;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -2663,12 +2536,6 @@ static ASTNode *parseBitwiseORExpression(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isBitwiseORExpression(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Bitwise OR Expression but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -2785,12 +2652,6 @@ static ASTNode *parseBitwiseXORExpression(Parser *parser)
         return NULL;
     }
 
-    if (!isBitwiseXORExpression(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Bitwise XOR Expression but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 1;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -2901,12 +2762,6 @@ static ASTNode *parseBitwiseANDExpression(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isBitwiseANDExpression(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Bitwise AND Expression but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -3042,12 +2897,6 @@ static ASTNode *parseEqualityExpression(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isEqualityExpression(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected an Equality Expression but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -3188,12 +3037,6 @@ static ASTNode *parseRelationalExpression(Parser *parser)
         return NULL;
     }
 
-    if (!isRelationalExpression(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Relational Expression but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 1;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -3329,12 +3172,6 @@ static ASTNode *parseShiftExpression(Parser *parser)
         return NULL;
     }
 
-    if (!isShiftExpression(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Shift Expression but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 1;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -3467,12 +3304,6 @@ static ASTNode *parseAdditiveExpression(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isAdditiveExpression(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected an Additive Expression but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -3612,12 +3443,6 @@ static ASTNode *parserMultiplicativeExpression(Parser *parser)
         return NULL;
     }
 
-    if (!isMultiplicativeExpression(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Multiplicative Expression but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 1;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -3733,12 +3558,6 @@ static ASTNode *parseCastExpression(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isCastExpression(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Cast Expression but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -3909,12 +3728,6 @@ static ASTNode *parseUnaryExpression(Parser *parser)
         return NULL;
     }
 
-    if (!isUnaryExpression(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Unary Expression but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 2;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -4032,12 +3845,6 @@ static ASTNode *parsePostfixExpression(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isPostfixExpression(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Postfix Expression but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -4196,12 +4003,6 @@ static ASTNode *parsePostfixExpressionPrime(Parser *parser)
         return NULL;
     }
 
-    if(!isPostfixExpressionPrime(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Postfix Expression Prime but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 2;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -4310,12 +4111,6 @@ static ASTNode *parsePrimaryExpression(Parser *parser)
         return NULL;
     }
 
-    if (!isPrimaryExpression(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Primary Expression but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 2;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -4411,27 +4206,17 @@ static ASTNode *parseLiteral(Parser *parser)
         return NULL;
     }
     size_t tokenCount = 0;
-    size_t childrenSize = 1;
-    ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
-    if (children == NULL)
-    {
-        fprintf(stderr, "Memory allocation for children failed.\n");
-        free(tokens);
-        return NULL;
-    }
-    size_t childCount = 0;
 
     //Parsing
     if(isLiteral(parser, 1))
     {
         tokens[tokenCount++] = matchToken(parser, nextToken(parser)->type);
-        return createASTNode(AST_LITERAL, tokens, tokenCount, children, childCount);
+        return createASTNode(AST_LITERAL, tokens, tokenCount, NULL, 0);
     }
 
     //Error
     addError(parser, createError(ERROR_PARSING, "Expected a literal but found:", duplicateToken(nextToken(parser))));
     free(tokens);
-    free(children);
     return NULL;
 }
 
@@ -4471,12 +4256,6 @@ static ASTNode *parseExpression(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isExpression(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected an Expression but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -4552,27 +4331,12 @@ static ASTNode *parseTypeName(Parser *parser)
         return NULL;
     }
 
-    if (!isTypeName(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Type Name but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
-    size_t tokensSize = 1;
-    Token **tokens = malloc(tokensSize * sizeof(Token *));
-    if (tokens == NULL)
-    {
-        fprintf(stderr, "Memory allocation for tokens failed.\n");
-        return NULL;
-    }
-    size_t tokenCount = 0;
     size_t childrenSize = 3;
     ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
     if (children == NULL)
     {
         fprintf(stderr, "Memory allocation for children failed.\n");
-        free(tokens);
         return NULL;
     }
     size_t childCount = 0;
@@ -4590,7 +4354,6 @@ static ASTNode *parseTypeName(Parser *parser)
                 if (newChildren == NULL)
                 {
                     fprintf(stderr, "Memory reallocation for ASTNode children failed!\n");
-                    free(tokens);
                     free(children);
                     return NULL;
                 }
@@ -4605,12 +4368,11 @@ static ASTNode *parseTypeName(Parser *parser)
             children[childCount++] = parseAbstractDeclarator(parser);
         }
 
-        return createASTNode(AST_TYPE_NAME, tokens, tokenCount, children, childCount);
+        return createASTNode(AST_TYPE_NAME, NULL, 0, children, childCount);
     }
 
     //Error
     addError(parser, createError(ERROR_PARSING, "Expected a Type Name but found:", duplicateToken(nextToken(parser))));
-    free(tokens);
     free(children);
     return NULL;
 }
@@ -4659,27 +4421,12 @@ static ASTNode *parseAbstractDeclarator(Parser *parser)
         return NULL;
     }
 
-    if (!isAbstractDeclarator(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected an Abstract Declarator but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
-    size_t tokensSize = 1;
-    Token **tokens = malloc(tokensSize * sizeof(Token *));
-    if (tokens == NULL)
-    {
-        fprintf(stderr, "Memory allocation for tokens failed.\n");
-        return NULL;
-    }
-    size_t tokenCount = 0;
     size_t childrenSize = 2;
     ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
     if (children == NULL)
     {
         fprintf(stderr, "Memory allocation for children failed.\n");
-        free(tokens);
         return NULL;
     }
     size_t childCount = 0;
@@ -4690,19 +4437,18 @@ static ASTNode *parseAbstractDeclarator(Parser *parser)
         children[childCount++] = parsePointer(parser);
         if (!isDirectAbstractDeclarator(parser, 1))
         {
-            return createASTNode(AST_ABSTRACT_DECLARATOR, tokens, tokenCount, children, childCount);
+            return createASTNode(AST_ABSTRACT_DECLARATOR, NULL, 0, children, childCount);
         }
     }
 
     if (isDirectAbstractDeclarator(parser, 1))
     {
         children[childCount++] = parseDirectAbstractDeclarator(parser);
-        return createASTNode(AST_ABSTRACT_DECLARATOR, tokens, tokenCount, children, childCount);
+        return createASTNode(AST_ABSTRACT_DECLARATOR, NULL, 0, children, childCount);
     }
 
     //Error
     addError(parser, createError(ERROR_PARSING, "Expected an Abstract Declarator but found:", duplicateToken(nextToken(parser))));
-    free(tokens);
     free(children);
     return NULL;
 }
@@ -4742,12 +4488,6 @@ static ASTNode *parseDirectAbstractDeclarator(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isDirectAbstractDeclarator(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Direct Abstract Declarator but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -4962,12 +4702,6 @@ static ASTNode *parseParameterList(Parser *parser)
         return NULL;
     }
 
-    if (!isParameterList(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Parameter List but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 1;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -5074,27 +4808,12 @@ static ASTNode *parseParameterDeclaration(Parser *parser)
         return NULL;
     }
 
-    if (!isParameterDeclaration(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Parameter Declaration but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
-    size_t tokensSize = 1;
-    Token **tokens = malloc(tokensSize * sizeof(Token *));
-    if (tokens == NULL)
-    {
-        fprintf(stderr, "Memory allocation for tokens failed.\n");
-        return NULL;
-    }
-    size_t tokenCount = 0;
     size_t childrenSize = 2;
     ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
     if (children == NULL)
     {
         fprintf(stderr, "Memory allocation for children failed.\n");
-        free(tokens);
         return NULL;
     }
     size_t childCount = 0;
@@ -5106,7 +4825,7 @@ static ASTNode *parseParameterDeclaration(Parser *parser)
         if (isDeclarator(parser, 1))
         {
             children[childCount++] = parseDeclarator(parser);
-            return createASTNode(AST_PARAMETER_DECLARATION, tokens, tokenCount, children, childCount);
+            return createASTNode(AST_PARAMETER_DECLARATION, NULL, 0, children, childCount);
         }
 
         if (isAbstractDeclarator(parser, 1))
@@ -5114,12 +4833,11 @@ static ASTNode *parseParameterDeclaration(Parser *parser)
             children[childCount++] = parseAbstractDeclarator(parser);
         }
 
-        return createASTNode(AST_PARAMETER_DECLARATION, tokens, tokenCount, children, childCount);
+        return createASTNode(AST_PARAMETER_DECLARATION, NULL, 0, children, childCount);
     }
 
     //Error
     addError(parser, createError(ERROR_PARSING, "Expected a Parameter Declaration but found:", duplicateToken(nextToken(parser))));
-    free(tokens);
     free(children);
     return NULL;
 }
@@ -5164,12 +4882,6 @@ static ASTNode *parseInitializerList(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isInitializerList(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected an Initializer List but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -5284,12 +4996,6 @@ static ASTNode *parseDesignation(Parser *parser)
         return NULL;
     }
 
-    if (!isDesignation(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Designation but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 1;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -5391,12 +5097,6 @@ static ASTNode *parseDesignator(Parser *parser)
         return NULL;
     }
 
-    if (!isDesignator(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Designator but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 2;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -5466,20 +5166,26 @@ static ASTNode *parseConstantExpression(Parser *parser)
         return NULL;
     }
 
-    if (!isConstantExpression(parser, 1))
+    //Allocating memory
+    size_t childrenSize = 1;
+    ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
+    if (children == NULL)
     {
-        addError(parser, createError(ERROR_PARSING, "Expected a Constant Expression but found:", duplicateToken(nextToken(parser))));
+        fprintf(stderr, "Memory allocation for children failed.\n");
         return NULL;
     }
+    size_t childCount = 0;
 
     //Parsing
     if (isConditionalExpression(parser, 1))
     {
-        return parseConditionalExpression(parser);
+        children[childCount++] = parseConditionalExpression(parser);
+        return createASTNode(AST_CONSTANT_EXPRESSION, NULL, 0, children, childCount);
     }
 
     //Error
     addError(parser, createError(ERROR_PARSING, "Expected a Constant Expression but found:", duplicateToken(nextToken(parser))));
+    free(children);
     return NULL;
 }
 
@@ -5520,17 +5226,11 @@ static int isInitializer(Parser *parser, const int resetOnSuccess)
     return 0;
 }
 
-    static ASTNode *parseInitializer(Parser *parser)
+static ASTNode *parseInitializer(Parser *parser)
 {
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isInitializer(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected an Initializer but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -5618,12 +5318,6 @@ static ASTNode *parseIdentifierList(Parser *parser)
         return NULL;
     }
 
-    if (!isIdentifierList(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected an Identifier List but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 4;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -5633,15 +5327,6 @@ static ASTNode *parseIdentifierList(Parser *parser)
         return NULL;
     }
     size_t tokenCount = 0;
-    size_t childrenSize = 1;
-    ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
-    if (children == NULL)
-    {
-        fprintf(stderr, "Memory allocation for children failed.\n");
-        free(tokens);
-        return NULL;
-    }
-    size_t childCount = 0;
 
     //Parsing
     if (isNextTokenTypeOf(parser, TOKEN_IDENTIFIER, 0))
@@ -5657,7 +5342,6 @@ static ASTNode *parseIdentifierList(Parser *parser)
                 {
                     fprintf(stderr, "Memory reallocation for tokens failed!\n");
                     free(tokens);
-                    free(children);
                     return NULL;
                 }
                 tokens = newTokens;
@@ -5667,13 +5351,12 @@ static ASTNode *parseIdentifierList(Parser *parser)
             tokens[tokenCount++] = matchToken(parser, TOKEN_IDENTIFIER);
         }
 
-        return createASTNode(AST_IDENTIFIER_LIST, tokens, tokenCount, children, childCount);
+        return createASTNode(AST_IDENTIFIER_LIST, tokens, tokenCount, NULL, 0);
     }
 
     //Error
     addError(parser, createError(ERROR_PARSING, "Expected an Identifier List but found:", duplicateToken(nextToken(parser))));
     free(tokens);
-    free(children);
     return NULL;
 }
 
@@ -5726,12 +5409,6 @@ static ASTNode *parseEnumSpecifier(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isEnumSpecifier(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected an Enum Specifier but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -5820,12 +5497,6 @@ static ASTNode *parseEnumeratorList(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isEnumeratorList(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected an Enumerator List but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -5934,12 +5605,6 @@ static ASTNode *parseEnumerator(Parser *parser)
         return NULL;
     }
 
-    if (!isEnumerator(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected an Enumerator but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 3;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -6040,12 +5705,6 @@ static ASTNode *parseDeclaration(Parser *parser)
         return NULL;
     }
 
-    if (!isDeclaration(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Declaration but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 1;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -6121,12 +5780,6 @@ static ASTNode *parseInitDeclaratorList(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isInitDeclaratorList(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected an Init Declarator List but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -6241,12 +5894,6 @@ static ASTNode *parseInitDeclarator(Parser *parser)
         return NULL;
     }
 
-    if (!isInitDeclarator(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected an Init Declarator but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 1;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -6313,12 +5960,6 @@ static ASTNode *parseStatement(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isStatement(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Statement but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -6420,12 +6061,6 @@ static ASTNode *parseLabeledStatement(Parser *parser)
         return NULL;
     }
 
-    if (!isLabeledStatement(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Labeled Statement but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 2;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -6508,12 +6143,6 @@ static ASTNode *parseCompoundStatement(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isCompoundStatement(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Compound Statement but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -6606,12 +6235,6 @@ static ASTNode *parseExpressionStatement(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isExpressionStatement(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected an Expression Statement but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -6717,12 +6340,6 @@ static ASTNode *parseSelectionStatement(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isSelectionStatement(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Selection Statement but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -6867,12 +6484,6 @@ static ASTNode *parseIterationStatement(Parser *parser)
         return NULL;
     }
 
-    if (!isIterationStatement(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected an Iteration Statement but found:", duplicateToken(nextToken(parser))));
-        return NULL;
-    }
-
     //Allocating memory
     size_t tokensSize = 5;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
@@ -6977,12 +6588,6 @@ static ASTNode *parseForControl(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isForControl(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a For Control but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 
@@ -7095,12 +6700,6 @@ static ASTNode *parseJumpStatement(Parser *parser)
     if (parser == NULL)
     {
         fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    if (!isJumpStatement(parser, 1))
-    {
-        addError(parser, createError(ERROR_PARSING, "Expected a Jump Statement but found:", duplicateToken(nextToken(parser))));
         return NULL;
     }
 

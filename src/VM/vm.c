@@ -744,6 +744,18 @@ static ASTNode *parseTokens(Token **tokens, size_t tokenCount)
         return NULL;
     }
 
+    if (parser->errorCount > 0)
+    {
+        fprintf(stderr, "Parsing completed with errors!\n");
+        for (size_t i = 0; i < parser->errorCount; i++)
+        {
+            printError(parser->errors[i]);
+        }
+        deleteParser(parser);
+        deleteTokens(tokens, tokenCount);
+        return NULL;
+    }
+
     //Get the AST root
     ASTNode *root = getCopyAST(parser);
     deleteParser(parser);
