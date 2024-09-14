@@ -72,3 +72,22 @@ char convertEscapeString(const char *const input)
         return '\0';
     }
 }
+
+int covertStringToPreHash(const char *const input)
+{
+    if (input == NULL)
+    {
+        fprintf(stderr, "Input string is NULL!\n");
+        return -1;
+    }
+
+    unsigned long long preHash = 0;
+    for (size_t i = 0; input[i] != '\0'; i++)
+    {
+        preHash += (input[i] - '0') * pow(67, i);
+
+    }
+    int result = preHash % 1000000009;
+
+    return result;
+}

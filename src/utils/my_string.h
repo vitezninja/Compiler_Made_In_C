@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 /**
  * Returns a substring of the input string from start to end.
@@ -32,5 +33,7 @@ char *substring(const char *const string, const int start, const int end);
  * @return The corresponding character, or `'\0'` if an error occurs.
  */
 char convertEscapeString(const char *const input);
+
+int covertStringToPreHash(const char *const input);
 
 #endif // MY_STRING_H

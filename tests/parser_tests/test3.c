@@ -1,7 +1,7 @@
 
 int x = 5;
 
-void hello();
+void hello(int argv, char **argc);
 
 int main()
 {

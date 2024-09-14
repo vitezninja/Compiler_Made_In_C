@@ -10,15 +10,15 @@
  * 
  * The `ErrorType` enumeration defines the possible types of errors that can occur during parsing or processing.
  * 
- * - `ERROR_NONE`: No error occurred.
  * - `ERROR_LEXING`: An error occurred during lexing.
  * - `ERROR_PARSING`: An error occurred during parsing.
+ * - `ERROR_VALIDATION`: An error occurred during validation.
  */
 typedef enum errorType
 {
-    ERROR_NONE,     /** No error occurred. */
     ERROR_LEXING,   /** An error occurred during lexing. */
     ERROR_PARSING,  /** An error occurred during parsing. */
+    ERROR_VALIDATION, /** An error occurred during validation. */
 } ErrorType;
 
 /**
