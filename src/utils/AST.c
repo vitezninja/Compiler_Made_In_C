@@ -126,6 +126,18 @@ void deleteASTNode(ASTNode *const astNode)
     free(astNode);
 }
 
+void freeASTNode(ASTNode *const astNode)
+{
+    if (astNode == NULL)
+    {
+        return;
+    }
+
+    free(astNode->children);
+    free(astNode->tokens);
+    free(astNode);
+}
+
 ASTNode *duplicateASTNode(ASTNode *const astNode)
 {
     if (astNode == NULL)

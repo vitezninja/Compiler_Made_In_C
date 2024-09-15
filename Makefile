@@ -27,7 +27,7 @@ main.o: src/main.c src/VM/vm.h
 	$(CC) $(CFLAGS) -c src/main.c -o src/main.o
 
 # VM
-vm.o: src/VM/vm.c src/VM/vm.h src/utils/token.h src/Lexer/lexer.h src/Parser/parser.h src/utils/AST.h src/Validator/validator.h
+vm.o: src/VM/vm.c src/VM/vm.h src/utils/token.h src/utils/error.h src/utils/AST.h src/utils/my_string.h src/Lexer/lexer.h src/Parser/parser.h src/Validator/validator.h
 	$(CC) $(CFLAGS) -c src/VM/vm.c -o src/VM/vm.o
 
 # Lexer

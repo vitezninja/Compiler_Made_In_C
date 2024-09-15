@@ -97,6 +97,8 @@ static Token **lexFile(const char *const fileContents, size_t *tokenCount);
 
 static ASTNode *parseTokens(Token **tokens, size_t tokenCount);
 
+static ASTNode *validateAST(ASTNode *node);
+
 /*****************************************************************************************************
                                 PRIVATE MY_STRING FUNCTIONS START HERE
  *****************************************************************************************************/
@@ -763,6 +765,45 @@ static ASTNode *parseTokens(Token **tokens, size_t tokenCount)
     return root;
 }
 
+static ASTNode *validateAST(ASTNode *node)
+{
+    if (node == NULL)
+    {
+        printf("Node is NULL!\n");
+        return NULL;
+    }
+
+    Validator *validator = createValidator(node);
+    int success = validate(validator);
+    if (!success)
+    {
+        fprintf(stderr, "Validation failed!\n");
+        for (size_t i = 0; i < validator->errorCount; i++)
+        {
+            printError(validator->errors[i]);
+        }
+
+        deleteValidator(validator);
+        return NULL;
+    }
+
+    if (validator->errorCount > 0)
+    {
+        fprintf(stderr, "Validation completed with errors!\n");
+        for (size_t i = 0; i < validator->errorCount; i++)
+        {
+            printError(validator->errors[i]);
+        }
+        deleteValidator(validator);
+        return NULL;
+    }
+
+    ASTNode *validated = copyASTNode(validator);
+    deleteValidator(validator);
+
+    return validated;
+}
+
 /*****************************************************************************************************
                                 PUBLIC MY_STRING FUNCTIONS START HERE                                
  *****************************************************************************************************/
@@ -830,7 +871,22 @@ int runVM(int argc, char **argv)
     }
 
     //Print the AST
+    printf("\n\nParsed AST:\n");
     printASTNode(root, "", 0);
+
+    //Validate the AST
+    ASTNode *validated = validateAST(root);
+    if (validated == NULL)
+    {
+        freeFlags(flags);
+        deleteTokens(tokens, tokenCount);
+        deleteASTNode(root);
+        return -1;
+    }
+
+    //Print the validated AST
+    printf("\n\nValidated AST:\n");
+    printASTNode(validated, "", 0);
 
     //TODO:
     //Do things with the AST

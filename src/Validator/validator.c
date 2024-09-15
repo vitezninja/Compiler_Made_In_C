@@ -10,6 +10,40 @@ static int typeCheck(Validator *validator);
 
 static int constantFold(Validator *validator);
 
+static void findConstant(Validator *validator, ASTNode *node);
+
+static ASTNode *tryFold(Validator *validator, ASTNode *node, int *isConstant);
+
+static ASTNode *foldConditionalExpression(Validator *validator, ASTNode *node, int *isConstant);
+
+static ASTNode *foldLogicalOrExpression(Validator *validator, ASTNode *node, int *isConstant);
+
+static ASTNode *foldLogicalAndExpression(Validator *validator, ASTNode *node, int *isConstant);
+
+static ASTNode *foldBitwiseOrExpression(Validator *validator, ASTNode *node, int *isConstant);
+
+static ASTNode *foldBitwiseXorExpression(Validator *validator, ASTNode *node, int *isConstant);
+
+static ASTNode *foldBitwiseAndExpression(Validator *validator, ASTNode *node, int *isConstant);
+
+static ASTNode *foldEqualityExpression(Validator *validator, ASTNode *node, int *isConstant);
+
+static ASTNode *foldRelationalExpression(Validator *validator, ASTNode *node, int *isConstant);
+
+static ASTNode *foldShiftExpression(Validator *validator, ASTNode *node, int *isConstant);
+
+static ASTNode *foldAdditiveExpression(Validator *validator, ASTNode *node, int *isConstant);
+
+static ASTNode *foldMultiplicativeExpression(Validator *validator, ASTNode *node, int *isConstant);
+
+static ASTNode *foldCastExpression(Validator *validator, ASTNode *node, int *isConstant);
+
+static ASTNode *foldUnaryExpression(Validator *validator, ASTNode *node, int *isConstant);
+
+static ASTNode *foldPrimaryExpression(Validator *validator, ASTNode *node, int *isConstant);
+
+Symbol *findTypeSymbol(Validator *validator, ASTNode *node);
+
 /*****************************************************************************************************
                                 PRIVATE VALIDATOR FUNCTIONS START HERE
  *****************************************************************************************************/
@@ -55,42 +89,13 @@ static int typeCheck(Validator *validator)
         return 0;
     }
 
-    if (validator->globalScope == NULL)
-    {
-        fprintf(stderr, "Global scope is not initialized.\n");
-        return 0;
-    }
-
-    if (validator->scopes == NULL)
-    {
-        fprintf(stderr, "Scopes stack is not initialized.\n");
-        return 0;
-    }
-
-    if (validator->ASTroot == NULL)
-    {
-        fprintf(stderr, "ASTRoot is not initialized.\n");
-        return 0;
-    }
-
-    if (validator->ASTroot->type != AST_PROGRAM)
-    {
-        fprintf(stderr, "ASTRoot is not a PROGRAM node.\n");
-        return 0;
-    }
-
     //Add function declarations to the global scope
-    ASTNode *program = validator->ASTroot;
     //TODO: Implement adding function declarations to the global scope
     //This should something like a recusive decent parser but returning the retrived data found.
 
     return 1;
 }
 
-//TODO: Implement constant folding
-// This should call a recursive function until it finds a constant expression then evaluate it
-// The evaluation should be done similarly to how the parser parses
-// This should alter the AST in place and free old nodes
 static int constantFold(Validator *validator)
 {
     if (validator == NULL)
@@ -99,7 +104,1889 @@ static int constantFold(Validator *validator)
         return 0;
     }
 
+    findConstant(validator, validator->ASTroot);
+
     return 1;
+}
+
+static void findConstant(Validator *validator, ASTNode *node)
+{
+    if (node == NULL)
+    {
+        return;
+    }
+
+    for (size_t i = 0; i < node->childCount; i++)
+    {
+        if (node->children[i]->type == AST_CONSTANT_EXPRESSION)
+        {
+            int isConstant = 1;
+            tryFold(validator, node->children[i], &isConstant);
+        }
+        else
+        {
+            findConstant(validator, node->children[i]);
+        }
+    }
+}
+
+//TODO: Implement constant folding
+// Update folding function to do implicit type conversion
+static ASTNode *tryFold(Validator *validator, ASTNode *node, int *isConstant)
+{
+    if (node == NULL)
+    {
+        return NULL;
+    }
+
+    if (*isConstant == 0)
+    {
+        return NULL;
+    }
+
+    ASTNode *result = NULL;
+    if (node->type == AST_CONSTANT_EXPRESSION)
+    {
+        int isConstant = 1;
+        ASTNode *child = tryFold(validator, node->children[0], &isConstant);
+        freeASTNode(node->children[0]);
+        node->children[0] = child;
+        result = node;
+    }    
+    if (node->type == AST_CONDITIONAL_EXPRESSION)
+    {
+        result = foldConditionalExpression(validator, node, isConstant); //Done
+    }
+    else if (node->type == AST_LOGICAL_OR_EXPRESSION) 
+    {
+        result = foldLogicalOrExpression(validator, node, isConstant); //Done
+    }
+    else if (node->type == AST_LOGICAL_AND_EXPRESSION)
+    {
+        result = foldLogicalAndExpression(validator, node, isConstant); //Done
+    }
+    else if (node->type == AST_BITWISE_OR_EXPRESSION)
+    {
+        result = foldBitwiseOrExpression(validator, node, isConstant); //Done
+    }
+    else if (node->type == AST_BITWISE_XOR_EXPRESSION)
+    {
+        result = foldBitwiseXorExpression(validator, node, isConstant); //Done
+    }
+    else if (node->type == AST_BITWISE_AND_EXPRESSION)
+    {
+        result = foldBitwiseAndExpression(validator, node, isConstant); //Done
+    }
+    else if (node->type == AST_EQUALITY_EXPRESSION)
+    {
+        result = foldEqualityExpression(validator, node, isConstant); //Done
+    }
+    else if (node->type == AST_RELATIONAL_EXPRESSION)
+    {
+        result = foldRelationalExpression(validator, node, isConstant); //Done
+    }
+    else if (node->type == AST_SHIFT_EXPRESSION)
+    {
+        result = foldShiftExpression(validator, node, isConstant); //Done
+    }
+    else if (node->type == AST_ADDITIVE_EXPRESSION)
+    {
+        result = foldAdditiveExpression(validator, node, isConstant); //Done
+    }
+    else if (node->type == AST_MULTIPLICATIVE_EXPRESSION)
+    {
+        result = foldMultiplicativeExpression(validator, node, isConstant); //Done
+    }
+    else if (node->type == AST_CAST_EXPRESSION)
+    {
+        //TODO: Implement cast expression folding
+        result = foldCastExpression(validator, node, isConstant);
+    }
+    else if (node->type == AST_UNARY_EXPRESSION)
+    {
+        //TODO: Implement unary expression folding
+        result = foldUnaryExpression(validator, node, isConstant); //Mostly done
+    }
+    else if (node->type == AST_POSTFIX_EXPRESSION)
+    {
+        *isConstant = 0;
+        result = duplicateASTNode(node); //Done
+    }
+    else if (node->type == AST_PRIMARY_EXPRESSION)
+    {
+        result = foldPrimaryExpression(validator, node, isConstant); //Done
+    }
+    else if (node->type == AST_LITERAL)
+    {
+        return duplicateASTNode(node); //Done
+    }
+
+    return result;
+}
+
+static ASTNode *foldConditionalExpression(Validator *validator, ASTNode *node, int *isConstant)
+{
+    if (node == NULL)
+    {
+        return NULL;
+    }
+
+    int isConstantChild = 1;
+    ASTNode *trueExpression = tryFold(validator, node->children[1], &isConstantChild);
+    freeASTNode(node->children[1]);
+    node->children[1] = trueExpression;
+    if (!isConstantChild)
+    {
+        *isConstant = 0;
+    }
+
+    isConstantChild = 1;
+    ASTNode *falseExpression = tryFold(validator, node->children[2], &isConstantChild);
+    freeASTNode(node->children[2]);
+    node->children[2] = falseExpression;
+    if (!isConstantChild)
+    {
+        *isConstant = 0;
+    }
+
+    isConstantChild = 1;
+    ASTNode *condition = tryFold(validator, node->children[0], &isConstantChild);
+    freeASTNode(node->children[0]);
+    node->children[0] = condition;
+    if (isConstantChild)
+    {
+        ASTNode *returnExpression = NULL;
+
+        if ((condition->tokens[0]->type == TOKEN_INTEGER && condition->tokens[0]->value.number != 0) ||
+            (condition->tokens[0]->type == TOKEN_FLOATINGPOINT && condition->tokens[0]->value.floatingPoint != 0.0) ||
+            (condition->tokens[0]->type == TOKEN_CHARACTER && condition->tokens[0]->value.character != '\0') ||
+            (condition->tokens[0]->type == TOKEN_STRING && condition->tokens[0]->value.string != NULL) ||
+            (condition->tokens[0]->type == TOKEN_HEXADECIMAL && condition->tokens[0]->value.number != 0) ||
+            (condition->tokens[0]->type == TOKEN_OCTAL && condition->tokens[0]->value.number != 0))
+        {
+            returnExpression = duplicateASTNode(node->children[1]);
+            deleteASTNode(node->children[2]);
+        }
+        else
+        {
+            deleteASTNode(node->children[1]);
+            returnExpression = duplicateASTNode(node->children[2]);
+        }
+        freeASTNode(node);
+
+        return returnExpression;
+    }
+    else
+    {
+        *isConstant = 0;
+        return duplicateASTNode(node);
+    }
+}
+
+static ASTNode *foldLogicalOrExpression(Validator *validator, ASTNode *node, int *isConstant)
+{
+    if (node == NULL)
+    {
+        return NULL;
+    }
+
+    int *isConstantChild = malloc(node->childCount * sizeof(int));
+    //Iterating over the children and fold them
+    int foldCount = 0;
+    for (size_t i = 0; i < node->childCount; i++)
+    {
+        ASTNode *child = tryFold(validator, node->children[i], &(isConstantChild[i]));
+        freeASTNode(node->children[i]);
+        node->children[i] = child;
+        if (isConstantChild[i])
+        {
+            foldCount++;
+        }
+        else
+        {
+            *isConstant = 0;
+        }
+    }
+    if (foldCount == 0)
+    {
+        free(isConstantChild);
+        return duplicateASTNode(node);
+    }
+
+    //Allocating memory
+    size_t tokensSize = node->tokenCount - foldCount;
+    Token **tokens = malloc(tokensSize * sizeof(Token *));
+    if (tokens == NULL)
+    {
+        fprintf(stderr, "Memory allocation for tokens failed.\n");
+        free(isConstantChild);
+        return NULL;
+    }
+    size_t tokenCount = 0;
+    size_t childrenSize = node->childCount - foldCount + 1;
+    ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
+    if (children == NULL)
+    {
+        fprintf(stderr, "Memory allocation for children failed.\n");
+        free(isConstantChild);
+        free(tokens);
+        return NULL;
+    }
+    size_t childCount = 0;
+    
+    ASTNode *left = node->children[0];
+    size_t i;
+    size_t currentOperator = 0;
+    for (i = 1; i < node->childCount; i++)
+    {
+        Token **newTokens = malloc(1 * sizeof(Token *));
+        if (newTokens == NULL)
+        {
+            fprintf(stderr, "Memory allocation for newTokens failed.\n");
+            free(isConstantChild);
+            free(tokens);
+            free(children);
+            return NULL;
+        }
+
+        if (isConstantChild[i - 1] && isConstantChild[i])
+        {
+            ASTNode *right = node->children[i];
+            currentOperator++;
+            int value = 0;
+
+            if (left->tokens[0]->type == TOKEN_INTEGER && right->tokens[0]->type == TOKEN_INTEGER)
+            {
+                value = left->tokens[0]->value.number || right->tokens[0]->value.number;
+            }
+            else if (left->tokens[0]->type == TOKEN_FLOATINGPOINT && right->tokens[0]->type == TOKEN_FLOATINGPOINT)
+            {
+                value = left->tokens[0]->value.floatingPoint || right->tokens[0]->value.floatingPoint;
+            }
+            else if (left->tokens[0]->type == TOKEN_CHARACTER && right->tokens[0]->type == TOKEN_CHARACTER)
+            {
+                value = left->tokens[0]->value.character || right->tokens[0]->value.character;
+            }
+            else if (left->tokens[0]->type == TOKEN_STRING && right->tokens[0]->type == TOKEN_STRING)
+            {
+                value = (left->tokens[0]->value.string != NULL) || (right->tokens[0]->value.string != NULL);
+            }
+            else if (left->tokens[0]->type == TOKEN_HEXADECIMAL && right->tokens[0]->type == TOKEN_HEXADECIMAL)
+            {
+                value = left->tokens[0]->value.number || right->tokens[0]->value.number;
+            }
+            else if (left->tokens[0]->type == TOKEN_OCTAL && right->tokens[0]->type == TOKEN_OCTAL)
+            {
+                value = left->tokens[0]->value.number || right->tokens[0]->value.number;
+            }
+
+            newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
+            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            freeASTNode(left);
+            left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
+        }
+        else
+        {
+            break;
+        }
+    }
+    free(isConstantChild);
+
+    children[childCount++] = left;
+    for (; i < node->childCount; i++)
+    {
+        tokens[tokenCount++] = node->tokens[currentOperator++];
+        children[childCount++] = node->children[i];
+    }
+    ASTNode *newExpression = createASTNode(AST_LOGICAL_OR_EXPRESSION, tokens, tokenCount, children, childCount);
+    freeASTNode(node);
+    
+    return newExpression;
+}
+
+static ASTNode *foldLogicalAndExpression(Validator *validator, ASTNode *node, int *isConstant)
+{
+    if (node == NULL)
+    {
+        return NULL;
+    }
+
+    int *isConstantChild = malloc(node->childCount * sizeof(int));
+    //Iterating over the children and fold them
+    int foldCount = 0;
+    for (size_t i = 0; i < node->childCount; i++)
+    {
+        ASTNode *child = tryFold(validator, node->children[i], &(isConstantChild[i]));
+        freeASTNode(node->children[i]);
+        node->children[i] = child;
+        if (isConstantChild[i])
+        {
+            foldCount++;
+        }
+        else
+        {
+            *isConstant = 0;
+        }
+    }
+    if (foldCount == 0)
+    {
+        free(isConstantChild);
+        return duplicateASTNode(node);
+    }
+
+    //Allocating memory
+    size_t tokensSize = node->tokenCount - foldCount;
+    Token **tokens = malloc(tokensSize * sizeof(Token *));
+    if (tokens == NULL)
+    {
+        fprintf(stderr, "Memory allocation for tokens failed.\n");
+        free(isConstantChild);
+        return NULL;
+    }
+    size_t tokenCount = 0;
+    size_t childrenSize = node->childCount - foldCount + 1;
+    ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
+    if (children == NULL)
+    {
+        fprintf(stderr, "Memory allocation for children failed.\n");
+        free(isConstantChild);
+        free(tokens);
+        return NULL;
+    }
+    size_t childCount = 0;
+    
+    ASTNode *left = node->children[0];
+    size_t i;
+    size_t currentOperator = 0;
+    for (i = 1; i < node->childCount; i++)
+    {
+        Token **newTokens = malloc(1 * sizeof(Token *));
+        if (newTokens == NULL)
+        {
+            fprintf(stderr, "Memory allocation for newTokens failed.\n");
+            free(isConstantChild);
+            free(tokens);
+            free(children);
+            return NULL;
+        }
+
+        if (isConstantChild[i - 1] && isConstantChild[i])
+        {
+            ASTNode *right = node->children[i];
+            currentOperator++;
+            int value = 0;
+
+            if (left->tokens[0]->type == TOKEN_INTEGER && right->tokens[0]->type == TOKEN_INTEGER)
+            {
+                value = left->tokens[0]->value.number && right->tokens[0]->value.number;
+            }
+            else if (left->tokens[0]->type == TOKEN_FLOATINGPOINT && right->tokens[0]->type == TOKEN_FLOATINGPOINT)
+            {
+                value = left->tokens[0]->value.floatingPoint && right->tokens[0]->value.floatingPoint;
+            }
+            else if (left->tokens[0]->type == TOKEN_CHARACTER && right->tokens[0]->type == TOKEN_CHARACTER)
+            {
+                value = left->tokens[0]->value.character && right->tokens[0]->value.character;
+            }
+            else if (left->tokens[0]->type == TOKEN_STRING && right->tokens[0]->type == TOKEN_STRING)
+            {
+                value = (left->tokens[0]->value.string != NULL) && (right->tokens[0]->value.string != NULL);
+            }
+            else if (left->tokens[0]->type == TOKEN_HEXADECIMAL && right->tokens[0]->type == TOKEN_HEXADECIMAL)
+            {
+                value = left->tokens[0]->value.number && right->tokens[0]->value.number;
+            }
+            else if (left->tokens[0]->type == TOKEN_OCTAL && right->tokens[0]->type == TOKEN_OCTAL)
+            {
+                value = left->tokens[0]->value.number && right->tokens[0]->value.number;
+            }
+
+            newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
+            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            freeASTNode(left);
+            left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
+        }
+        else
+        {
+            break;
+        }
+    }
+    free(isConstantChild);
+
+    children[childCount++] = left;
+    for (; i < node->childCount; i++)
+    {
+        tokens[tokenCount++] = node->tokens[currentOperator++];
+        children[childCount++] = node->children[i];
+    }
+    ASTNode *newExpression = createASTNode(AST_LOGICAL_AND_EXPRESSION, tokens, tokenCount, children, childCount);
+    freeASTNode(node);
+    
+    return newExpression;
+}
+
+static ASTNode *foldBitwiseOrExpression(Validator *validator, ASTNode *node, int *isConstant)
+{
+    if (node == NULL)
+    {
+        return NULL;
+    }
+
+    int *isConstantChild = malloc(node->childCount * sizeof(int));
+    //Iterating over the children and fold them
+    int foldCount = 0;
+    for (size_t i = 0; i < node->childCount; i++)
+    {
+        ASTNode *child = tryFold(validator, node->children[i], &(isConstantChild[i]));
+        freeASTNode(node->children[i]);
+        node->children[i] = child;
+        if (isConstantChild[i])
+        {
+            foldCount++;
+        }
+        else
+        {
+            *isConstant = 0;
+        }
+    }
+    if (foldCount == 0)
+    {
+        free(isConstantChild);
+        return duplicateASTNode(node);
+    }
+
+    //Allocating memory
+    size_t tokensSize = node->tokenCount - foldCount;
+    Token **tokens = malloc(tokensSize * sizeof(Token *));
+    if (tokens == NULL)
+    {
+        fprintf(stderr, "Memory allocation for tokens failed.\n");
+        free(isConstantChild);
+        return NULL;
+    }
+    size_t tokenCount = 0;
+    size_t childrenSize = node->childCount - foldCount + 1;
+    ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
+    if (children == NULL)
+    {
+        fprintf(stderr, "Memory allocation for children failed.\n");
+        free(isConstantChild);
+        free(tokens);
+        return NULL;
+    }
+    size_t childCount = 0;
+    
+    ASTNode *left = node->children[0];
+    size_t i;
+    size_t currentOperator = 0;
+    for (i = 1; i < node->childCount; i++)
+    {
+        Token **newTokens = malloc(1 * sizeof(Token *));
+        if (newTokens == NULL)
+        {
+            fprintf(stderr, "Memory allocation for newTokens failed.\n");
+            free(isConstantChild);
+            free(tokens);
+            free(children);
+            return NULL;
+        }
+
+        if (isConstantChild[i - 1] && isConstantChild[i])
+        {
+            ASTNode *right = node->children[i];
+            currentOperator++;
+            int value = 0;
+
+            if (left->tokens[0]->type == TOKEN_INTEGER && right->tokens[0]->type == TOKEN_INTEGER)
+            {
+                value = left->tokens[0]->value.number | right->tokens[0]->value.number;
+            }
+            else if (left->tokens[0]->type == TOKEN_FLOATINGPOINT && right->tokens[0]->type == TOKEN_FLOATINGPOINT)
+            {
+                value = (int)left->tokens[0]->value.floatingPoint | (int)right->tokens[0]->value.floatingPoint;
+            }
+            else if (left->tokens[0]->type == TOKEN_CHARACTER && right->tokens[0]->type == TOKEN_CHARACTER)
+            {
+                value = left->tokens[0]->value.character | right->tokens[0]->value.character;
+            }
+            else if (left->tokens[0]->type == TOKEN_STRING && right->tokens[0]->type == TOKEN_STRING)
+            {
+                value = (left->tokens[0]->value.string != NULL) | (right->tokens[0]->value.string != NULL);
+            }
+            else if (left->tokens[0]->type == TOKEN_HEXADECIMAL && right->tokens[0]->type == TOKEN_HEXADECIMAL)
+            {
+                value = left->tokens[0]->value.number | right->tokens[0]->value.number;
+            }
+            else if (left->tokens[0]->type == TOKEN_OCTAL && right->tokens[0]->type == TOKEN_OCTAL)
+            {
+                value = left->tokens[0]->value.number | right->tokens[0]->value.number;
+            }
+
+            newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
+            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            freeASTNode(left);
+            left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
+        }
+        else
+        {
+            break;
+        }
+    }
+    free(isConstantChild);
+
+    children[childCount++] = left;
+    for (; i < node->childCount; i++)
+    {
+        tokens[tokenCount++] = node->tokens[currentOperator++];
+        children[childCount++] = node->children[i];
+    }
+    ASTNode *newExpression = createASTNode(AST_BITWISE_OR_EXPRESSION, tokens, tokenCount, children, childCount);
+    freeASTNode(node);
+    
+    return newExpression;
+}
+
+static ASTNode *foldBitwiseXorExpression(Validator *validator, ASTNode *node, int *isConstant)
+{
+    if (node == NULL)
+    {
+        return NULL;
+    }
+
+    int *isConstantChild = malloc(node->childCount * sizeof(int));
+    //Iterating over the children and fold them
+    int foldCount = 0;
+    for (size_t i = 0; i < node->childCount; i++)
+    {
+        ASTNode *child = tryFold(validator, node->children[i], &(isConstantChild[i]));
+        freeASTNode(node->children[i]);
+        node->children[i] = child;
+        if (isConstantChild[i])
+        {
+            foldCount++;
+        }
+        else
+        {
+            *isConstant = 0;
+        }
+    }
+    if (foldCount == 0)
+    {
+        free(isConstantChild);
+        return duplicateASTNode(node);
+    }
+
+    //Allocating memory
+    size_t tokensSize = node->tokenCount - foldCount;
+    Token **tokens = malloc(tokensSize * sizeof(Token *));
+    if (tokens == NULL)
+    {
+        fprintf(stderr, "Memory allocation for tokens failed.\n");
+        free(isConstantChild);
+        return NULL;
+    }
+    size_t tokenCount = 0;
+    size_t childrenSize = node->childCount - foldCount + 1;
+    ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
+    if (children == NULL)
+    {
+        fprintf(stderr, "Memory allocation for children failed.\n");
+        free(isConstantChild);
+        free(tokens);
+        return NULL;
+    }
+    size_t childCount = 0;
+    
+    ASTNode *left = node->children[0];
+    size_t i;
+    size_t currentOperator = 0;
+    for (i = 1; i < node->childCount; i++)
+    {
+        Token **newTokens = malloc(1 * sizeof(Token *));
+        if (newTokens == NULL)
+        {
+            fprintf(stderr, "Memory allocation for newTokens failed.\n");
+            free(isConstantChild);
+            free(tokens);
+            free(children);
+            return NULL;
+        }
+
+        if (isConstantChild[i - 1] && isConstantChild[i])
+        {
+            ASTNode *right = node->children[i];
+            currentOperator++;
+            int value = 0;
+
+            if (left->tokens[0]->type == TOKEN_INTEGER && right->tokens[0]->type == TOKEN_INTEGER)
+            {
+                value = left->tokens[0]->value.number ^ right->tokens[0]->value.number;
+            }
+            else if (left->tokens[0]->type == TOKEN_FLOATINGPOINT && right->tokens[0]->type == TOKEN_FLOATINGPOINT)
+            {
+                value = (int)left->tokens[0]->value.floatingPoint ^ (int)right->tokens[0]->value.floatingPoint;
+            }
+            else if (left->tokens[0]->type == TOKEN_CHARACTER && right->tokens[0]->type == TOKEN_CHARACTER)
+            {
+                value = left->tokens[0]->value.character ^ right->tokens[0]->value.character;
+            }
+            else if (left->tokens[0]->type == TOKEN_STRING && right->tokens[0]->type == TOKEN_STRING)
+            {
+                value = (left->tokens[0]->value.string != NULL) ^ (right->tokens[0]->value.string != NULL);
+            }
+            else if (left->tokens[0]->type == TOKEN_HEXADECIMAL && right->tokens[0]->type == TOKEN_HEXADECIMAL)
+            {
+                value = left->tokens[0]->value.number ^ right->tokens[0]->value.number;
+            }
+            else if (left->tokens[0]->type == TOKEN_OCTAL && right->tokens[0]->type == TOKEN_OCTAL)
+            {
+                value = left->tokens[0]->value.number ^ right->tokens[0]->value.number;
+            }
+
+            newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
+            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            freeASTNode(left);
+            left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
+        }
+        else
+        {
+            break;
+        }
+    }
+    free(isConstantChild);
+
+    children[childCount++] = left;
+    for (; i < node->childCount; i++)
+    {
+        tokens[tokenCount++] = node->tokens[currentOperator++];
+        children[childCount++] = node->children[i];
+    }
+    ASTNode *newExpression = createASTNode(AST_BITWISE_XOR_EXPRESSION, tokens, tokenCount, children, childCount);
+    freeASTNode(node);
+    
+    return newExpression;
+}
+
+static ASTNode *foldBitwiseAndExpression(Validator *validator, ASTNode *node, int *isConstant)
+{
+    if (node == NULL)
+    {
+        return NULL;
+    }
+
+    int *isConstantChild = malloc(node->childCount * sizeof(int));
+    //Iterating over the children and fold them
+    int foldCount = 0;
+    for (size_t i = 0; i < node->childCount; i++)
+    {
+        ASTNode *child = tryFold(validator, node->children[i], &(isConstantChild[i]));
+        freeASTNode(node->children[i]);
+        node->children[i] = child;
+        if (isConstantChild[i])
+        {
+            foldCount++;
+        }
+        else
+        {
+            *isConstant = 0;
+        }
+    }
+    if (foldCount == 0)
+    {
+        free(isConstantChild);
+        return duplicateASTNode(node);
+    }
+
+    //Allocating memory
+    size_t tokensSize = node->tokenCount - foldCount;
+    Token **tokens = malloc(tokensSize * sizeof(Token *));
+    if (tokens == NULL)
+    {
+        fprintf(stderr, "Memory allocation for tokens failed.\n");
+        free(isConstantChild);
+        return NULL;
+    }
+    size_t tokenCount = 0;
+    size_t childrenSize = node->childCount - foldCount + 1;
+    ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
+    if (children == NULL)
+    {
+        fprintf(stderr, "Memory allocation for children failed.\n");
+        free(isConstantChild);
+        free(tokens);
+        return NULL;
+    }
+    size_t childCount = 0;
+    
+    ASTNode *left = node->children[0];
+    size_t i;
+    size_t currentOperator = 0;
+    for (i = 1; i < node->childCount; i++)
+    {
+        Token **newTokens = malloc(1 * sizeof(Token *));
+        if (newTokens == NULL)
+        {
+            fprintf(stderr, "Memory allocation for newTokens failed.\n");
+            free(isConstantChild);
+            free(tokens);
+            free(children);
+            return NULL;
+        }
+
+        if (isConstantChild[i - 1] && isConstantChild[i])
+        {
+            ASTNode *right = node->children[i];
+            currentOperator++;
+            int value = 0;
+
+            if (left->tokens[0]->type == TOKEN_INTEGER && right->tokens[0]->type == TOKEN_INTEGER)
+            {
+                value = left->tokens[0]->value.number & right->tokens[0]->value.number;
+            }
+            else if (left->tokens[0]->type == TOKEN_FLOATINGPOINT && right->tokens[0]->type == TOKEN_FLOATINGPOINT)
+            {
+                value = (int)left->tokens[0]->value.floatingPoint & (int)right->tokens[0]->value.floatingPoint;
+            }
+            else if (left->tokens[0]->type == TOKEN_CHARACTER && right->tokens[0]->type == TOKEN_CHARACTER)
+            {
+                value = left->tokens[0]->value.character & right->tokens[0]->value.character;
+            }
+            else if (left->tokens[0]->type == TOKEN_STRING && right->tokens[0]->type == TOKEN_STRING)
+            {
+                value = (left->tokens[0]->value.string != NULL) & (right->tokens[0]->value.string != NULL);
+            }
+            else if (left->tokens[0]->type == TOKEN_HEXADECIMAL && right->tokens[0]->type == TOKEN_HEXADECIMAL)
+            {
+                value = left->tokens[0]->value.number & right->tokens[0]->value.number;
+            }
+            else if (left->tokens[0]->type == TOKEN_OCTAL && right->tokens[0]->type == TOKEN_OCTAL)
+            {
+                value = left->tokens[0]->value.number & right->tokens[0]->value.number;
+            }
+
+            newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
+            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            freeASTNode(left);
+            left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
+        }
+        else
+        {
+            break;
+        }
+    }
+    free(isConstantChild);
+
+    children[childCount++] = left;
+    for (; i < node->childCount; i++)
+    {
+        tokens[tokenCount++] = node->tokens[currentOperator++];
+        children[childCount++] = node->children[i];
+    }
+    ASTNode *newExpression = createASTNode(AST_BITWISE_AND_EXPRESSION, tokens, tokenCount, children, childCount);
+    freeASTNode(node);
+    
+    return newExpression;
+}
+
+static ASTNode *foldEqualityExpression(Validator *validator, ASTNode *node, int *isConstant)
+{
+    if (node == NULL)
+    {
+        return NULL;
+    }
+
+    int *isConstantChild = malloc(node->childCount * sizeof(int));
+    //Iterating over the children and fold them
+    int foldCount = 0;
+    for (size_t i = 0; i < node->childCount; i++)
+    {
+        ASTNode *child = tryFold(validator, node->children[i], &(isConstantChild[i]));
+        freeASTNode(node->children[i]);
+        node->children[i] = child;
+        if (isConstantChild[i])
+        {
+            foldCount++;
+        }
+        else
+        {
+            *isConstant = 0;
+        }
+    }
+    if (foldCount == 0)
+    {
+        free(isConstantChild);
+        return duplicateASTNode(node);
+    }
+
+    //Allocating memory
+    size_t tokensSize = node->tokenCount - foldCount;
+    Token **tokens = malloc(tokensSize * sizeof(Token *));
+    if (tokens == NULL)
+    {
+        fprintf(stderr, "Memory allocation for tokens failed.\n");
+        free(isConstantChild);
+        return NULL;
+    }
+    size_t tokenCount = 0;
+    size_t childrenSize = node->childCount - foldCount + 1;
+    ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
+    if (children == NULL)
+    {
+        fprintf(stderr, "Memory allocation for children failed.\n");
+        free(isConstantChild);
+        free(tokens);
+        return NULL;
+    }
+    size_t childCount = 0;
+    
+    ASTNode *left = node->children[0];
+    size_t i;
+    size_t currentOperator = 0;
+    for (i = 1; i < node->childCount; i++)
+    {
+        Token **newTokens = malloc(1 * sizeof(Token *));
+        if (newTokens == NULL)
+        {
+            fprintf(stderr, "Memory allocation for newTokens failed.\n");
+            free(isConstantChild);
+            free(tokens);
+            free(children);
+            return NULL;
+        }
+
+        if (isConstantChild[i - 1] && isConstantChild[i])
+        {
+            ASTNode *right = node->children[i];
+            currentOperator++;
+            int value = 0;
+
+            if (left->tokens[0]->type == TOKEN_INTEGER && right->tokens[0]->type == TOKEN_INTEGER)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_DOUBLE_EQUALS)
+                {
+                    value = left->tokens[0]->value.number == right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_NOT_EQUALS)
+                {
+                    value = left->tokens[0]->value.number != right->tokens[0]->value.number;
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_FLOATINGPOINT && right->tokens[0]->type == TOKEN_FLOATINGPOINT)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_DOUBLE_EQUALS)
+                {
+                    value = left->tokens[0]->value.floatingPoint == right->tokens[0]->value.floatingPoint;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_NOT_EQUALS)
+                {
+                    value = left->tokens[0]->value.floatingPoint != right->tokens[0]->value.floatingPoint;
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_CHARACTER && right->tokens[0]->type == TOKEN_CHARACTER)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_DOUBLE_EQUALS)
+                {
+                    value = left->tokens[0]->value.character == right->tokens[0]->value.character;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_NOT_EQUALS)
+                {
+                    value = left->tokens[0]->value.character != right->tokens[0]->value.character;
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_STRING && right->tokens[0]->type == TOKEN_STRING)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_DOUBLE_EQUALS)
+                {
+                    value = (left->tokens[0]->value.string != NULL) & (right->tokens[0]->value.string != NULL);
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_NOT_EQUALS)
+                {
+                    value = (left->tokens[0]->value.string != NULL) & (right->tokens[0]->value.string != NULL);
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_HEXADECIMAL && right->tokens[0]->type == TOKEN_HEXADECIMAL)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_DOUBLE_EQUALS)
+                {
+                    value = left->tokens[0]->value.number == right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_NOT_EQUALS)
+                {
+                    value = left->tokens[0]->value.number != right->tokens[0]->value.number;
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_OCTAL && right->tokens[0]->type == TOKEN_OCTAL)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_DOUBLE_EQUALS)
+                {
+                    value = left->tokens[0]->value.number == right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_NOT_EQUALS)
+                {
+                    value = left->tokens[0]->value.number != right->tokens[0]->value.number;
+                }
+            }
+
+            newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
+            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            freeASTNode(left);
+            left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
+        }
+        else
+        {
+            break;
+        }
+    }
+    free(isConstantChild);
+
+    children[childCount++] = left;
+    for (; i < node->childCount; i++)
+    {
+        tokens[tokenCount++] = node->tokens[currentOperator++];
+        children[childCount++] = node->children[i];
+    }
+    ASTNode *newExpression = createASTNode(AST_EQUALITY_EXPRESSION, tokens, tokenCount, children, childCount);
+    freeASTNode(node);
+    
+    return newExpression;
+}
+
+static ASTNode *foldRelationalExpression(Validator *validator, ASTNode *node, int *isConstant)
+{
+    if (node == NULL)
+    {
+        return NULL;
+    }
+
+    int *isConstantChild = malloc(node->childCount * sizeof(int));
+    //Iterating over the children and fold them
+    int foldCount = 0;
+    for (size_t i = 0; i < node->childCount; i++)
+    {
+        ASTNode *child = tryFold(validator, node->children[i], &(isConstantChild[i]));
+        freeASTNode(node->children[i]);
+        node->children[i] = child;
+        if (isConstantChild[i])
+        {
+            foldCount++;
+        }
+        else
+        {
+            *isConstant = 0;
+        }
+    }
+    if (foldCount == 0)
+    {
+        free(isConstantChild);
+        return duplicateASTNode(node);
+    }
+
+    //Allocating memory
+    size_t tokensSize = node->tokenCount - foldCount;
+    Token **tokens = malloc(tokensSize * sizeof(Token *));
+    if (tokens == NULL)
+    {
+        fprintf(stderr, "Memory allocation for tokens failed.\n");
+        free(isConstantChild);
+        return NULL;
+    }
+    size_t tokenCount = 0;
+    size_t childrenSize = node->childCount - foldCount + 1;
+    ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
+    if (children == NULL)
+    {
+        fprintf(stderr, "Memory allocation for children failed.\n");
+        free(isConstantChild);
+        free(tokens);
+        return NULL;
+    }
+    size_t childCount = 0;
+    
+    ASTNode *left = node->children[0];
+    size_t i;
+    size_t currentOperator = 0;
+    for (i = 1; i < node->childCount; i++)
+    {
+        Token **newTokens = malloc(1 * sizeof(Token *));
+        if (newTokens == NULL)
+        {
+            fprintf(stderr, "Memory allocation for newTokens failed.\n");
+            free(isConstantChild);
+            free(tokens);
+            free(children);
+            return NULL;
+        }
+
+        if (isConstantChild[i - 1] && isConstantChild[i])
+        {
+            ASTNode *right = node->children[i];
+            currentOperator++;
+            int value = 0;
+
+            if (left->tokens[0]->type == TOKEN_INTEGER && right->tokens[0]->type == TOKEN_INTEGER)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN)
+                {
+                    value = left->tokens[0]->value.number < right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN_OR_EQUALS)
+                {
+                    value = left->tokens[0]->value.number <= right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN)
+                {
+                    value = left->tokens[0]->value.number > right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN_OR_EQUALS)
+                {
+                    value = left->tokens[0]->value.number >= right->tokens[0]->value.number;
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_FLOATINGPOINT && right->tokens[0]->type == TOKEN_FLOATINGPOINT)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN)
+                {
+                    value = left->tokens[0]->value.floatingPoint < right->tokens[0]->value.floatingPoint;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN_OR_EQUALS)
+                {
+                    value = left->tokens[0]->value.floatingPoint <= right->tokens[0]->value.floatingPoint;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN)
+                {
+                    value = left->tokens[0]->value.floatingPoint > right->tokens[0]->value.floatingPoint;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN_OR_EQUALS)
+                {
+                    value = left->tokens[0]->value.floatingPoint >= right->tokens[0]->value.floatingPoint;
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_CHARACTER && right->tokens[0]->type == TOKEN_CHARACTER)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN)
+                {
+                    value = left->tokens[0]->value.character < right->tokens[0]->value.character;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN_OR_EQUALS)
+                {
+                    value = left->tokens[0]->value.character <= right->tokens[0]->value.character;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN)
+                {
+                    value = left->tokens[0]->value.character > right->tokens[0]->value.character;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN_OR_EQUALS)
+                {
+                    value = left->tokens[0]->value.character >= right->tokens[0]->value.character;
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_STRING && right->tokens[0]->type == TOKEN_STRING)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN)
+                {
+                    value = (left->tokens[0]->value.string != NULL) < (right->tokens[0]->value.string != NULL);
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN_OR_EQUALS)
+                {
+                    value = (left->tokens[0]->value.string != NULL) <= (right->tokens[0]->value.string != NULL);
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN)
+                {
+                    value = (left->tokens[0]->value.string != NULL) > (right->tokens[0]->value.string != NULL);
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN_OR_EQUALS)
+                {
+                    value = (left->tokens[0]->value.string != NULL) >= (right->tokens[0]->value.string != NULL);
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_HEXADECIMAL && right->tokens[0]->type == TOKEN_HEXADECIMAL)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN)
+                {
+                    value = left->tokens[0]->value.number < right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN_OR_EQUALS)
+                {
+                    value = left->tokens[0]->value.number <= right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN)
+                {
+                    value = left->tokens[0]->value.number > right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN_OR_EQUALS)
+                {
+                    value = left->tokens[0]->value.number >= right->tokens[0]->value.number;
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_OCTAL && right->tokens[0]->type == TOKEN_OCTAL)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN)
+                {
+                    value = left->tokens[0]->value.number < right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN_OR_EQUALS)
+                {
+                    value = left->tokens[0]->value.number <= right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN)
+                {
+                    value = left->tokens[0]->value.number > right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN_OR_EQUALS)
+                {
+                    value = left->tokens[0]->value.number >= right->tokens[0]->value.number;
+                }
+            }
+
+            newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
+            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            freeASTNode(left);
+            left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
+        }
+        else
+        {
+            break;
+        }
+    }
+    free(isConstantChild);
+
+    children[childCount++] = left;
+    for (; i < node->childCount; i++)
+    {
+        tokens[tokenCount++] = node->tokens[currentOperator++];
+        children[childCount++] = node->children[i];
+    }
+    ASTNode *newExpression = createASTNode(AST_RELATIONAL_EXPRESSION, tokens, tokenCount, children, childCount);
+    freeASTNode(node);
+    
+    return newExpression;
+}
+
+static ASTNode *foldShiftExpression(Validator *validator, ASTNode *node, int *isConstant)
+{
+    if (node == NULL)
+    {
+        return NULL;
+    }
+
+    int *isConstantChild = malloc(node->childCount * sizeof(int));
+    //Iterating over the children and fold them
+    int foldCount = 0;
+    for (size_t i = 0; i < node->childCount; i++)
+    {
+        ASTNode *child = tryFold(validator, node->children[i], &(isConstantChild[i]));
+        freeASTNode(node->children[i]);
+        node->children[i] = child;
+        if (isConstantChild[i])
+        {
+            foldCount++;
+        }
+        else
+        {
+            *isConstant = 0;
+        }
+    }
+    if (foldCount == 0)
+    {
+        free(isConstantChild);
+        return duplicateASTNode(node);
+    }
+
+    //Allocating memory
+    size_t tokensSize = node->tokenCount - foldCount;
+    Token **tokens = malloc(tokensSize * sizeof(Token *));
+    if (tokens == NULL)
+    {
+        fprintf(stderr, "Memory allocation for tokens failed.\n");
+        free(isConstantChild);
+        return NULL;
+    }
+    size_t tokenCount = 0;
+    size_t childrenSize = node->childCount - foldCount + 1;
+    ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
+    if (children == NULL)
+    {
+        fprintf(stderr, "Memory allocation for children failed.\n");
+        free(isConstantChild);
+        free(tokens);
+        return NULL;
+    }
+    size_t childCount = 0;
+    
+    ASTNode *left = node->children[0];
+    size_t i;
+    size_t currentOperator = 0;
+    for (i = 1; i < node->childCount; i++)
+    {
+        Token **newTokens = malloc(1 * sizeof(Token *));
+        if (newTokens == NULL)
+        {
+            fprintf(stderr, "Memory allocation for newTokens failed.\n");
+            free(isConstantChild);
+            free(tokens);
+            free(children);
+            return NULL;
+        }
+
+        if (isConstantChild[i - 1] && isConstantChild[i])
+        {
+            ASTNode *right = node->children[i];
+            currentOperator++;
+            int value = 0;
+
+            if (left->tokens[0]->type == TOKEN_INTEGER && right->tokens[0]->type == TOKEN_INTEGER)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_LEFT_SHIFT)
+                {
+                    value = left->tokens[0]->value.number << right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_RIGHT_SHIFT)
+                {
+                    value = left->tokens[0]->value.number >> right->tokens[0]->value.number;
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_FLOATINGPOINT && right->tokens[0]->type == TOKEN_FLOATINGPOINT)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_LEFT_SHIFT)
+                {
+                    value = (int)left->tokens[0]->value.floatingPoint << (int)right->tokens[0]->value.floatingPoint;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_RIGHT_SHIFT)
+                {
+                    value = (int)left->tokens[0]->value.floatingPoint >> (int)right->tokens[0]->value.floatingPoint;
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_CHARACTER && right->tokens[0]->type == TOKEN_CHARACTER)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_LEFT_SHIFT)
+                {
+                    value = left->tokens[0]->value.character << right->tokens[0]->value.character;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_RIGHT_SHIFT)
+                {
+                    value = left->tokens[0]->value.character >> right->tokens[0]->value.character;
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_STRING && right->tokens[0]->type == TOKEN_STRING)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_LEFT_SHIFT)
+                {
+                    value = (left->tokens[0]->value.string != NULL) << (right->tokens[0]->value.string != NULL);
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_RIGHT_SHIFT)
+                {
+                    value = (left->tokens[0]->value.string != NULL) >> (right->tokens[0]->value.string != NULL);
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_HEXADECIMAL && right->tokens[0]->type == TOKEN_HEXADECIMAL)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_LEFT_SHIFT)
+                {
+                    value = left->tokens[0]->value.number << right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_RIGHT_SHIFT)
+                {
+                    value = left->tokens[0]->value.number >> right->tokens[0]->value.number;
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_OCTAL && right->tokens[0]->type == TOKEN_OCTAL)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_LEFT_SHIFT)
+                {
+                    value = left->tokens[0]->value.number << right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_RIGHT_SHIFT)
+                {
+                    value = left->tokens[0]->value.number >> right->tokens[0]->value.number;
+                }
+            }
+
+            newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
+            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            freeASTNode(left);
+            left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
+        }
+        else
+        {
+            break;
+        }
+    }
+    free(isConstantChild);
+
+    children[childCount++] = left;
+    for (; i < node->childCount; i++)
+    {
+        tokens[tokenCount++] = node->tokens[currentOperator++];
+        children[childCount++] = node->children[i];
+    }
+    ASTNode *newExpression = createASTNode(AST_SHIFT_EXPRESSION, tokens, tokenCount, children, childCount);
+    freeASTNode(node);
+    
+    return newExpression;
+}
+
+static ASTNode *foldAdditiveExpression(Validator *validator, ASTNode *node, int *isConstant)
+{
+    if (node == NULL)
+    {
+        return NULL;
+    }
+
+    int *isConstantChild = malloc(node->childCount * sizeof(int));
+    //Iterating over the children and fold them
+    int foldCount = 0;
+    for (size_t i = 0; i < node->childCount; i++)
+    {
+        ASTNode *child = tryFold(validator, node->children[i], &(isConstantChild[i]));
+        freeASTNode(node->children[i]);
+        node->children[i] = child;
+        if (isConstantChild[i])
+        {
+            foldCount++;
+        }
+        else
+        {
+            *isConstant = 0;
+        }
+    }
+    if (foldCount == 0)
+    {
+        free(isConstantChild);
+        return duplicateASTNode(node);
+    }
+
+    //Allocating memory
+    size_t tokensSize = node->tokenCount - foldCount;
+    Token **tokens = malloc(tokensSize * sizeof(Token *));
+    if (tokens == NULL)
+    {
+        fprintf(stderr, "Memory allocation for tokens failed.\n");
+        free(isConstantChild);
+        return NULL;
+    }
+    size_t tokenCount = 0;
+    size_t childrenSize = node->childCount - foldCount + 1;
+    ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
+    if (children == NULL)
+    {
+        fprintf(stderr, "Memory allocation for children failed.\n");
+        free(isConstantChild);
+        free(tokens);
+        return NULL;
+    }
+    size_t childCount = 0;
+    
+    ASTNode *left = node->children[0];
+    size_t i;
+    size_t currentOperator = 0;
+    for (i = 1; i < node->childCount; i++)
+    {
+        Token **newTokens = malloc(1 * sizeof(Token *));
+        if (newTokens == NULL)
+        {
+            fprintf(stderr, "Memory allocation for newTokens failed.\n");
+            free(isConstantChild);
+            free(tokens);
+            free(children);
+            return NULL;
+        }
+
+        if (isConstantChild[i - 1] && isConstantChild[i])
+        {
+            ASTNode *right = node->children[i];
+            currentOperator++;
+            int value = 0;
+
+            if (left->tokens[0]->type == TOKEN_INTEGER && right->tokens[0]->type == TOKEN_INTEGER)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_PLUS)
+                {
+                    value = left->tokens[0]->value.number + right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_MINUS)
+                {
+                    value = left->tokens[0]->value.number - right->tokens[0]->value.number;
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_FLOATINGPOINT && right->tokens[0]->type == TOKEN_FLOATINGPOINT)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_PLUS)
+                {
+                    value = left->tokens[0]->value.floatingPoint + right->tokens[0]->value.floatingPoint;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_MINUS)
+                {
+                    value = left->tokens[0]->value.floatingPoint - right->tokens[0]->value.floatingPoint;
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_CHARACTER && right->tokens[0]->type == TOKEN_CHARACTER)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_PLUS)
+                {
+                    value = left->tokens[0]->value.character + right->tokens[0]->value.character;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_MINUS)
+                {
+                    value = left->tokens[0]->value.character - right->tokens[0]->value.character;
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_STRING && right->tokens[0]->type == TOKEN_STRING)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_PLUS)
+                {
+                    value = (left->tokens[0]->value.string != NULL) + (right->tokens[0]->value.string != NULL);
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_MINUS)
+                {
+                    value = (left->tokens[0]->value.string != NULL) - (right->tokens[0]->value.string != NULL);
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_HEXADECIMAL && right->tokens[0]->type == TOKEN_HEXADECIMAL)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_PLUS)
+                {
+                    value = left->tokens[0]->value.number + right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_MINUS)
+                {
+                    value = left->tokens[0]->value.number - right->tokens[0]->value.number;
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_OCTAL && right->tokens[0]->type == TOKEN_OCTAL)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_PLUS)
+                {
+                    value = left->tokens[0]->value.number + right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_MINUS)
+                {
+                    value = left->tokens[0]->value.number - right->tokens[0]->value.number;
+                }
+            }
+
+            newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
+            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            freeASTNode(left);
+            left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
+        }
+        else
+        {
+            break;
+        }
+    }
+    free(isConstantChild);
+
+    children[childCount++] = left;
+    for (; i < node->childCount; i++)
+    {
+        tokens[tokenCount++] = node->tokens[currentOperator++];
+        children[childCount++] = node->children[i];
+    }
+    ASTNode *newExpression = createASTNode(AST_ADDITIVE_EXPRESSION, tokens, tokenCount, children, childCount);
+    freeASTNode(node);
+    
+    return newExpression;
+}
+
+static ASTNode *foldMultiplicativeExpression(Validator *validator, ASTNode *node, int *isConstant)
+{
+    if (node == NULL)
+    {
+        return NULL;
+    }
+
+    int *isConstantChild = malloc(node->childCount * sizeof(int));
+    //Iterating over the children and fold them
+    int foldCount = 0;
+    for (size_t i = 0; i < node->childCount; i++)
+    {
+        ASTNode *child = tryFold(validator, node->children[i], &(isConstantChild[i]));
+        freeASTNode(node->children[i]);
+        node->children[i] = child;
+        if (isConstantChild[i])
+        {
+            foldCount++;
+        }
+        else
+        {
+            *isConstant = 0;
+        }
+    }
+    if (foldCount == 0)
+    {
+        free(isConstantChild);
+        return duplicateASTNode(node);
+    }
+
+    //Allocating memory
+    size_t tokensSize = node->tokenCount - foldCount;
+    Token **tokens = malloc(tokensSize * sizeof(Token *));
+    if (tokens == NULL)
+    {
+        fprintf(stderr, "Memory allocation for tokens failed.\n");
+        free(isConstantChild);
+        return NULL;
+    }
+    size_t tokenCount = 0;
+    size_t childrenSize = node->childCount - foldCount + 1;
+    ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
+    if (children == NULL)
+    {
+        fprintf(stderr, "Memory allocation for children failed.\n");
+        free(isConstantChild);
+        free(tokens);
+        return NULL;
+    }
+    size_t childCount = 0;
+    
+    ASTNode *left = node->children[0];
+    size_t i;
+    size_t currentOperator = 0;
+    for (i = 1; i < node->childCount; i++)
+    {
+        Token **newTokens = malloc(1 * sizeof(Token *));
+        if (newTokens == NULL)
+        {
+            fprintf(stderr, "Memory allocation for newTokens failed.\n");
+            free(isConstantChild);
+            free(tokens);
+            free(children);
+            return NULL;
+        }
+
+        if (isConstantChild[i - 1] && isConstantChild[i])
+        {
+            ASTNode *right = node->children[i];
+            currentOperator++;
+            int value = 0;
+
+            if (left->tokens[0]->type == TOKEN_INTEGER && right->tokens[0]->type == TOKEN_INTEGER)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_STAR)
+                {
+                    value = left->tokens[0]->value.number * right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_SLASH)
+                {
+                    value = left->tokens[0]->value.number / right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_PERCENT)
+                {
+                    value = left->tokens[0]->value.number % right->tokens[0]->value.number;
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_FLOATINGPOINT && right->tokens[0]->type == TOKEN_FLOATINGPOINT)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_STAR)
+                {
+                    value = left->tokens[0]->value.floatingPoint * right->tokens[0]->value.floatingPoint;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_SLASH)
+                {
+                    value = left->tokens[0]->value.floatingPoint / right->tokens[0]->value.floatingPoint;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_PERCENT)
+                {
+                    value = (int)left->tokens[0]->value.floatingPoint % (int)right->tokens[0]->value.floatingPoint;
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_CHARACTER && right->tokens[0]->type == TOKEN_CHARACTER)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_STAR)
+                {
+                    value = left->tokens[0]->value.character * right->tokens[0]->value.character;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_SLASH)
+                {
+                    value = left->tokens[0]->value.character / right->tokens[0]->value.character;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_PERCENT)
+                {
+                    value = left->tokens[0]->value.character % right->tokens[0]->value.character;
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_STRING && right->tokens[0]->type == TOKEN_STRING)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_STAR)
+                {
+                    value = (left->tokens[0]->value.string != NULL) * (right->tokens[0]->value.string != NULL);
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_SLASH)
+                {
+                    value = (left->tokens[0]->value.string != NULL) / (right->tokens[0]->value.string != NULL);
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_PERCENT)
+                {
+                    value = (left->tokens[0]->value.string != NULL) % (right->tokens[0]->value.string != NULL);
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_HEXADECIMAL && right->tokens[0]->type == TOKEN_HEXADECIMAL)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_STAR)
+                {
+                    value = left->tokens[0]->value.number * right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_SLASH)
+                {
+                    value = left->tokens[0]->value.number / right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_PERCENT)
+                {
+                    value = left->tokens[0]->value.number % right->tokens[0]->value.number;
+                }
+            }
+            else if (left->tokens[0]->type == TOKEN_OCTAL && right->tokens[0]->type == TOKEN_OCTAL)
+            {
+                if (node->tokens[currentOperator - 1]->type == TOKEN_STAR)
+                {
+                    value = left->tokens[0]->value.number * right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_SLASH)
+                {
+                    value = left->tokens[0]->value.number / right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_PERCENT)
+                {
+                    value = left->tokens[0]->value.number % right->tokens[0]->value.number;
+                }
+            }
+
+            newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
+            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            freeASTNode(left);
+            left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
+        }
+        else
+        {
+            break;
+        }
+    }
+    free(isConstantChild);
+
+    children[childCount++] = left;
+    for (; i < node->childCount; i++)
+    {
+        tokens[tokenCount++] = node->tokens[currentOperator++];
+        children[childCount++] = node->children[i];
+    }
+    ASTNode *newExpression = createASTNode(AST_MULTIPLICATIVE_EXPRESSION, tokens, tokenCount, children, childCount);
+    freeASTNode(node);
+    
+    return newExpression;
+}
+
+static ASTNode *foldCastExpression(Validator *validator, ASTNode *node, int *isConstant)
+{
+    if (node == NULL)
+    {
+        return NULL;
+    }
+
+    return duplicateASTNode(node);
+}
+
+static ASTNode *foldUnaryExpression(Validator *validator, ASTNode *node, int *isConstant)
+{
+    if (node == NULL)
+    {
+        return NULL;
+    }
+
+    if (node->tokenCount > 0 && node->tokens[0]->type == TOKEN_KEYWORD)
+    {
+        int result = 0;
+        if (node->tokenCount ==  1)
+        {
+            int isConstantChild = 1;
+            ASTNode *size = tryFold(validator, node->children[0], &isConstantChild);
+            freeASTNode(node->children[0]);
+            node->children[0] = size;
+            if (isConstantChild)
+            {
+                if (size->tokens[0]->type == TOKEN_INTEGER ||
+                    size->tokens[0]->type == TOKEN_OCTAL ||
+                    size->tokens[0]->type == TOKEN_HEXADECIMAL)
+                {
+                    result = sizeof(int);
+                }
+                else if (size->tokens[0]->type == TOKEN_FLOATINGPOINT)
+                {
+                    result = sizeof(double);
+                }
+                else if (size->tokens[0]->type == TOKEN_CHARACTER)
+                {
+                    result = sizeof(char);
+                }
+                else if (size->tokens[0]->type == TOKEN_STRING)
+                {
+                    result = sizeof(char *);
+                }
+
+                Token **newTokens = malloc(1 * sizeof(Token *));
+                if (newTokens == NULL)
+                {
+                    fprintf(stderr, "Memory allocation for newTokens failed.\n");
+                    return NULL;
+                }
+                newTokens[0] = createTokenNumber(NULL, size->tokens[0]->start, TOKEN_INTEGER, result);
+                validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+                freeASTNode(size);
+                return createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
+            }
+            else
+            {
+                *isConstant = 0;
+            }
+        }
+        else
+        {
+            Symbol *type = findTypeSymbol(validator, node->children[0]);
+            //TODO: finish this
+        }
+    }
+    else if (node->tokenCount == 1)
+    {
+        int isConstantChild = 1;
+        ASTNode *expression = tryFold(validator, node->children[0], &isConstantChild);
+        freeASTNode(node->children[0]);
+        node->children[0] = expression;
+
+        if (node->tokens[0]->type == TOKEN_BITWISE_AND ||
+            node->tokens[0]->type == TOKEN_STAR ||
+            node->tokens[0]->type == TOKEN_DOUBLE_PLUS ||
+            node->tokens[0]->type == TOKEN_DOUBLE_MINUS)
+        {
+            *isConstant = 0;
+            return duplicateASTNode(node);
+        }
+
+
+        if (isConstantChild)
+        {
+            int value = 0;
+            if (expression->tokens[0]->type == TOKEN_INTEGER || expression->tokens[0]->type == TOKEN_OCTAL || expression->tokens[0]->type == TOKEN_HEXADECIMAL)
+            {
+                if (node->tokens[0]->type == TOKEN_PLUS)
+                {
+                    value = expression->tokens[0]->value.number;
+                }
+                else if (node->tokens[0]->type == TOKEN_MINUS)
+                {
+                    value = -expression->tokens[0]->value.number;
+                }
+                else if (node->tokens[0]->type == TOKEN_BITWISE_NOT)
+                {
+                    value = ~expression->tokens[0]->value.number;
+                }
+                else if (node->tokens[0]->type == TOKEN_NOT)
+                {
+                    value = !expression->tokens[0]->value.number;
+                }
+            }
+            else if (expression->tokens[0]->type == TOKEN_FLOATINGPOINT)
+            {
+                if (node->tokens[0]->type == TOKEN_PLUS)
+                {
+                    value = expression->tokens[0]->value.floatingPoint;
+                }
+                else if (node->tokens[0]->type == TOKEN_MINUS)
+                {
+                    value = -expression->tokens[0]->value.floatingPoint;
+                }
+                else if (node->tokens[0]->type == TOKEN_NOT)
+                {
+                    value = !expression->tokens[0]->value.floatingPoint;
+                }
+            }
+            else if (expression->tokens[0]->type == TOKEN_CHARACTER)
+            {
+                if (node->tokens[0]->type == TOKEN_PLUS)
+                {
+                    value = expression->tokens[0]->value.character;
+                }
+                else if (node->tokens[0]->type == TOKEN_MINUS)
+                {
+                    value = -expression->tokens[0]->value.character;
+                }
+                else if (node->tokens[0]->type == TOKEN_BITWISE_NOT)
+                {
+                    value = ~expression->tokens[0]->value.character;
+                }
+                else if (node->tokens[0]->type == TOKEN_NOT)
+                {
+                    value = !expression->tokens[0]->value.character;
+                }
+            }
+            else if (expression->tokens[0]->type == TOKEN_STRING)
+            {
+                if (node->tokens[0]->type == TOKEN_NOT)
+                {
+                    value = !(expression->tokens[0]->value.string != NULL);
+                }
+            }
+
+            Token **newTokens = malloc(1 * sizeof(Token *));
+            if (newTokens == NULL)
+            {
+                fprintf(stderr, "Memory allocation for newTokens failed.\n");
+                return NULL;
+            }
+            newTokens[0] = createTokenNumber(NULL, expression->tokens[0]->start, TOKEN_INTEGER, value);
+            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            freeASTNode(expression);
+            return createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
+        }
+        else
+        {
+            *isConstant = 0;
+        }
+    }
+
+
+    return duplicateASTNode(node);
+}
+
+static ASTNode *foldPrimaryExpression(Validator *validator, ASTNode *node, int *isConstant)
+{
+    if (node == NULL)
+    {
+        return NULL;
+    }
+
+    if (node->tokenCount == 1 && node->tokens[0]->type == TOKEN_IDENTIFIER)
+    {
+        *isConstant = 0;
+        return duplicateASTNode(node);
+    }
+    else 
+    {
+        int isConstantChild = 1;
+        ASTNode *expression = tryFold(validator, node->children[0], &isConstantChild);
+        freeASTNode(node->children[0]);
+        freeASTNode(node);
+        if (!isConstantChild)
+        {
+            *isConstant = 0;
+        }
+        return expression;
+    }
+}
+
+Symbol *findTypeSymbol(Validator *validator, ASTNode *node)
+{
+    if (validator == NULL)
+    {
+        fprintf(stderr, "Validator is not initialized.\n");
+        return NULL;
+    }
+
+    if (node == NULL)
+    {
+        fprintf(stderr, "ASTNode is NULL.\n");
+        return NULL;
+    }
+
+    return NULL;
 }
 
 /*****************************************************************************************************
@@ -161,6 +2048,15 @@ void deleteValidator(Validator *validator)
 
     deleteErrors(validator->errors, validator->errorCount);
     free(validator->errors);
+
+    //TODO:
+    //Created tokens will leak memory but we can't free them here because they are used in the AST
+    /*
+    for (size_t i = 0; i < validator->createdTokenCount; i++)
+    {
+        deleteTokens(validator->createdTokens, validator->createdTokenCount);
+    }
+    */
 
     free(validator);
 }

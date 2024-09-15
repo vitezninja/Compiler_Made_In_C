@@ -144,6 +144,8 @@ ASTNode *createASTNode(const ASTType type, Token **const tokens, const size_t to
  */
 void deleteASTNode(ASTNode *const astNode);
 
+void freeASTNode(ASTNode *const astNode);
+
 /**
  * Creates a duplicate of an `ASTNode`.
  * 

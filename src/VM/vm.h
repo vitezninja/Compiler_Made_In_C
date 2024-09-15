@@ -6,9 +6,11 @@
 #include <string.h>
 #include "../utils/my_string.h"
 #include "../utils/token.h"
+#include "../utils/AST.h"
+#include "../utils/error.h"
 #include "../Lexer/lexer.h"
 #include "../Parser/parser.h"
-#include "../utils/AST.h"
+#include "../Validator/validator.h"
 
 /**
  * Executes the virtual machine (VM) process for compiling a source file.

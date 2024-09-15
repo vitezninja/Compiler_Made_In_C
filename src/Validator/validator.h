@@ -8,6 +8,114 @@
 #include "../src/utils/error.h"
 #include "../src/utils/my_string.h"
 
+typedef struct symbol Symbol;
+
+typedef enum type
+{
+    TYPE_VOID,
+    TYPE_CHAR,
+    TYPE_STRING,
+    TYPE_SHORT,
+    TYPE_INT,
+    TYPE_LONG,
+    TYPE_FLOAT,
+    TYPE_DOUBLE,
+    TYPE_SIGNED,
+    TYPE_UNSIGNED,
+    TYPE_STRUCT,
+    TYPE_UNION,
+    TYPE_ENUM,
+    TYPE_TYPEDEF,
+} Type;
+
+typedef struct extraTypeData
+{
+    int isPointer;
+
+    int isArray;
+    size_t arraySize;
+
+    int isExtern;
+    int isStatic;
+    int isAuto;
+    int isRegister;
+
+    int isInLine;
+} ExtraTypeData;
+
+typedef struct variableSymbol
+{
+    char *name;
+    Type type;
+    ExtraTypeData *extraTypeData;
+    size_t size;
+    Symbol *data;
+} VariableSymbol;
+
+typedef struct functionSymbol
+{
+    char *name;
+    Type returnType;
+    ExtraTypeData *extraReturnTypeData;
+    size_t numParams;
+    VariableSymbol **params;
+} FunctionSymbol;
+
+typedef struct structSymbol
+{
+    char *name;
+    size_t numMembers;
+    Symbol **members;
+    size_t size;
+} StructSymbol;
+
+typedef struct unionSymbol
+{
+    char *name;
+    size_t numMembers;
+    Symbol **members;
+    size_t size;
+} UnionSymbol;
+
+typedef struct enumSymbol
+{
+    char *name;
+    size_t numConstants;
+    char **constants;
+    int *values;
+    size_t size;
+} EnumSymbol;
+
+typedef struct typedefSymbol
+{
+    char *name;
+    Symbol *type;
+} TypedefSymbol;
+
+typedef enum symbolType
+{
+    SYMBOL_VARIABLE,
+    SYMBOL_FUNCTION,
+    SYMBOL_STRUCT,
+    SYMBOL_UNION,
+    SYMBOL_ENUM,
+    SYMBOL_TYPEDEF,
+} SymbolType;
+
+typedef struct symbol
+{
+    SymbolType type;
+    union Data
+    {
+        VariableSymbol *variableSymbol;
+        FunctionSymbol *functionSymbol;
+        StructSymbol *structureSymbol;
+        UnionSymbol *unionSymbol;
+        EnumSymbol *enumerationSymbol;
+        TypedefSymbol *typedefSymbol;
+    } data;
+} Symbol;
+
 /**
  * Represents the state of the validator used for semantic analysis.
  *
@@ -36,6 +144,10 @@
  * 
  * - `errorsSize`: The total size of the allocated `errors` array. This is used to manage
  *                 dynamic resizing of the array when new errors are encountered.
+ * 
+ * - `createdTokens`: An array of pointers to `Token` structures representing any tokens
+ * 
+ * - `createdTokenCount`: The number of tokens created during validation.
  */
 typedef struct validator
 {
@@ -45,6 +157,8 @@ typedef struct validator
     Error **errors;             /** An array of error pointers encountered during validation. */
     size_t errorCount;          /** The number of errors recorded. */
     size_t errorsSize;          /** The allocated size of the errors array. */
+    Token **createdTokens;      /** An array of tokens created during validation. */
+    size_t createdTokenCount;   /** The number of tokens created. */
 } Validator;
 
 Validator *createValidator(ASTNode *ASTroot);
