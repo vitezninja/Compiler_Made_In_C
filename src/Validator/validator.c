@@ -163,6 +163,7 @@ static void findConstant(Validator *validator, ASTNode *node)
 
 //TODO: Implement constant folding
 // Update folding function to do implicit type conversion
+// Update folding function to handle all types, currently only handles integers
 static ASTNode *tryFold(Validator *validator, ASTNode *node, int *isConstant)
 {
     if (node == NULL)
@@ -184,7 +185,7 @@ static ASTNode *tryFold(Validator *validator, ASTNode *node, int *isConstant)
         node->children[0] = child;
         result = node;
     }    
-    if (node->type == AST_CONDITIONAL_EXPRESSION)
+    else if (node->type == AST_CONDITIONAL_EXPRESSION)
     {
         result = foldConditionalExpression(validator, node, isConstant); //Done
     }
@@ -250,6 +251,12 @@ static ASTNode *tryFold(Validator *validator, ASTNode *node, int *isConstant)
     else if (node->type == AST_LITERAL)
     {
         return deepCopyASTNode(node); //Done
+    }
+    else 
+    {
+        fprintf(stderr, "Unknown node type: %d\n", node->type);
+        *isConstant = 0;
+        return NULL;
     }
 
     return result;
@@ -322,6 +329,7 @@ static ASTNode *foldLogicalOrExpression(Validator *validator, ASTNode *node, int
     }
 
     int *isConstantChild = malloc(node->childCount * sizeof(int));
+    memset(isConstantChild, 1, node->childCount * sizeof(int));
     //Iterating over the children and fold them
     int foldCount = 0;
     for (size_t i = 0; i < node->childCount; i++)
@@ -451,6 +459,7 @@ static ASTNode *foldLogicalAndExpression(Validator *validator, ASTNode *node, in
     }
 
     int *isConstantChild = malloc(node->childCount * sizeof(int));
+    memset(isConstantChild, 1, node->childCount * sizeof(int));
     //Iterating over the children and fold them
     int foldCount = 0;
     for (size_t i = 0; i < node->childCount; i++)
@@ -580,6 +589,7 @@ static ASTNode *foldBitwiseOrExpression(Validator *validator, ASTNode *node, int
     }
 
     int *isConstantChild = malloc(node->childCount * sizeof(int));
+    memset(isConstantChild, 1, node->childCount * sizeof(int));
     //Iterating over the children and fold them
     int foldCount = 0;
     for (size_t i = 0; i < node->childCount; i++)
@@ -709,6 +719,7 @@ static ASTNode *foldBitwiseXorExpression(Validator *validator, ASTNode *node, in
     }
 
     int *isConstantChild = malloc(node->childCount * sizeof(int));
+    memset(isConstantChild, 1, node->childCount * sizeof(int));
     //Iterating over the children and fold them
     int foldCount = 0;
     for (size_t i = 0; i < node->childCount; i++)
@@ -838,6 +849,7 @@ static ASTNode *foldBitwiseAndExpression(Validator *validator, ASTNode *node, in
     }
 
     int *isConstantChild = malloc(node->childCount * sizeof(int));
+    memset(isConstantChild, 1, node->childCount * sizeof(int));
     //Iterating over the children and fold them
     int foldCount = 0;
     for (size_t i = 0; i < node->childCount; i++)
@@ -967,6 +979,7 @@ static ASTNode *foldEqualityExpression(Validator *validator, ASTNode *node, int 
     }
 
     int *isConstantChild = malloc(node->childCount * sizeof(int));
+    memset(isConstantChild, 1, node->childCount * sizeof(int));
     //Iterating over the children and fold them
     int foldCount = 0;
     for (size_t i = 0; i < node->childCount; i++)
@@ -1138,6 +1151,7 @@ static ASTNode *foldRelationalExpression(Validator *validator, ASTNode *node, in
     }
 
     int *isConstantChild = malloc(node->childCount * sizeof(int));
+    memset(isConstantChild, 1, node->childCount * sizeof(int));
     //Iterating over the children and fold them
     int foldCount = 0;
     for (size_t i = 0; i < node->childCount; i++)
@@ -1357,6 +1371,7 @@ static ASTNode *foldShiftExpression(Validator *validator, ASTNode *node, int *is
     }
 
     int *isConstantChild = malloc(node->childCount * sizeof(int));
+    memset(isConstantChild, 1, node->childCount * sizeof(int));
     //Iterating over the children and fold them
     int foldCount = 0;
     for (size_t i = 0; i < node->childCount; i++)
@@ -1528,6 +1543,7 @@ static ASTNode *foldAdditiveExpression(Validator *validator, ASTNode *node, int 
     }
 
     int *isConstantChild = malloc(node->childCount * sizeof(int));
+    memset(isConstantChild, 1, node->childCount * sizeof(int));
     //Iterating over the children and fold them
     int foldCount = 0;
     for (size_t i = 0; i < node->childCount; i++)
@@ -1699,6 +1715,7 @@ static ASTNode *foldMultiplicativeExpression(Validator *validator, ASTNode *node
     }
 
     int *isConstantChild = malloc(node->childCount * sizeof(int));
+    memset(isConstantChild, 1, node->childCount * sizeof(int));
     //Iterating over the children and fold them
     int foldCount = 0;
     for (size_t i = 0; i < node->childCount; i++)

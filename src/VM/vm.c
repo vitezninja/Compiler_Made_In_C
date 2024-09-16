@@ -888,7 +888,6 @@ int runVM(int argc, char **argv)
     printf("\n\nValidated AST:\n");
     printASTNode(validated, "", 0);
 
-    printf("\n\nRunning the VM:\n");
     //TODO:
     //Do things with the AST
 
