@@ -72,7 +72,7 @@
 	                       |  "TOKEN_OPEN_PARENTHESIS" <parameter_list> "TOKEN_CLOSED_PARENTHESIS"
 	                       |  "TOKEN_OPEN_PARENTHESIS" <identifier_list>? "TOKEN_CLOSED_PARENTHESIS"
 
-<assignment_expression> ::= <conditional_expression>
+<assignment_expression> ::= <constant_expression>
                          |  <unary_expression> <assignment_operator> <assignment_expression>
 
 <assignment_operator> ::= "TOKEN_EQUALS"
@@ -86,6 +86,9 @@
                        |  "TOKEN_BITWISE_AND_EQUAL"
                        |  "TOKEN_BITWISE_XOR_EQUAL"
                        |  "TOKEN_BITWISE_OR_EQUAL"
+
+
+<constant_expression> ::= <conditional_expression>
 
 
 <conditional_expression> ::= <logical_OR_expression>
@@ -221,9 +224,6 @@
 
 <designator> ::= "TOKEN_OPEN_BRACKET" <constant_expression> "TOKEN_CLOSED_BRACKET"
               |  "TOKEN_DOT" "TOKEN_IDENTIFIER"
-
-
-<constant_expression> ::= <conditional_expression>
 
 
 <initializer> ::= <assignment_expression>
@@ -461,3 +461,9 @@ Operator precedence determines the order in which operations are performed in an
 - **Operator Associativity**: For the expression `a = b = 5 + 3`, both the assignment operator (`=`) and addition operator (`+`) have different precedences. The addition operator has a higher precedence number, so `5 + 3` is evaluated first, resulting in `8`. Then, the assignments are performed from right to left, so `b` is assigned `8` first, and then `a` is also assigned `8`.
 
 This table helps in understanding the evaluation order of operators in expressions and predicting how complex expressions will be processed.
+
+## References
+
+- C99 Grammar converted from [ISO/IEC 9899:1999](https://slebok.github.io/zoo/c/c99/iso-9899-1999/extracted/index.html)
+
+- C Operator Precedence from [cppreference.com](https://en.cppreference.com/w/c/language/operator_precedence)

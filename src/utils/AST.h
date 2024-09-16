@@ -164,6 +164,8 @@ void freeASTNode(ASTNode *const astNode);
  */
 ASTNode *duplicateASTNode(ASTNode *const astNode);
 
+ASTNode *deepCopyASTNode(ASTNode *const astNode);
+
 /**
  * Recursively prints an Abstract Syntax Tree (AST) node with indentation.
  * 

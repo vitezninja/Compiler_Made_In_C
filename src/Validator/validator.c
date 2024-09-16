@@ -6,6 +6,8 @@
 
 static int addError(Validator *validator, Error *error);
 
+static void addCreatedToken(Validator *validator, Token *token);
+
 static int typeCheck(Validator *validator);
 
 static int constantFold(Validator *validator);
@@ -76,6 +78,35 @@ static int addError(Validator *validator, Error *error)
 
     validator->errors[validator->errorCount++] = error;
     return 1;
+}
+
+static void addCreatedToken(Validator *validator, Token *token)
+{
+    if (validator == NULL)
+    {
+        fprintf(stderr, "Validator is not initialized.\n");
+        return;
+    }
+
+    if (token == NULL)
+    {
+        fprintf(stderr, "Token is not initialized.\n");
+        return;
+    }
+
+    if (validator->createdTokenCount + 1 >= validator->createdTokensSize)
+    {
+        validator->createdTokensSize *= 2;
+        Token **newTokens = realloc(validator->createdTokens, validator->createdTokensSize * sizeof(Token *));
+        if (newTokens == NULL)
+        {
+            fprintf(stderr, "Memory reallocation for Tokens failed!\n");
+            return;
+        }
+        validator->createdTokens = newTokens;
+    }
+
+    validator->createdTokens[validator->createdTokenCount++] = token;
 }
 
 //TODO: Implement type checking
@@ -210,7 +241,7 @@ static ASTNode *tryFold(Validator *validator, ASTNode *node, int *isConstant)
     else if (node->type == AST_POSTFIX_EXPRESSION)
     {
         *isConstant = 0;
-        result = duplicateASTNode(node); //Done
+        result = deepCopyASTNode(node); //Done
     }
     else if (node->type == AST_PRIMARY_EXPRESSION)
     {
@@ -218,7 +249,7 @@ static ASTNode *tryFold(Validator *validator, ASTNode *node, int *isConstant)
     }
     else if (node->type == AST_LITERAL)
     {
-        return duplicateASTNode(node); //Done
+        return deepCopyASTNode(node); //Done
     }
 
     return result;
@@ -264,13 +295,13 @@ static ASTNode *foldConditionalExpression(Validator *validator, ASTNode *node, i
             (condition->tokens[0]->type == TOKEN_HEXADECIMAL && condition->tokens[0]->value.number != 0) ||
             (condition->tokens[0]->type == TOKEN_OCTAL && condition->tokens[0]->value.number != 0))
         {
-            returnExpression = duplicateASTNode(node->children[1]);
+            returnExpression = deepCopyASTNode(node->children[1]);
             deleteASTNode(node->children[2]);
         }
         else
         {
             deleteASTNode(node->children[1]);
-            returnExpression = duplicateASTNode(node->children[2]);
+            returnExpression = deepCopyASTNode(node->children[2]);
         }
         freeASTNode(node);
 
@@ -279,7 +310,7 @@ static ASTNode *foldConditionalExpression(Validator *validator, ASTNode *node, i
     else
     {
         *isConstant = 0;
-        return duplicateASTNode(node);
+        return deepCopyASTNode(node);
     }
 }
 
@@ -310,11 +341,11 @@ static ASTNode *foldLogicalOrExpression(Validator *validator, ASTNode *node, int
     if (foldCount == 0)
     {
         free(isConstantChild);
-        return duplicateASTNode(node);
+        return deepCopyASTNode(node);
     }
 
     //Allocating memory
-    size_t tokensSize = node->tokenCount - foldCount;
+    size_t tokensSize = node->tokenCount;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
     if (tokens == NULL)
     {
@@ -323,7 +354,7 @@ static ASTNode *foldLogicalOrExpression(Validator *validator, ASTNode *node, int
         return NULL;
     }
     size_t tokenCount = 0;
-    size_t childrenSize = node->childCount - foldCount + 1;
+    size_t childrenSize = node->childCount;
     ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
     if (children == NULL)
     {
@@ -381,7 +412,7 @@ static ASTNode *foldLogicalOrExpression(Validator *validator, ASTNode *node, int
             }
 
             newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
-            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            addCreatedToken(validator, newTokens[0]);
             freeASTNode(left);
             left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
         }
@@ -398,6 +429,14 @@ static ASTNode *foldLogicalOrExpression(Validator *validator, ASTNode *node, int
         tokens[tokenCount++] = node->tokens[currentOperator++];
         children[childCount++] = node->children[i];
     }
+
+    if (childCount == 1)
+    {
+        free(tokens);
+        free(children);
+        return left;
+    }
+
     ASTNode *newExpression = createASTNode(AST_LOGICAL_OR_EXPRESSION, tokens, tokenCount, children, childCount);
     freeASTNode(node);
     
@@ -431,11 +470,11 @@ static ASTNode *foldLogicalAndExpression(Validator *validator, ASTNode *node, in
     if (foldCount == 0)
     {
         free(isConstantChild);
-        return duplicateASTNode(node);
+        return deepCopyASTNode(node);
     }
 
     //Allocating memory
-    size_t tokensSize = node->tokenCount - foldCount;
+    size_t tokensSize = node->tokenCount;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
     if (tokens == NULL)
     {
@@ -444,7 +483,7 @@ static ASTNode *foldLogicalAndExpression(Validator *validator, ASTNode *node, in
         return NULL;
     }
     size_t tokenCount = 0;
-    size_t childrenSize = node->childCount - foldCount + 1;
+    size_t childrenSize = node->childCount;
     ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
     if (children == NULL)
     {
@@ -502,7 +541,7 @@ static ASTNode *foldLogicalAndExpression(Validator *validator, ASTNode *node, in
             }
 
             newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
-            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            addCreatedToken(validator, newTokens[0]);
             freeASTNode(left);
             left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
         }
@@ -519,6 +558,14 @@ static ASTNode *foldLogicalAndExpression(Validator *validator, ASTNode *node, in
         tokens[tokenCount++] = node->tokens[currentOperator++];
         children[childCount++] = node->children[i];
     }
+
+    if (childCount == 1)
+    {
+        free(tokens);
+        free(children);
+        return left;
+    }
+
     ASTNode *newExpression = createASTNode(AST_LOGICAL_AND_EXPRESSION, tokens, tokenCount, children, childCount);
     freeASTNode(node);
     
@@ -552,11 +599,11 @@ static ASTNode *foldBitwiseOrExpression(Validator *validator, ASTNode *node, int
     if (foldCount == 0)
     {
         free(isConstantChild);
-        return duplicateASTNode(node);
+        return deepCopyASTNode(node);
     }
 
     //Allocating memory
-    size_t tokensSize = node->tokenCount - foldCount;
+    size_t tokensSize = node->tokenCount;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
     if (tokens == NULL)
     {
@@ -565,7 +612,7 @@ static ASTNode *foldBitwiseOrExpression(Validator *validator, ASTNode *node, int
         return NULL;
     }
     size_t tokenCount = 0;
-    size_t childrenSize = node->childCount - foldCount + 1;
+    size_t childrenSize = node->childCount;
     ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
     if (children == NULL)
     {
@@ -623,7 +670,7 @@ static ASTNode *foldBitwiseOrExpression(Validator *validator, ASTNode *node, int
             }
 
             newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
-            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            addCreatedToken(validator, newTokens[0]);
             freeASTNode(left);
             left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
         }
@@ -640,6 +687,14 @@ static ASTNode *foldBitwiseOrExpression(Validator *validator, ASTNode *node, int
         tokens[tokenCount++] = node->tokens[currentOperator++];
         children[childCount++] = node->children[i];
     }
+
+    if (childCount == 1)
+    {
+        free(tokens);
+        free(children);
+        return left;
+    }
+    
     ASTNode *newExpression = createASTNode(AST_BITWISE_OR_EXPRESSION, tokens, tokenCount, children, childCount);
     freeASTNode(node);
     
@@ -673,11 +728,11 @@ static ASTNode *foldBitwiseXorExpression(Validator *validator, ASTNode *node, in
     if (foldCount == 0)
     {
         free(isConstantChild);
-        return duplicateASTNode(node);
+        return deepCopyASTNode(node);
     }
 
     //Allocating memory
-    size_t tokensSize = node->tokenCount - foldCount;
+    size_t tokensSize = node->tokenCount;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
     if (tokens == NULL)
     {
@@ -686,7 +741,7 @@ static ASTNode *foldBitwiseXorExpression(Validator *validator, ASTNode *node, in
         return NULL;
     }
     size_t tokenCount = 0;
-    size_t childrenSize = node->childCount - foldCount + 1;
+    size_t childrenSize = node->childCount;
     ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
     if (children == NULL)
     {
@@ -744,7 +799,7 @@ static ASTNode *foldBitwiseXorExpression(Validator *validator, ASTNode *node, in
             }
 
             newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
-            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            addCreatedToken(validator, newTokens[0]);
             freeASTNode(left);
             left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
         }
@@ -761,6 +816,14 @@ static ASTNode *foldBitwiseXorExpression(Validator *validator, ASTNode *node, in
         tokens[tokenCount++] = node->tokens[currentOperator++];
         children[childCount++] = node->children[i];
     }
+    
+    if (childCount == 1)
+    {
+        free(tokens);
+        free(children);
+        return left;
+    }
+    
     ASTNode *newExpression = createASTNode(AST_BITWISE_XOR_EXPRESSION, tokens, tokenCount, children, childCount);
     freeASTNode(node);
     
@@ -794,11 +857,11 @@ static ASTNode *foldBitwiseAndExpression(Validator *validator, ASTNode *node, in
     if (foldCount == 0)
     {
         free(isConstantChild);
-        return duplicateASTNode(node);
+        return deepCopyASTNode(node);
     }
 
     //Allocating memory
-    size_t tokensSize = node->tokenCount - foldCount;
+    size_t tokensSize = node->tokenCount;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
     if (tokens == NULL)
     {
@@ -807,7 +870,7 @@ static ASTNode *foldBitwiseAndExpression(Validator *validator, ASTNode *node, in
         return NULL;
     }
     size_t tokenCount = 0;
-    size_t childrenSize = node->childCount - foldCount + 1;
+    size_t childrenSize = node->childCount;
     ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
     if (children == NULL)
     {
@@ -865,7 +928,7 @@ static ASTNode *foldBitwiseAndExpression(Validator *validator, ASTNode *node, in
             }
 
             newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
-            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            addCreatedToken(validator, newTokens[0]);
             freeASTNode(left);
             left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
         }
@@ -882,6 +945,14 @@ static ASTNode *foldBitwiseAndExpression(Validator *validator, ASTNode *node, in
         tokens[tokenCount++] = node->tokens[currentOperator++];
         children[childCount++] = node->children[i];
     }
+    
+    if (childCount == 1)
+    {
+        free(tokens);
+        free(children);
+        return left;
+    }
+    
     ASTNode *newExpression = createASTNode(AST_BITWISE_AND_EXPRESSION, tokens, tokenCount, children, childCount);
     freeASTNode(node);
     
@@ -915,11 +986,11 @@ static ASTNode *foldEqualityExpression(Validator *validator, ASTNode *node, int 
     if (foldCount == 0)
     {
         free(isConstantChild);
-        return duplicateASTNode(node);
+        return deepCopyASTNode(node);
     }
 
     //Allocating memory
-    size_t tokensSize = node->tokenCount - foldCount;
+    size_t tokensSize = node->tokenCount;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
     if (tokens == NULL)
     {
@@ -928,7 +999,7 @@ static ASTNode *foldEqualityExpression(Validator *validator, ASTNode *node, int 
         return NULL;
     }
     size_t tokenCount = 0;
-    size_t childrenSize = node->childCount - foldCount + 1;
+    size_t childrenSize = node->childCount;
     ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
     if (children == NULL)
     {
@@ -1028,7 +1099,7 @@ static ASTNode *foldEqualityExpression(Validator *validator, ASTNode *node, int 
             }
 
             newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
-            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            addCreatedToken(validator, newTokens[0]);
             freeASTNode(left);
             left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
         }
@@ -1045,6 +1116,14 @@ static ASTNode *foldEqualityExpression(Validator *validator, ASTNode *node, int 
         tokens[tokenCount++] = node->tokens[currentOperator++];
         children[childCount++] = node->children[i];
     }
+    
+    if (childCount == 1)
+    {
+        free(tokens);
+        free(children);
+        return left;
+    }
+    
     ASTNode *newExpression = createASTNode(AST_EQUALITY_EXPRESSION, tokens, tokenCount, children, childCount);
     freeASTNode(node);
     
@@ -1078,11 +1157,11 @@ static ASTNode *foldRelationalExpression(Validator *validator, ASTNode *node, in
     if (foldCount == 0)
     {
         free(isConstantChild);
-        return duplicateASTNode(node);
+        return deepCopyASTNode(node);
     }
 
     //Allocating memory
-    size_t tokensSize = node->tokenCount - foldCount;
+    size_t tokensSize = node->tokenCount;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
     if (tokens == NULL)
     {
@@ -1091,7 +1170,7 @@ static ASTNode *foldRelationalExpression(Validator *validator, ASTNode *node, in
         return NULL;
     }
     size_t tokenCount = 0;
-    size_t childrenSize = node->childCount - foldCount + 1;
+    size_t childrenSize = node->childCount;
     ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
     if (children == NULL)
     {
@@ -1239,7 +1318,7 @@ static ASTNode *foldRelationalExpression(Validator *validator, ASTNode *node, in
             }
 
             newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
-            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            addCreatedToken(validator, newTokens[0]);
             freeASTNode(left);
             left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
         }
@@ -1256,6 +1335,14 @@ static ASTNode *foldRelationalExpression(Validator *validator, ASTNode *node, in
         tokens[tokenCount++] = node->tokens[currentOperator++];
         children[childCount++] = node->children[i];
     }
+    
+    if (childCount == 1)
+    {
+        free(tokens);
+        free(children);
+        return left;
+    }
+    
     ASTNode *newExpression = createASTNode(AST_RELATIONAL_EXPRESSION, tokens, tokenCount, children, childCount);
     freeASTNode(node);
     
@@ -1289,11 +1376,11 @@ static ASTNode *foldShiftExpression(Validator *validator, ASTNode *node, int *is
     if (foldCount == 0)
     {
         free(isConstantChild);
-        return duplicateASTNode(node);
+        return deepCopyASTNode(node);
     }
 
     //Allocating memory
-    size_t tokensSize = node->tokenCount - foldCount;
+    size_t tokensSize = node->tokenCount;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
     if (tokens == NULL)
     {
@@ -1302,7 +1389,7 @@ static ASTNode *foldShiftExpression(Validator *validator, ASTNode *node, int *is
         return NULL;
     }
     size_t tokenCount = 0;
-    size_t childrenSize = node->childCount - foldCount + 1;
+    size_t childrenSize = node->childCount;
     ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
     if (children == NULL)
     {
@@ -1402,7 +1489,7 @@ static ASTNode *foldShiftExpression(Validator *validator, ASTNode *node, int *is
             }
 
             newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
-            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            addCreatedToken(validator, newTokens[0]);
             freeASTNode(left);
             left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
         }
@@ -1419,6 +1506,14 @@ static ASTNode *foldShiftExpression(Validator *validator, ASTNode *node, int *is
         tokens[tokenCount++] = node->tokens[currentOperator++];
         children[childCount++] = node->children[i];
     }
+    
+    if (childCount == 1)
+    {
+        free(tokens);
+        free(children);
+        return left;
+    }
+    
     ASTNode *newExpression = createASTNode(AST_SHIFT_EXPRESSION, tokens, tokenCount, children, childCount);
     freeASTNode(node);
     
@@ -1452,11 +1547,11 @@ static ASTNode *foldAdditiveExpression(Validator *validator, ASTNode *node, int 
     if (foldCount == 0)
     {
         free(isConstantChild);
-        return duplicateASTNode(node);
+        return deepCopyASTNode(node);
     }
 
     //Allocating memory
-    size_t tokensSize = node->tokenCount - foldCount;
+    size_t tokensSize = node->tokenCount;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
     if (tokens == NULL)
     {
@@ -1465,7 +1560,7 @@ static ASTNode *foldAdditiveExpression(Validator *validator, ASTNode *node, int 
         return NULL;
     }
     size_t tokenCount = 0;
-    size_t childrenSize = node->childCount - foldCount + 1;
+    size_t childrenSize = node->childCount;
     ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
     if (children == NULL)
     {
@@ -1565,7 +1660,7 @@ static ASTNode *foldAdditiveExpression(Validator *validator, ASTNode *node, int 
             }
 
             newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
-            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            addCreatedToken(validator, newTokens[0]);
             freeASTNode(left);
             left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
         }
@@ -1582,6 +1677,14 @@ static ASTNode *foldAdditiveExpression(Validator *validator, ASTNode *node, int 
         tokens[tokenCount++] = node->tokens[currentOperator++];
         children[childCount++] = node->children[i];
     }
+    
+    if (childCount == 1)
+    {
+        free(tokens);
+        free(children);
+        return left;
+    }
+    
     ASTNode *newExpression = createASTNode(AST_ADDITIVE_EXPRESSION, tokens, tokenCount, children, childCount);
     freeASTNode(node);
     
@@ -1615,11 +1718,11 @@ static ASTNode *foldMultiplicativeExpression(Validator *validator, ASTNode *node
     if (foldCount == 0)
     {
         free(isConstantChild);
-        return duplicateASTNode(node);
+        return deepCopyASTNode(node);
     }
 
     //Allocating memory
-    size_t tokensSize = node->tokenCount - foldCount;
+    size_t tokensSize = node->tokenCount;
     Token **tokens = malloc(tokensSize * sizeof(Token *));
     if (tokens == NULL)
     {
@@ -1628,7 +1731,7 @@ static ASTNode *foldMultiplicativeExpression(Validator *validator, ASTNode *node
         return NULL;
     }
     size_t tokenCount = 0;
-    size_t childrenSize = node->childCount - foldCount + 1;
+    size_t childrenSize = node->childCount;
     ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
     if (children == NULL)
     {
@@ -1752,7 +1855,7 @@ static ASTNode *foldMultiplicativeExpression(Validator *validator, ASTNode *node
             }
 
             newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
-            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            addCreatedToken(validator, newTokens[0]);
             freeASTNode(left);
             left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
         }
@@ -1769,6 +1872,14 @@ static ASTNode *foldMultiplicativeExpression(Validator *validator, ASTNode *node
         tokens[tokenCount++] = node->tokens[currentOperator++];
         children[childCount++] = node->children[i];
     }
+    
+    if (childCount == 1)
+    {
+        free(tokens);
+        free(children);
+        return left;
+    }
+    
     ASTNode *newExpression = createASTNode(AST_MULTIPLICATIVE_EXPRESSION, tokens, tokenCount, children, childCount);
     freeASTNode(node);
     
@@ -1782,7 +1893,7 @@ static ASTNode *foldCastExpression(Validator *validator, ASTNode *node, int *isC
         return NULL;
     }
 
-    return duplicateASTNode(node);
+    return deepCopyASTNode(node);
 }
 
 static ASTNode *foldUnaryExpression(Validator *validator, ASTNode *node, int *isConstant)
@@ -1829,7 +1940,7 @@ static ASTNode *foldUnaryExpression(Validator *validator, ASTNode *node, int *is
                     return NULL;
                 }
                 newTokens[0] = createTokenNumber(NULL, size->tokens[0]->start, TOKEN_INTEGER, result);
-                validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+                addCreatedToken(validator, newTokens[0]);
                 freeASTNode(size);
                 return createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
             }
@@ -1857,7 +1968,7 @@ static ASTNode *foldUnaryExpression(Validator *validator, ASTNode *node, int *is
             node->tokens[0]->type == TOKEN_DOUBLE_MINUS)
         {
             *isConstant = 0;
-            return duplicateASTNode(node);
+            return deepCopyASTNode(node);
         }
 
 
@@ -1932,7 +2043,7 @@ static ASTNode *foldUnaryExpression(Validator *validator, ASTNode *node, int *is
                 return NULL;
             }
             newTokens[0] = createTokenNumber(NULL, expression->tokens[0]->start, TOKEN_INTEGER, value);
-            validator->createdTokens[validator->createdTokenCount++] = newTokens[0];
+            addCreatedToken(validator, newTokens[0]);
             freeASTNode(expression);
             return createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
         }
@@ -1943,7 +2054,7 @@ static ASTNode *foldUnaryExpression(Validator *validator, ASTNode *node, int *is
     }
 
 
-    return duplicateASTNode(node);
+    return deepCopyASTNode(node);
 }
 
 static ASTNode *foldPrimaryExpression(Validator *validator, ASTNode *node, int *isConstant)
@@ -1956,7 +2067,7 @@ static ASTNode *foldPrimaryExpression(Validator *validator, ASTNode *node, int *
     if (node->tokenCount == 1 && node->tokens[0]->type == TOKEN_IDENTIFIER)
     {
         *isConstant = 0;
-        return duplicateASTNode(node);
+        return deepCopyASTNode(node);
     }
     else 
     {
@@ -2037,6 +2148,19 @@ Validator *createValidator(ASTNode *ASTroot)
     }
     validator->errorCount = 0;
 
+    validator->createdTokensSize = 5;
+    validator->createdTokens = malloc(validator->createdTokensSize * sizeof(Token *));
+    if (validator->createdTokens == NULL)
+    {
+        fprintf(stderr, "Memory allocation for Validator->createdTokens failed!\n");
+        deleteHashTable(validator->globalScope);
+        deleteStack(validator->scopes);
+        deleteErrors(validator->errors, validator->errorCount);
+        free(validator);
+        return NULL;
+    }
+    validator->createdTokenCount = 0;
+
     return validator;
 }
 
@@ -2092,5 +2216,5 @@ ASTNode *copyASTNode(const Validator *const validator)
         return NULL;
     }
 
-    return duplicateASTNode(validator->ASTroot);
+    return deepCopyASTNode(validator->ASTroot);
 }

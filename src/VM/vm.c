@@ -888,12 +888,13 @@ int runVM(int argc, char **argv)
     printf("\n\nValidated AST:\n");
     printASTNode(validated, "", 0);
 
+    printf("\n\nRunning the VM:\n");
     //TODO:
     //Do things with the AST
 
     //Free memory
     freeFlags(flags);
-    deleteASTNode(root);
+    deleteASTNode(validated);
     deleteTokens(tokens, tokenCount);
     return 0;
 }

@@ -398,7 +398,14 @@ void printToken(const Token *const token)
         return;
     }
 
-    printf("%s token, text: %s", getType(token->type), token->text);
+    if (token->text == NULL)
+    {
+        printf("%s token, text: NULL ", getType(token->type));
+    }
+    else
+    {
+        printf("%s token, text: %s", getType(token->type), token->text);
+    }
 
     const char *escape = escapeCharToString(token->value.character);
     switch (token->type)

@@ -156,6 +156,46 @@ ASTNode *duplicateASTNode(ASTNode *const astNode)
     return newNode;
 }
 
+ASTNode *deepCopyASTNode(ASTNode *const astNode)
+{
+    if (astNode == NULL)
+    {
+        fprintf(stderr, "ASTNode is NULL!\n");
+        return NULL;
+    }
+
+    Token **tokens = (Token **)malloc(astNode->tokenCount * sizeof(Token *));
+    if (tokens == NULL)
+    {
+        fprintf(stderr, "Memory allocation for tokens failed!\n");
+        return NULL;
+    }
+    ASTNode **children = (ASTNode **)malloc(astNode->childCount * sizeof(ASTNode *));
+    if (children == NULL)
+    {
+        fprintf(stderr, "Memory allocation for children failed!\n");
+        free(tokens);
+        return NULL;
+    }
+    for (size_t i = 0; i < astNode->tokenCount; i++)
+    {
+        tokens[i] = astNode->tokens[i];
+    }
+    for (size_t i = 0; i < astNode->childCount; i++)
+    {
+        children[i] = astNode->children[i];
+    }
+
+    ASTNode *newNode = createASTNode(astNode->type, tokens, astNode->tokenCount, children, astNode->childCount);
+    if (newNode == NULL)
+    {
+        fprintf(stderr, "Memory allocation for new AST Node failed!\n");
+        return NULL;
+    }
+    
+    return newNode;
+}
+
 void printASTNode(const ASTNode *const astNode, char *indent, int isLast)
 {
     if (astNode == NULL)

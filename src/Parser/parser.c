@@ -80,6 +80,10 @@ static int isAssignmentOperator(Parser *parser, int consumeOnSuccess);
 
 static ASTNode *parseAssignmentExpression(Parser *parser);
 
+static int isConstantExpression(Parser *parser, const int resetOnSuccess);
+
+static ASTNode *parseConstantExpression(Parser *parser);
+
 static int isConditionalExpression(Parser *parser, const int resetOnSuccess);
 
 static ASTNode *parseConditionalExpression(Parser *parser);
@@ -201,10 +205,6 @@ static ASTNode *parseDesignation(Parser *parser);
 static int isDesignator(Parser *parser, const int resetOnSucces);
 
 static ASTNode *parseDesignator(Parser *parser);
-
-static int isConstantExpression(Parser *parser, const int resetOnSuccess);
-
-static ASTNode *parseConstantExpression(Parser *parser);
 
 static int isInitializer(Parser *parser, const int resetOnSuccess);
 
@@ -2078,7 +2078,7 @@ static int isAssignmentExpression(Parser *parser, const int resetOnSuccess)
         }
     }
 
-    if (isConditionalExpression(parser, 0))
+    if (isConstantExpression(parser, 0))
     {
         if (resetOnSuccess)
         {
@@ -2164,16 +2164,69 @@ static ASTNode *parseAssignmentExpression(Parser *parser)
     }
     parser->position = lookaheadPosition;
 
-    if (isConditionalExpression(parser, 1))
+    if (isConstantExpression(parser, 1))
     {
         free(tokens);
         free(children);
-        return parseConditionalExpression(parser);
+        return parseConstantExpression(parser);
     }
 
     //Error
     addError(parser, createError(ERROR_PARSING, "Expected an Assignment Expression but found:", duplicateToken(nextToken(parser))));
     free(tokens);
+    free(children);
+    return NULL;
+}
+
+static int isConstantExpression(Parser *parser, const int resetOnSuccess)
+{
+    if (parser == NULL)
+    {
+        fprintf(stderr, "Parser is not initialized.\n");
+        return 0;
+    }
+
+    int lookaheadPosition = parser->position;
+    if (isConditionalExpression(parser, 0))
+    {
+        if (resetOnSuccess)
+        {
+            parser->position = lookaheadPosition;
+        }
+        return 1;
+    }
+
+    parser->position = lookaheadPosition;
+    return 0;
+}
+
+static ASTNode *parseConstantExpression(Parser *parser)
+{
+    if (parser == NULL)
+    {
+        fprintf(stderr, "Parser is not initialized.\n");
+        return NULL;
+    }
+
+    //Allocating memory
+    size_t childrenSize = 1;
+    ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
+    if (children == NULL)
+    {
+        fprintf(stderr, "Memory allocation for children failed.\n");
+        return NULL;
+    }
+    size_t childCount = 0;
+
+    //Parsing
+    if (isConditionalExpression(parser, 1))
+    {
+        children[childCount++] = parseConditionalExpression(parser);
+        return createASTNode(AST_CONSTANT_EXPRESSION, NULL, 0, children, childCount);
+    }
+
+    //Error
+    addError(parser, createError(ERROR_PARSING, "Expected a Constant Expression but found:", duplicateToken(nextToken(parser))));
     free(children);
     return NULL;
 }
@@ -5132,59 +5185,6 @@ static ASTNode *parseDesignator(Parser *parser)
     //Error
     addError(parser, createError(ERROR_PARSING, "Expected a Designator but found:", duplicateToken(nextToken(parser))));
     free(tokens);
-    free(children);
-    return NULL;
-}
-
-static int isConstantExpression(Parser *parser, const int resetOnSuccess)
-{
-    if (parser == NULL)
-    {
-        fprintf(stderr, "Parser is not initialized.\n");
-        return 0;
-    }
-
-    int lookaheadPosition = parser->position;
-    if (isConditionalExpression(parser, 0))
-    {
-        if (resetOnSuccess)
-        {
-            parser->position = lookaheadPosition;
-        }
-        return 1;
-    }
-
-    parser->position = lookaheadPosition;
-    return 0;
-}
-
-static ASTNode *parseConstantExpression(Parser *parser)
-{
-    if (parser == NULL)
-    {
-        fprintf(stderr, "Parser is not initialized.\n");
-        return NULL;
-    }
-
-    //Allocating memory
-    size_t childrenSize = 1;
-    ASTNode **children = malloc(childrenSize * sizeof(ASTNode *));
-    if (children == NULL)
-    {
-        fprintf(stderr, "Memory allocation for children failed.\n");
-        return NULL;
-    }
-    size_t childCount = 0;
-
-    //Parsing
-    if (isConditionalExpression(parser, 1))
-    {
-        children[childCount++] = parseConditionalExpression(parser);
-        return createASTNode(AST_CONSTANT_EXPRESSION, NULL, 0, children, childCount);
-    }
-
-    //Error
-    addError(parser, createError(ERROR_PARSING, "Expected a Constant Expression but found:", duplicateToken(nextToken(parser))));
     free(children);
     return NULL;
 }

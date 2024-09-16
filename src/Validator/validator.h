@@ -159,6 +159,7 @@ typedef struct validator
     size_t errorsSize;          /** The allocated size of the errors array. */
     Token **createdTokens;      /** An array of tokens created during validation. */
     size_t createdTokenCount;   /** The number of tokens created. */
+    size_t createdTokensSize;   /** The allocated size of the created tokens array. */
 } Validator;
 
 Validator *createValidator(ASTNode *ASTroot);
