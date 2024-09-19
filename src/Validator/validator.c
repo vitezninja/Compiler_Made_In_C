@@ -44,7 +44,9 @@ static ASTNode *foldUnaryExpression(Validator *validator, ASTNode *node, int *is
 
 static ASTNode *foldPrimaryExpression(Validator *validator, ASTNode *node, int *isConstant);
 
-Symbol *findTypeSymbol(Validator *validator, ASTNode *node);
+static Symbol *findTypeSymbol(Validator *validator, ASTNode *node);
+
+static int getSymbolSize(Symbol *symbol);
 
 /*****************************************************************************************************
                                 PRIVATE VALIDATOR FUNCTIONS START HERE
@@ -161,9 +163,6 @@ static void findConstant(Validator *validator, ASTNode *node)
     }
 }
 
-//TODO: Implement constant folding
-// Update folding function to do implicit type conversion
-// Update folding function to handle all types, currently only handles integers
 static ASTNode *tryFold(Validator *validator, ASTNode *node, int *isConstant)
 {
     if (node == NULL)
@@ -236,7 +235,7 @@ static ASTNode *tryFold(Validator *validator, ASTNode *node, int *isConstant)
     }
     else if (node->type == AST_UNARY_EXPRESSION)
     {
-        //TODO: Implement unary expression folding
+        //TODO: Implement sizeof calculation
         result = foldUnaryExpression(validator, node, isConstant); //Mostly done
     }
     else if (node->type == AST_POSTFIX_EXPRESSION)
@@ -369,6 +368,7 @@ static ASTNode *foldLogicalOrExpression(Validator *validator, ASTNode *node, int
         fprintf(stderr, "Memory allocation for children failed.\n");
         free(isConstantChild);
         free(tokens);
+        *isConstant = 0;
         return NULL;
     }
     size_t childCount = 0;
@@ -385,6 +385,7 @@ static ASTNode *foldLogicalOrExpression(Validator *validator, ASTNode *node, int
             free(isConstantChild);
             free(tokens);
             free(children);
+            *isConstant = 0;
             return NULL;
         }
 
@@ -392,52 +393,68 @@ static ASTNode *foldLogicalOrExpression(Validator *validator, ASTNode *node, int
         {
             ASTNode *right = node->children[i];
             currentOperator++;
-            int value = 0;
 
-            if (left->tokens[0]->type == TOKEN_INTEGER && right->tokens[0]->type == TOKEN_INTEGER)
+            int value_i = 0;
+            double value_f = 0.0;
+            
+            int isFloat = 0;
+            switch (left->tokens[0]->type)
             {
-                value = left->tokens[0]->value.number || right->tokens[0]->value.number;
-            }
-            else if (left->tokens[0]->type == TOKEN_FLOATINGPOINT && right->tokens[0]->type == TOKEN_FLOATINGPOINT)
-            {
-                value = left->tokens[0]->value.floatingPoint || right->tokens[0]->value.floatingPoint;
-            }
-            else if (left->tokens[0]->type == TOKEN_CHARACTER && right->tokens[0]->type == TOKEN_CHARACTER)
-            {
-                value = left->tokens[0]->value.character || right->tokens[0]->value.character;
-            }
-            else if (left->tokens[0]->type == TOKEN_STRING && right->tokens[0]->type == TOKEN_STRING)
-            {
-                value = (left->tokens[0]->value.string != NULL) || (right->tokens[0]->value.string != NULL);
-            }
-            else if (left->tokens[0]->type == TOKEN_HEXADECIMAL && right->tokens[0]->type == TOKEN_HEXADECIMAL)
-            {
-                value = left->tokens[0]->value.number || right->tokens[0]->value.number;
-            }
-            else if (left->tokens[0]->type == TOKEN_OCTAL && right->tokens[0]->type == TOKEN_OCTAL)
-            {
-                value = left->tokens[0]->value.number || right->tokens[0]->value.number;
+            case TOKEN_INTEGER:
+            case TOKEN_HEXADECIMAL:
+            case TOKEN_OCTAL:
+                value_i = left->tokens[0]->value.number;
+                break;
+            case TOKEN_FLOATINGPOINT:
+                value_f = left->tokens[0]->value.floatingPoint;
+                isFloat = 1;
+                break;
+            case TOKEN_CHARACTER:
+                value_i = left->tokens[0]->value.character;
+                break;
+            case TOKEN_STRING:
+                value_i = (left->tokens[0]->value.string != NULL);
+                break;
+            default:
+                break;
             }
 
-            newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
+            switch (right->tokens[0]->type)
+            {
+            case TOKEN_INTEGER:
+            case TOKEN_HEXADECIMAL:
+            case TOKEN_OCTAL:
+                value_i = isFloat ? value_f || right->tokens[0]->value.number : value_i || right->tokens[0]->value.number;
+                break;
+            case TOKEN_FLOATINGPOINT:
+                value_i = isFloat ? value_f || right->tokens[0]->value.floatingPoint : value_i || right->tokens[0]->value.floatingPoint;
+                break;
+            case TOKEN_CHARACTER:
+                value_i = isFloat ? value_f || right->tokens[0]->value.character : value_i || right->tokens[0]->value.character;
+                break;
+            case TOKEN_STRING:
+                value_i = isFloat ? value_f || (right->tokens[0]->value.string != NULL) : value_i || (right->tokens[0]->value.string != NULL);
+                break;
+            default:
+                break;
+            }
+
+            newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value_i);
             addCreatedToken(validator, newTokens[0]);
             freeASTNode(left);
             left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
         }
         else
         {
-            break;
+            children[childCount++] = left;
+            tokens[tokenCount++] = node->tokens[currentOperator++];
+            left = node->children[i];
         }
     }
     free(isConstantChild);
 
     children[childCount++] = left;
-    for (; i < node->childCount; i++)
-    {
-        tokens[tokenCount++] = node->tokens[currentOperator++];
-        children[childCount++] = node->children[i];
-    }
-
+    
     if (childCount == 1)
     {
         free(tokens);
@@ -447,7 +464,7 @@ static ASTNode *foldLogicalOrExpression(Validator *validator, ASTNode *node, int
 
     ASTNode *newExpression = createASTNode(AST_LOGICAL_OR_EXPRESSION, tokens, tokenCount, children, childCount);
     freeASTNode(node);
-    
+
     return newExpression;
 }
 
@@ -489,6 +506,7 @@ static ASTNode *foldLogicalAndExpression(Validator *validator, ASTNode *node, in
     {
         fprintf(stderr, "Memory allocation for tokens failed.\n");
         free(isConstantChild);
+        *isConstant = 0;
         return NULL;
     }
     size_t tokenCount = 0;
@@ -499,6 +517,7 @@ static ASTNode *foldLogicalAndExpression(Validator *validator, ASTNode *node, in
         fprintf(stderr, "Memory allocation for children failed.\n");
         free(isConstantChild);
         free(tokens);
+        *isConstant = 0;
         return NULL;
     }
     size_t childCount = 0;
@@ -515,6 +534,7 @@ static ASTNode *foldLogicalAndExpression(Validator *validator, ASTNode *node, in
             free(isConstantChild);
             free(tokens);
             free(children);
+            *isConstant = 0;
             return NULL;
         }
 
@@ -522,52 +542,68 @@ static ASTNode *foldLogicalAndExpression(Validator *validator, ASTNode *node, in
         {
             ASTNode *right = node->children[i];
             currentOperator++;
-            int value = 0;
 
-            if (left->tokens[0]->type == TOKEN_INTEGER && right->tokens[0]->type == TOKEN_INTEGER)
+            int value_i = 0;
+            double value_f = 0.0;
+
+            int isFloat = 0;
+            switch (left->tokens[0]->type)
             {
-                value = left->tokens[0]->value.number && right->tokens[0]->value.number;
-            }
-            else if (left->tokens[0]->type == TOKEN_FLOATINGPOINT && right->tokens[0]->type == TOKEN_FLOATINGPOINT)
-            {
-                value = left->tokens[0]->value.floatingPoint && right->tokens[0]->value.floatingPoint;
-            }
-            else if (left->tokens[0]->type == TOKEN_CHARACTER && right->tokens[0]->type == TOKEN_CHARACTER)
-            {
-                value = left->tokens[0]->value.character && right->tokens[0]->value.character;
-            }
-            else if (left->tokens[0]->type == TOKEN_STRING && right->tokens[0]->type == TOKEN_STRING)
-            {
-                value = (left->tokens[0]->value.string != NULL) && (right->tokens[0]->value.string != NULL);
-            }
-            else if (left->tokens[0]->type == TOKEN_HEXADECIMAL && right->tokens[0]->type == TOKEN_HEXADECIMAL)
-            {
-                value = left->tokens[0]->value.number && right->tokens[0]->value.number;
-            }
-            else if (left->tokens[0]->type == TOKEN_OCTAL && right->tokens[0]->type == TOKEN_OCTAL)
-            {
-                value = left->tokens[0]->value.number && right->tokens[0]->value.number;
+            case TOKEN_INTEGER:
+            case TOKEN_HEXADECIMAL:
+            case TOKEN_OCTAL:
+                value_i = left->tokens[0]->value.number;
+                break;
+            case TOKEN_FLOATINGPOINT:
+                value_f = left->tokens[0]->value.floatingPoint;
+                isFloat = 1;
+                break;
+            case TOKEN_CHARACTER:
+                value_i = left->tokens[0]->value.character;
+                break;
+            case TOKEN_STRING:
+                value_i = (left->tokens[0]->value.string != NULL);
+                break;
+            default:
+                break;
             }
 
-            newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
+            switch (right->tokens[0]->type)
+            {
+            case TOKEN_INTEGER:
+            case TOKEN_HEXADECIMAL:
+            case TOKEN_OCTAL:
+                value_i = isFloat ? value_f && right->tokens[0]->value.number : value_i && right->tokens[0]->value.number;
+                break;
+            case TOKEN_FLOATINGPOINT:
+                value_i = isFloat ? value_f && right->tokens[0]->value.floatingPoint : value_i && right->tokens[0]->value.floatingPoint;
+                break;
+            case TOKEN_CHARACTER:
+                value_i = isFloat ? value_f && right->tokens[0]->value.character : value_i && right->tokens[0]->value.character;
+                break;
+            case TOKEN_STRING:
+                value_i = isFloat ? value_f && (right->tokens[0]->value.string != NULL) : value_i && (right->tokens[0]->value.string != NULL);
+                break;
+            default:
+                break;
+            }
+
+            newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value_i);
             addCreatedToken(validator, newTokens[0]);
             freeASTNode(left);
             left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
         }
         else
         {
-            break;
+            children[childCount++] = left;
+            tokens[tokenCount++] = node->tokens[currentOperator++];
+            left = node->children[i];
         }
     }
     free(isConstantChild);
 
     children[childCount++] = left;
-    for (; i < node->childCount; i++)
-    {
-        tokens[tokenCount++] = node->tokens[currentOperator++];
-        children[childCount++] = node->children[i];
-    }
-
+    
     if (childCount == 1)
     {
         free(tokens);
@@ -619,6 +655,7 @@ static ASTNode *foldBitwiseOrExpression(Validator *validator, ASTNode *node, int
     {
         fprintf(stderr, "Memory allocation for tokens failed.\n");
         free(isConstantChild);
+        *isConstant = 0;
         return NULL;
     }
     size_t tokenCount = 0;
@@ -629,6 +666,7 @@ static ASTNode *foldBitwiseOrExpression(Validator *validator, ASTNode *node, int
         fprintf(stderr, "Memory allocation for children failed.\n");
         free(isConstantChild);
         free(tokens);
+        *isConstant = 0;
         return NULL;
     }
     size_t childCount = 0;
@@ -645,6 +683,7 @@ static ASTNode *foldBitwiseOrExpression(Validator *validator, ASTNode *node, int
             free(isConstantChild);
             free(tokens);
             free(children);
+            *isConstant = 0;
             return NULL;
         }
 
@@ -652,31 +691,64 @@ static ASTNode *foldBitwiseOrExpression(Validator *validator, ASTNode *node, int
         {
             ASTNode *right = node->children[i];
             currentOperator++;
+
             int value = 0;
 
-            if (left->tokens[0]->type == TOKEN_INTEGER && right->tokens[0]->type == TOKEN_INTEGER)
+            switch (left->tokens[0]->type)
             {
-                value = left->tokens[0]->value.number | right->tokens[0]->value.number;
+            case TOKEN_INTEGER:
+            case TOKEN_HEXADECIMAL:
+            case TOKEN_OCTAL:
+                value = left->tokens[0]->value.number;
+                break;
+            case TOKEN_CHARACTER:
+                value = left->tokens[0]->value.character;
+                break;
+            case TOKEN_STRING:
+                addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary | ('string')", left->tokens[0]));
+                free(isConstantChild);
+                free(tokens);
+                free(children);
+                *isConstant = 0;
+                return NULL;
+            case TOKEN_FLOATINGPOINT:
+                addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary | ('float')", left->tokens[0]));
+                free(isConstantChild);
+                free(tokens);
+                free(children);
+                *isConstant = 0;
+                return NULL;
+            default:
+                break;
             }
-            else if (left->tokens[0]->type == TOKEN_FLOATINGPOINT && right->tokens[0]->type == TOKEN_FLOATINGPOINT)
+
+
+            switch (right->tokens[0]->type)
             {
-                value = (int)left->tokens[0]->value.floatingPoint | (int)right->tokens[0]->value.floatingPoint;
-            }
-            else if (left->tokens[0]->type == TOKEN_CHARACTER && right->tokens[0]->type == TOKEN_CHARACTER)
-            {
-                value = left->tokens[0]->value.character | right->tokens[0]->value.character;
-            }
-            else if (left->tokens[0]->type == TOKEN_STRING && right->tokens[0]->type == TOKEN_STRING)
-            {
-                value = (left->tokens[0]->value.string != NULL) | (right->tokens[0]->value.string != NULL);
-            }
-            else if (left->tokens[0]->type == TOKEN_HEXADECIMAL && right->tokens[0]->type == TOKEN_HEXADECIMAL)
-            {
-                value = left->tokens[0]->value.number | right->tokens[0]->value.number;
-            }
-            else if (left->tokens[0]->type == TOKEN_OCTAL && right->tokens[0]->type == TOKEN_OCTAL)
-            {
-                value = left->tokens[0]->value.number | right->tokens[0]->value.number;
+            case TOKEN_INTEGER:
+            case TOKEN_HEXADECIMAL:
+            case TOKEN_OCTAL:
+                value |= right->tokens[0]->value.number;
+                break;
+            case TOKEN_CHARACTER:
+                value |= right->tokens[0]->value.character;
+                break;
+            case TOKEN_STRING:
+                addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary | ('string')", right->tokens[0]));
+                free(isConstantChild);
+                free(tokens);
+                free(children);
+                *isConstant = 0;
+                return NULL;
+            case TOKEN_FLOATINGPOINT:
+                addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary | ('float')", right->tokens[0]));
+                free(isConstantChild);
+                free(tokens);
+                free(children);
+                *isConstant = 0;
+                return NULL;
+            default:
+                break;
             }
 
             newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
@@ -686,18 +758,15 @@ static ASTNode *foldBitwiseOrExpression(Validator *validator, ASTNode *node, int
         }
         else
         {
-            break;
+            children[childCount++] = left;
+            tokens[tokenCount++] = node->tokens[currentOperator++];
+            left = node->children[i];
         }
     }
     free(isConstantChild);
 
     children[childCount++] = left;
-    for (; i < node->childCount; i++)
-    {
-        tokens[tokenCount++] = node->tokens[currentOperator++];
-        children[childCount++] = node->children[i];
-    }
-
+    
     if (childCount == 1)
     {
         free(tokens);
@@ -782,31 +851,63 @@ static ASTNode *foldBitwiseXorExpression(Validator *validator, ASTNode *node, in
         {
             ASTNode *right = node->children[i];
             currentOperator++;
+
             int value = 0;
 
-            if (left->tokens[0]->type == TOKEN_INTEGER && right->tokens[0]->type == TOKEN_INTEGER)
+            switch (left->tokens[0]->type)
             {
-                value = left->tokens[0]->value.number ^ right->tokens[0]->value.number;
+            case TOKEN_INTEGER:
+            case TOKEN_HEXADECIMAL:
+            case TOKEN_OCTAL:
+                value = left->tokens[0]->value.number;
+                break;
+            case TOKEN_CHARACTER:
+                value = left->tokens[0]->value.character;
+                break;
+            case TOKEN_STRING:
+                addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary ^ ('string')", left->tokens[0]));
+                free(isConstantChild);
+                free(tokens);
+                free(children);
+                *isConstant = 0;
+                return NULL;
+            case TOKEN_FLOATINGPOINT:
+                addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary ^ ('float')", left->tokens[0]));
+                free(isConstantChild);
+                free(tokens);
+                free(children);
+                *isConstant = 0;
+                return NULL;
+            default:
+                break;
             }
-            else if (left->tokens[0]->type == TOKEN_FLOATINGPOINT && right->tokens[0]->type == TOKEN_FLOATINGPOINT)
+
+            switch (right->tokens[0]->type)
             {
-                value = (int)left->tokens[0]->value.floatingPoint ^ (int)right->tokens[0]->value.floatingPoint;
-            }
-            else if (left->tokens[0]->type == TOKEN_CHARACTER && right->tokens[0]->type == TOKEN_CHARACTER)
-            {
-                value = left->tokens[0]->value.character ^ right->tokens[0]->value.character;
-            }
-            else if (left->tokens[0]->type == TOKEN_STRING && right->tokens[0]->type == TOKEN_STRING)
-            {
-                value = (left->tokens[0]->value.string != NULL) ^ (right->tokens[0]->value.string != NULL);
-            }
-            else if (left->tokens[0]->type == TOKEN_HEXADECIMAL && right->tokens[0]->type == TOKEN_HEXADECIMAL)
-            {
-                value = left->tokens[0]->value.number ^ right->tokens[0]->value.number;
-            }
-            else if (left->tokens[0]->type == TOKEN_OCTAL && right->tokens[0]->type == TOKEN_OCTAL)
-            {
-                value = left->tokens[0]->value.number ^ right->tokens[0]->value.number;
+            case TOKEN_INTEGER:
+            case TOKEN_HEXADECIMAL:
+            case TOKEN_OCTAL:
+                value ^= right->tokens[0]->value.number;
+                break;
+            case TOKEN_CHARACTER:
+                value ^= right->tokens[0]->value.character;
+                break;
+            case TOKEN_STRING:
+                addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary ^ ('string')", right->tokens[0]));
+                free(isConstantChild);
+                free(tokens);
+                free(children);
+                *isConstant = 0;
+                return NULL;
+            case TOKEN_FLOATINGPOINT:
+                addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary ^ ('float')", right->tokens[0]));
+                free(isConstantChild);
+                free(tokens);
+                free(children);
+                *isConstant = 0;
+                return NULL;
+            default:
+                break;
             }
 
             newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
@@ -816,17 +917,14 @@ static ASTNode *foldBitwiseXorExpression(Validator *validator, ASTNode *node, in
         }
         else
         {
-            break;
+            children[childCount++] = left;
+            tokens[tokenCount++] = node->tokens[currentOperator++];
+            left = node->children[i];
         }
     }
     free(isConstantChild);
 
     children[childCount++] = left;
-    for (; i < node->childCount; i++)
-    {
-        tokens[tokenCount++] = node->tokens[currentOperator++];
-        children[childCount++] = node->children[i];
-    }
     
     if (childCount == 1)
     {
@@ -912,31 +1010,63 @@ static ASTNode *foldBitwiseAndExpression(Validator *validator, ASTNode *node, in
         {
             ASTNode *right = node->children[i];
             currentOperator++;
+
             int value = 0;
 
-            if (left->tokens[0]->type == TOKEN_INTEGER && right->tokens[0]->type == TOKEN_INTEGER)
+            switch (left->tokens[0]->type)
             {
-                value = left->tokens[0]->value.number & right->tokens[0]->value.number;
+            case TOKEN_INTEGER:
+            case TOKEN_HEXADECIMAL:
+            case TOKEN_OCTAL:
+                value = left->tokens[0]->value.number;
+                break;
+            case TOKEN_CHARACTER:
+                value = left->tokens[0]->value.character;
+                break;
+            case TOKEN_STRING:
+                addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary & ('string')", left->tokens[0]));
+                free(isConstantChild);
+                free(tokens);
+                free(children);
+                *isConstant = 0;
+                return NULL;
+            case TOKEN_FLOATINGPOINT:
+                addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary & ('float')", left->tokens[0]));
+                free(isConstantChild);
+                free(tokens);
+                free(children);
+                *isConstant = 0;
+                return NULL;
+            default:
+                break;
             }
-            else if (left->tokens[0]->type == TOKEN_FLOATINGPOINT && right->tokens[0]->type == TOKEN_FLOATINGPOINT)
+
+            switch (right->tokens[0]->type)
             {
-                value = (int)left->tokens[0]->value.floatingPoint & (int)right->tokens[0]->value.floatingPoint;
-            }
-            else if (left->tokens[0]->type == TOKEN_CHARACTER && right->tokens[0]->type == TOKEN_CHARACTER)
-            {
-                value = left->tokens[0]->value.character & right->tokens[0]->value.character;
-            }
-            else if (left->tokens[0]->type == TOKEN_STRING && right->tokens[0]->type == TOKEN_STRING)
-            {
-                value = (left->tokens[0]->value.string != NULL) & (right->tokens[0]->value.string != NULL);
-            }
-            else if (left->tokens[0]->type == TOKEN_HEXADECIMAL && right->tokens[0]->type == TOKEN_HEXADECIMAL)
-            {
-                value = left->tokens[0]->value.number & right->tokens[0]->value.number;
-            }
-            else if (left->tokens[0]->type == TOKEN_OCTAL && right->tokens[0]->type == TOKEN_OCTAL)
-            {
-                value = left->tokens[0]->value.number & right->tokens[0]->value.number;
+            case TOKEN_INTEGER:
+            case TOKEN_HEXADECIMAL:
+            case TOKEN_OCTAL:
+                value &= right->tokens[0]->value.number;
+                break;
+            case TOKEN_CHARACTER:
+                value &= right->tokens[0]->value.character;
+                break;
+            case TOKEN_STRING:
+                addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary & ('string')", right->tokens[0]));
+                free(isConstantChild);
+                free(tokens);
+                free(children);
+                *isConstant = 0;
+                return NULL;
+            case TOKEN_FLOATINGPOINT:
+                addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary & ('float')", right->tokens[0]));
+                free(isConstantChild);
+                free(tokens);
+                free(children);
+                *isConstant = 0;
+                return NULL;
+            default:
+                break;
             }
 
             newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
@@ -946,17 +1076,14 @@ static ASTNode *foldBitwiseAndExpression(Validator *validator, ASTNode *node, in
         }
         else
         {
-            break;
+            children[childCount++] = left;
+            tokens[tokenCount++] = node->tokens[currentOperator++];
+            left = node->children[i];
         }
     }
     free(isConstantChild);
 
     children[childCount++] = left;
-    for (; i < node->childCount; i++)
-    {
-        tokens[tokenCount++] = node->tokens[currentOperator++];
-        children[childCount++] = node->children[i];
-    }
     
     if (childCount == 1)
     {
@@ -1042,76 +1169,81 @@ static ASTNode *foldEqualityExpression(Validator *validator, ASTNode *node, int 
         {
             ASTNode *right = node->children[i];
             currentOperator++;
-            int value = 0;
 
-            if (left->tokens[0]->type == TOKEN_INTEGER && right->tokens[0]->type == TOKEN_INTEGER)
+            int value_i = 0;
+            double value_f = 0.0;
+            
+            int isFloat = 0;
+            switch (left->tokens[0]->type)
             {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_DOUBLE_EQUALS)
-                {
-                    value = left->tokens[0]->value.number == right->tokens[0]->value.number;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_NOT_EQUALS)
-                {
-                    value = left->tokens[0]->value.number != right->tokens[0]->value.number;
-                }
-            }
-            else if (left->tokens[0]->type == TOKEN_FLOATINGPOINT && right->tokens[0]->type == TOKEN_FLOATINGPOINT)
-            {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_DOUBLE_EQUALS)
-                {
-                    value = left->tokens[0]->value.floatingPoint == right->tokens[0]->value.floatingPoint;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_NOT_EQUALS)
-                {
-                    value = left->tokens[0]->value.floatingPoint != right->tokens[0]->value.floatingPoint;
-                }
-            }
-            else if (left->tokens[0]->type == TOKEN_CHARACTER && right->tokens[0]->type == TOKEN_CHARACTER)
-            {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_DOUBLE_EQUALS)
-                {
-                    value = left->tokens[0]->value.character == right->tokens[0]->value.character;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_NOT_EQUALS)
-                {
-                    value = left->tokens[0]->value.character != right->tokens[0]->value.character;
-                }
-            }
-            else if (left->tokens[0]->type == TOKEN_STRING && right->tokens[0]->type == TOKEN_STRING)
-            {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_DOUBLE_EQUALS)
-                {
-                    value = (left->tokens[0]->value.string != NULL) & (right->tokens[0]->value.string != NULL);
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_NOT_EQUALS)
-                {
-                    value = (left->tokens[0]->value.string != NULL) & (right->tokens[0]->value.string != NULL);
-                }
-            }
-            else if (left->tokens[0]->type == TOKEN_HEXADECIMAL && right->tokens[0]->type == TOKEN_HEXADECIMAL)
-            {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_DOUBLE_EQUALS)
-                {
-                    value = left->tokens[0]->value.number == right->tokens[0]->value.number;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_NOT_EQUALS)
-                {
-                    value = left->tokens[0]->value.number != right->tokens[0]->value.number;
-                }
-            }
-            else if (left->tokens[0]->type == TOKEN_OCTAL && right->tokens[0]->type == TOKEN_OCTAL)
-            {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_DOUBLE_EQUALS)
-                {
-                    value = left->tokens[0]->value.number == right->tokens[0]->value.number;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_NOT_EQUALS)
-                {
-                    value = left->tokens[0]->value.number != right->tokens[0]->value.number;
-                }
+            case TOKEN_INTEGER:
+            case TOKEN_HEXADECIMAL:
+            case TOKEN_OCTAL:
+                value_i = left->tokens[0]->value.number;
+                break;
+            case TOKEN_FLOATINGPOINT:
+                value_f = left->tokens[0]->value.floatingPoint;
+                isFloat = 1;
+                break;
+            case TOKEN_CHARACTER:
+                value_i = left->tokens[0]->value.character;
+                break;
+            case TOKEN_STRING:
+                value_i = (left->tokens[0]->value.string != NULL);
+                break;
+            default:
+                break;
             }
 
-            newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
+            switch (right->tokens[0]->type)
+            {
+            case TOKEN_INTEGER:
+            case TOKEN_HEXADECIMAL:
+            case TOKEN_OCTAL:
+                if (node->tokens[currentOperator - 1]->type == TOKEN_DOUBLE_EQUALS)
+                {
+                    value_i = isFloat ? value_f == right->tokens[0]->value.number : value_i == right->tokens[0]->value.number;
+                }
+                else
+                {
+                    value_i = isFloat ? value_f != right->tokens[0]->value.number : value_i != right->tokens[0]->value.number;
+                }
+                break;
+            case TOKEN_FLOATINGPOINT:
+                if (node->tokens[currentOperator - 1]->type == TOKEN_DOUBLE_EQUALS)
+                {
+                    value_i = isFloat ? value_f == right->tokens[0]->value.floatingPoint : value_i == right->tokens[0]->value.floatingPoint;
+                }
+                else
+                {
+                    value_i = isFloat ? value_f != right->tokens[0]->value.floatingPoint : value_i != right->tokens[0]->value.floatingPoint;
+                }
+                break;
+            case TOKEN_CHARACTER:
+                if (node->tokens[currentOperator - 1]->type == TOKEN_DOUBLE_EQUALS)
+                {
+                    value_i = isFloat ? value_f == right->tokens[0]->value.character : value_i == right->tokens[0]->value.character;
+                }
+                else
+                {
+                    value_i = isFloat ? value_f != right->tokens[0]->value.character : value_i != right->tokens[0]->value.character;
+                }
+                break;
+            case TOKEN_STRING:
+                if (node->tokens[currentOperator - 1]->type == TOKEN_DOUBLE_EQUALS)
+                {
+                    value_i = isFloat ? value_f == (right->tokens[0]->value.string != NULL) : value_i == (right->tokens[0]->value.string != NULL);
+                }
+                else
+                {
+                    value_i = isFloat ? value_f != (right->tokens[0]->value.string != NULL) : value_i != (right->tokens[0]->value.string != NULL);
+                }
+                break;
+            default:
+                break;
+            }
+
+            newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value_i);
             addCreatedToken(validator, newTokens[0]);
             freeASTNode(left);
             left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
@@ -1214,124 +1346,113 @@ static ASTNode *foldRelationalExpression(Validator *validator, ASTNode *node, in
         {
             ASTNode *right = node->children[i];
             currentOperator++;
-            int value = 0;
 
-            if (left->tokens[0]->type == TOKEN_INTEGER && right->tokens[0]->type == TOKEN_INTEGER)
+            int value_i = 0;
+            double value_f = 0.0;
+
+            int isFloat = 0;
+            switch (left->tokens[0]->type)
             {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN)
-                {
-                    value = left->tokens[0]->value.number < right->tokens[0]->value.number;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN_OR_EQUALS)
-                {
-                    value = left->tokens[0]->value.number <= right->tokens[0]->value.number;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN)
-                {
-                    value = left->tokens[0]->value.number > right->tokens[0]->value.number;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN_OR_EQUALS)
-                {
-                    value = left->tokens[0]->value.number >= right->tokens[0]->value.number;
-                }
-            }
-            else if (left->tokens[0]->type == TOKEN_FLOATINGPOINT && right->tokens[0]->type == TOKEN_FLOATINGPOINT)
-            {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN)
-                {
-                    value = left->tokens[0]->value.floatingPoint < right->tokens[0]->value.floatingPoint;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN_OR_EQUALS)
-                {
-                    value = left->tokens[0]->value.floatingPoint <= right->tokens[0]->value.floatingPoint;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN)
-                {
-                    value = left->tokens[0]->value.floatingPoint > right->tokens[0]->value.floatingPoint;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN_OR_EQUALS)
-                {
-                    value = left->tokens[0]->value.floatingPoint >= right->tokens[0]->value.floatingPoint;
-                }
-            }
-            else if (left->tokens[0]->type == TOKEN_CHARACTER && right->tokens[0]->type == TOKEN_CHARACTER)
-            {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN)
-                {
-                    value = left->tokens[0]->value.character < right->tokens[0]->value.character;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN_OR_EQUALS)
-                {
-                    value = left->tokens[0]->value.character <= right->tokens[0]->value.character;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN)
-                {
-                    value = left->tokens[0]->value.character > right->tokens[0]->value.character;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN_OR_EQUALS)
-                {
-                    value = left->tokens[0]->value.character >= right->tokens[0]->value.character;
-                }
-            }
-            else if (left->tokens[0]->type == TOKEN_STRING && right->tokens[0]->type == TOKEN_STRING)
-            {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN)
-                {
-                    value = (left->tokens[0]->value.string != NULL) < (right->tokens[0]->value.string != NULL);
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN_OR_EQUALS)
-                {
-                    value = (left->tokens[0]->value.string != NULL) <= (right->tokens[0]->value.string != NULL);
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN)
-                {
-                    value = (left->tokens[0]->value.string != NULL) > (right->tokens[0]->value.string != NULL);
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN_OR_EQUALS)
-                {
-                    value = (left->tokens[0]->value.string != NULL) >= (right->tokens[0]->value.string != NULL);
-                }
-            }
-            else if (left->tokens[0]->type == TOKEN_HEXADECIMAL && right->tokens[0]->type == TOKEN_HEXADECIMAL)
-            {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN)
-                {
-                    value = left->tokens[0]->value.number < right->tokens[0]->value.number;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN_OR_EQUALS)
-                {
-                    value = left->tokens[0]->value.number <= right->tokens[0]->value.number;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN)
-                {
-                    value = left->tokens[0]->value.number > right->tokens[0]->value.number;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN_OR_EQUALS)
-                {
-                    value = left->tokens[0]->value.number >= right->tokens[0]->value.number;
-                }
-            }
-            else if (left->tokens[0]->type == TOKEN_OCTAL && right->tokens[0]->type == TOKEN_OCTAL)
-            {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN)
-                {
-                    value = left->tokens[0]->value.number < right->tokens[0]->value.number;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN_OR_EQUALS)
-                {
-                    value = left->tokens[0]->value.number <= right->tokens[0]->value.number;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN)
-                {
-                    value = left->tokens[0]->value.number > right->tokens[0]->value.number;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN_OR_EQUALS)
-                {
-                    value = left->tokens[0]->value.number >= right->tokens[0]->value.number;
-                }
+            case TOKEN_INTEGER:
+            case TOKEN_HEXADECIMAL:
+            case TOKEN_OCTAL:
+                value_i = left->tokens[0]->value.number;
+                break;
+            case TOKEN_FLOATINGPOINT:
+                value_f = left->tokens[0]->value.floatingPoint;
+                isFloat = 1;
+                break;
+            case TOKEN_CHARACTER:
+                value_i = left->tokens[0]->value.character;
+                break;
+            case TOKEN_STRING:
+                value_i = (left->tokens[0]->value.string != NULL);
+                break;
+            default:
+                break;
             }
 
-            newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
+            switch (right->tokens[0]->type)
+            {
+            case TOKEN_INTEGER:
+            case TOKEN_HEXADECIMAL:
+            case TOKEN_OCTAL:
+                if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN)
+                {
+                    value_i = isFloat ? value_f < right->tokens[0]->value.number : value_i < right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN_OR_EQUALS)
+                {
+                    value_i = isFloat ? value_f <= right->tokens[0]->value.number : value_i <= right->tokens[0]->value.number;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN)
+                {
+                    value_i = isFloat ? value_f > right->tokens[0]->value.number : value_i > right->tokens[0]->value.number;
+                }
+                else
+                {
+                    value_i = isFloat ? value_f >= right->tokens[0]->value.number : value_i >= right->tokens[0]->value.number;
+                }
+                break;
+            case TOKEN_FLOATINGPOINT:
+                if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN)
+                {
+                    value_i = isFloat ? value_f < right->tokens[0]->value.floatingPoint : value_i < right->tokens[0]->value.floatingPoint;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN_OR_EQUALS)
+                {
+                    value_i = isFloat ? value_f <= right->tokens[0]->value.floatingPoint : value_i <= right->tokens[0]->value.floatingPoint;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN)
+                {
+                    value_i = isFloat ? value_f > right->tokens[0]->value.floatingPoint : value_i > right->tokens[0]->value.floatingPoint;
+                }
+                else
+                {
+                    value_i = isFloat ? value_f >= right->tokens[0]->value.floatingPoint : value_i >= right->tokens[0]->value.floatingPoint;
+                }
+                break;
+            case TOKEN_CHARACTER:
+                if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN)
+                {
+                    value_i = isFloat ? value_f < right->tokens[0]->value.character : value_i < right->tokens[0]->value.character;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN_OR_EQUALS)
+                {
+                    value_i = isFloat ? value_f <= right->tokens[0]->value.character : value_i <= right->tokens[0]->value.character;
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN)
+                {
+                    value_i = isFloat ? value_f > right->tokens[0]->value.character : value_i > right->tokens[0]->value.character;
+                }
+                else
+                {
+                    value_i = isFloat ? value_f >= right->tokens[0]->value.character : value_i >= right->tokens[0]->value.character;
+                }
+                break;
+            case TOKEN_STRING:
+                if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN)
+                {
+                    value_i = isFloat ? value_f < (right->tokens[0]->value.string != NULL) : value_i < (right->tokens[0]->value.string != NULL);
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_LESS_THAN_OR_EQUALS)
+                {
+                    value_i = isFloat ? value_f <= (right->tokens[0]->value.string != NULL) : value_i <= (right->tokens[0]->value.string != NULL);
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_GREATER_THAN)
+                {
+                    value_i = isFloat ? value_f > (right->tokens[0]->value.string != NULL) : value_i > (right->tokens[0]->value.string != NULL);
+                }
+                else
+                {
+                    value_i = isFloat ? value_f >= (right->tokens[0]->value.string != NULL) : value_i >= (right->tokens[0]->value.string != NULL);
+                }
+                break;
+            default:
+                break;
+            }
+
+            newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value_i);
             addCreatedToken(validator, newTokens[0]);
             freeASTNode(left);
             left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
@@ -1434,73 +1555,105 @@ static ASTNode *foldShiftExpression(Validator *validator, ASTNode *node, int *is
         {
             ASTNode *right = node->children[i];
             currentOperator++;
+            
             int value = 0;
 
-            if (left->tokens[0]->type == TOKEN_INTEGER && right->tokens[0]->type == TOKEN_INTEGER)
+            switch (left->tokens[0]->type)
             {
+            case TOKEN_INTEGER:
+            case TOKEN_HEXADECIMAL:
+            case TOKEN_OCTAL:
+                value = left->tokens[0]->value.number;
+                break;
+            case TOKEN_CHARACTER:
+                value = left->tokens[0]->value.character;
+                break;
+            case TOKEN_STRING:
                 if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_LEFT_SHIFT)
                 {
-                    value = left->tokens[0]->value.number << right->tokens[0]->value.number;
+                    addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary << ('string')", left->tokens[0]));
                 }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_RIGHT_SHIFT)
+                else
                 {
-                    value = left->tokens[0]->value.number >> right->tokens[0]->value.number;
+                    addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary >> ('string')", left->tokens[0]));
                 }
+                free(isConstantChild);
+                free(tokens);
+                free(children);
+                *isConstant = 0;
+                return NULL;
+            case TOKEN_FLOATINGPOINT:
+                if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_LEFT_SHIFT)
+                {
+                    addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary << ('float')", left->tokens[0]));
+                }
+                else
+                {
+                    addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary >> ('float')", left->tokens[0]));
+                }
+                free(isConstantChild);
+                free(tokens);
+                free(children);
+                *isConstant = 0;
+                return NULL;
+            default:
+                break;
             }
-            else if (left->tokens[0]->type == TOKEN_FLOATINGPOINT && right->tokens[0]->type == TOKEN_FLOATINGPOINT)
+
+            switch (right->tokens[0]->type)
             {
+            case TOKEN_INTEGER:
+            case TOKEN_HEXADECIMAL:
+            case TOKEN_OCTAL:
                 if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_LEFT_SHIFT)
                 {
-                    value = (int)left->tokens[0]->value.floatingPoint << (int)right->tokens[0]->value.floatingPoint;
+                    value <<= right->tokens[0]->value.number;
                 }
                 else if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_RIGHT_SHIFT)
                 {
-                    value = (int)left->tokens[0]->value.floatingPoint >> (int)right->tokens[0]->value.floatingPoint;
+                    value >>= right->tokens[0]->value.number;
                 }
-            }
-            else if (left->tokens[0]->type == TOKEN_CHARACTER && right->tokens[0]->type == TOKEN_CHARACTER)
-            {
+                break;
+            case TOKEN_CHARACTER:
                 if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_LEFT_SHIFT)
                 {
-                    value = left->tokens[0]->value.character << right->tokens[0]->value.character;
+                    value <<= right->tokens[0]->value.character;
                 }
                 else if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_RIGHT_SHIFT)
                 {
-                    value = left->tokens[0]->value.character >> right->tokens[0]->value.character;
+                    value >>= right->tokens[0]->value.character;
                 }
-            }
-            else if (left->tokens[0]->type == TOKEN_STRING && right->tokens[0]->type == TOKEN_STRING)
-            {
+                break;
+            case TOKEN_STRING:
                 if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_LEFT_SHIFT)
                 {
-                    value = (left->tokens[0]->value.string != NULL) << (right->tokens[0]->value.string != NULL);
+                    addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary << ('string')", right->tokens[0]));
                 }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_RIGHT_SHIFT)
+                else
                 {
-                    value = (left->tokens[0]->value.string != NULL) >> (right->tokens[0]->value.string != NULL);
+                    addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary >> ('string')", right->tokens[0]));
                 }
-            }
-            else if (left->tokens[0]->type == TOKEN_HEXADECIMAL && right->tokens[0]->type == TOKEN_HEXADECIMAL)
-            {
+                free(isConstantChild);
+                free(tokens);
+                free(children);
+                *isConstant = 0;
+                return NULL;
+            case TOKEN_FLOATINGPOINT:
                 if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_LEFT_SHIFT)
                 {
-                    value = left->tokens[0]->value.number << right->tokens[0]->value.number;
+                    addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary << ('float')", right->tokens[0]));
                 }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_RIGHT_SHIFT)
+                else
                 {
-                    value = left->tokens[0]->value.number >> right->tokens[0]->value.number;
+                    addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary >> ('float')", right->tokens[0]));
                 }
-            }
-            else if (left->tokens[0]->type == TOKEN_OCTAL && right->tokens[0]->type == TOKEN_OCTAL)
-            {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_LEFT_SHIFT)
-                {
-                    value = left->tokens[0]->value.number << right->tokens[0]->value.number;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_BITWISE_RIGHT_SHIFT)
-                {
-                    value = left->tokens[0]->value.number >> right->tokens[0]->value.number;
-                }
+                free(isConstantChild);
+                free(tokens);
+                free(children);
+                *isConstant = 0;
+                return NULL;
+            default:
+                break;
             }
 
             newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
@@ -1606,93 +1759,146 @@ static ASTNode *foldAdditiveExpression(Validator *validator, ASTNode *node, int 
         {
             ASTNode *right = node->children[i];
             currentOperator++;
-            int value = 0;
 
-            if (left->tokens[0]->type == TOKEN_INTEGER && right->tokens[0]->type == TOKEN_INTEGER)
+            int value_i = 0;
+            double value_f = 0.0;
+
+            int isFloat = 0;
+            switch (left->tokens[0]->type)
             {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_PLUS)
-                {
-                    value = left->tokens[0]->value.number + right->tokens[0]->value.number;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_MINUS)
-                {
-                    value = left->tokens[0]->value.number - right->tokens[0]->value.number;
-                }
-            }
-            else if (left->tokens[0]->type == TOKEN_FLOATINGPOINT && right->tokens[0]->type == TOKEN_FLOATINGPOINT)
-            {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_PLUS)
-                {
-                    value = left->tokens[0]->value.floatingPoint + right->tokens[0]->value.floatingPoint;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_MINUS)
-                {
-                    value = left->tokens[0]->value.floatingPoint - right->tokens[0]->value.floatingPoint;
-                }
-            }
-            else if (left->tokens[0]->type == TOKEN_CHARACTER && right->tokens[0]->type == TOKEN_CHARACTER)
-            {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_PLUS)
-                {
-                    value = left->tokens[0]->value.character + right->tokens[0]->value.character;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_MINUS)
-                {
-                    value = left->tokens[0]->value.character - right->tokens[0]->value.character;
-                }
-            }
-            else if (left->tokens[0]->type == TOKEN_STRING && right->tokens[0]->type == TOKEN_STRING)
-            {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_PLUS)
-                {
-                    value = (left->tokens[0]->value.string != NULL) + (right->tokens[0]->value.string != NULL);
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_MINUS)
-                {
-                    value = (left->tokens[0]->value.string != NULL) - (right->tokens[0]->value.string != NULL);
-                }
-            }
-            else if (left->tokens[0]->type == TOKEN_HEXADECIMAL && right->tokens[0]->type == TOKEN_HEXADECIMAL)
-            {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_PLUS)
-                {
-                    value = left->tokens[0]->value.number + right->tokens[0]->value.number;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_MINUS)
-                {
-                    value = left->tokens[0]->value.number - right->tokens[0]->value.number;
-                }
-            }
-            else if (left->tokens[0]->type == TOKEN_OCTAL && right->tokens[0]->type == TOKEN_OCTAL)
-            {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_PLUS)
-                {
-                    value = left->tokens[0]->value.number + right->tokens[0]->value.number;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_MINUS)
-                {
-                    value = left->tokens[0]->value.number - right->tokens[0]->value.number;
-                }
+            case TOKEN_INTEGER:
+            case TOKEN_HEXADECIMAL:
+            case TOKEN_OCTAL:
+                value_i = left->tokens[0]->value.number;
+                break;
+            case TOKEN_FLOATINGPOINT:
+                value_f = left->tokens[0]->value.floatingPoint;
+                isFloat = 1;
+                break;
+            case TOKEN_CHARACTER:
+                value_i = left->tokens[0]->value.character;
+                break;
+            case TOKEN_STRING:
+                value_i = (left->tokens[0]->value.string != NULL);
+                break;
+            default:
+                break;
             }
 
-            newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
+            switch (right->tokens[0]->type)
+            {
+            case TOKEN_INTEGER:
+            case TOKEN_HEXADECIMAL:
+            case TOKEN_OCTAL:
+                if (node->tokens[currentOperator - 1]->type == TOKEN_PLUS)
+                {
+                    if (isFloat)
+                    {
+                        value_f += right->tokens[0]->value.number;
+                    }
+                    else
+                    {
+                        value_i += right->tokens[0]->value.number;
+                    }
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_MINUS)
+                {
+                    if (isFloat)
+                    {
+                        value_f -= right->tokens[0]->value.number;
+                    }
+                    else
+                    {
+                        value_i -= right->tokens[0]->value.number;
+                    }
+                }
+                break;
+            case TOKEN_FLOATINGPOINT:
+                if (node->tokens[currentOperator - 1]->type == TOKEN_PLUS)
+                {
+                    if (isFloat)
+                    {
+                        value_f += right->tokens[0]->value.floatingPoint;
+                    }
+                    else
+                    {
+                        value_f = value_i + right->tokens[0]->value.floatingPoint;
+                        isFloat = 1;
+                    }
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_MINUS)
+                {
+                    if (isFloat)
+                    {
+                        value_f -= right->tokens[0]->value.floatingPoint;
+                    }
+                    else
+                    {
+                        value_f = value_i - right->tokens[0]->value.floatingPoint;
+                        isFloat = 1;
+                    }
+                }
+                break;
+            case TOKEN_CHARACTER:
+                if (node->tokens[currentOperator - 1]->type == TOKEN_PLUS)
+                {
+                    if (isFloat)
+                    {
+                        value_f += right->tokens[0]->value.character;
+                    }
+                    else
+                    {
+                        value_i += right->tokens[0]->value.character;
+                    }
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_MINUS)
+                {
+                    if (isFloat)
+                    {
+                        value_f -= right->tokens[0]->value.character;
+                    }
+                    else
+                    {
+                        value_i -= right->tokens[0]->value.character;
+                    }
+                }
+                break;
+            case TOKEN_STRING:
+                if (node->tokens[currentOperator - 1]->type == TOKEN_PLUS)
+                {
+                    value_i += (right->tokens[0]->value.string != NULL);
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_MINUS)
+                {
+                    value_i -= (right->tokens[0]->value.string != NULL);
+                }
+                break;
+            default:
+                break;
+            }
+
+            if (isFloat)
+            {
+                newTokens[0] = createTokenFloat(NULL, left->tokens[0]->start, TOKEN_FLOATINGPOINT, value_f);
+            }
+            else
+            {
+                newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value_i);
+            }
             addCreatedToken(validator, newTokens[0]);
             freeASTNode(left);
             left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
         }
         else
         {
-            break;
+            children[childCount++] = left;
+            tokens[tokenCount++] = node->tokens[currentOperator++];
+            left = node->children[i];
         }
     }
     free(isConstantChild);
 
     children[childCount++] = left;
-    for (; i < node->childCount; i++)
-    {
-        tokens[tokenCount++] = node->tokens[currentOperator++];
-        children[childCount++] = node->children[i];
-    }
     
     if (childCount == 1)
     {
@@ -1778,100 +1984,250 @@ static ASTNode *foldMultiplicativeExpression(Validator *validator, ASTNode *node
         {
             ASTNode *right = node->children[i];
             currentOperator++;
-            int value = 0;
 
-            if (left->tokens[0]->type == TOKEN_INTEGER && right->tokens[0]->type == TOKEN_INTEGER)
+            int value_i = 0;
+            double value_f = 0.0;
+
+            int isFloat = 0;
+            switch (left->tokens[0]->type)
             {
+            case TOKEN_INTEGER:
+            case TOKEN_HEXADECIMAL:
+            case TOKEN_OCTAL:
+                value_i = left->tokens[0]->value.number;
+                break;
+            case TOKEN_FLOATINGPOINT:
+                value_f = left->tokens[0]->value.floatingPoint;
+                isFloat = 1;
+                break;
+            case TOKEN_CHARACTER:
+                value_i = left->tokens[0]->value.character;
+                break;
+            case TOKEN_STRING:
                 if (node->tokens[currentOperator - 1]->type == TOKEN_STAR)
                 {
-                    value = left->tokens[0]->value.number * right->tokens[0]->value.number;
+                    addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary * ('string')", left->tokens[0]));
                 }
                 else if (node->tokens[currentOperator - 1]->type == TOKEN_SLASH)
                 {
-                    value = left->tokens[0]->value.number / right->tokens[0]->value.number;
+                    addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary / ('string')", left->tokens[0]));
                 }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_PERCENT)
+                else
                 {
-                    value = left->tokens[0]->value.number % right->tokens[0]->value.number;
+                    addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary % ('string')", left->tokens[0]));
                 }
-            }
-            else if (left->tokens[0]->type == TOKEN_FLOATINGPOINT && right->tokens[0]->type == TOKEN_FLOATINGPOINT)
-            {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_STAR)
-                {
-                    value = left->tokens[0]->value.floatingPoint * right->tokens[0]->value.floatingPoint;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_SLASH)
-                {
-                    value = left->tokens[0]->value.floatingPoint / right->tokens[0]->value.floatingPoint;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_PERCENT)
-                {
-                    value = (int)left->tokens[0]->value.floatingPoint % (int)right->tokens[0]->value.floatingPoint;
-                }
-            }
-            else if (left->tokens[0]->type == TOKEN_CHARACTER && right->tokens[0]->type == TOKEN_CHARACTER)
-            {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_STAR)
-                {
-                    value = left->tokens[0]->value.character * right->tokens[0]->value.character;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_SLASH)
-                {
-                    value = left->tokens[0]->value.character / right->tokens[0]->value.character;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_PERCENT)
-                {
-                    value = left->tokens[0]->value.character % right->tokens[0]->value.character;
-                }
-            }
-            else if (left->tokens[0]->type == TOKEN_STRING && right->tokens[0]->type == TOKEN_STRING)
-            {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_STAR)
-                {
-                    value = (left->tokens[0]->value.string != NULL) * (right->tokens[0]->value.string != NULL);
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_SLASH)
-                {
-                    value = (left->tokens[0]->value.string != NULL) / (right->tokens[0]->value.string != NULL);
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_PERCENT)
-                {
-                    value = (left->tokens[0]->value.string != NULL) % (right->tokens[0]->value.string != NULL);
-                }
-            }
-            else if (left->tokens[0]->type == TOKEN_HEXADECIMAL && right->tokens[0]->type == TOKEN_HEXADECIMAL)
-            {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_STAR)
-                {
-                    value = left->tokens[0]->value.number * right->tokens[0]->value.number;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_SLASH)
-                {
-                    value = left->tokens[0]->value.number / right->tokens[0]->value.number;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_PERCENT)
-                {
-                    value = left->tokens[0]->value.number % right->tokens[0]->value.number;
-                }
-            }
-            else if (left->tokens[0]->type == TOKEN_OCTAL && right->tokens[0]->type == TOKEN_OCTAL)
-            {
-                if (node->tokens[currentOperator - 1]->type == TOKEN_STAR)
-                {
-                    value = left->tokens[0]->value.number * right->tokens[0]->value.number;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_SLASH)
-                {
-                    value = left->tokens[0]->value.number / right->tokens[0]->value.number;
-                }
-                else if (node->tokens[currentOperator - 1]->type == TOKEN_PERCENT)
-                {
-                    value = left->tokens[0]->value.number % right->tokens[0]->value.number;
-                }
+                free(isConstantChild);
+                free(tokens);
+                free(children);
+                *isConstant = 0;
+                return NULL;
+            default:
+                break;
             }
 
-            newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value);
+            switch (right->tokens[0]->type)
+            {
+            case TOKEN_INTEGER:
+            case TOKEN_HEXADECIMAL:
+            case TOKEN_OCTAL:
+                if (node->tokens[currentOperator - 1]->type == TOKEN_STAR)
+                {
+                    if (isFloat)
+                    {
+                        value_f *= right->tokens[0]->value.number;
+                    }
+                    else
+                    {
+                        value_i *= right->tokens[0]->value.number;
+                    }
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_SLASH)
+                {
+                    if (right->tokens[0]->value.number == 0)
+                    {
+                        addError(validator, createError(ERROR_VALIDATION, "Division by zero.", right->tokens[0]));
+                        free(isConstantChild);
+                        free(tokens);
+                        free(children);
+                        *isConstant = 0;
+                        return NULL;
+                    }
+
+                    if (isFloat)
+                    {
+                        value_f /= right->tokens[0]->value.number;
+                    }
+                    else
+                    {
+                        value_i /= right->tokens[0]->value.number;
+                    }
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_PERCENT)
+                {
+                    if (right->tokens[0]->value.number == 0)
+                    {
+                        addError(validator, createError(ERROR_VALIDATION, "Division by zero.", right->tokens[0]));
+                        free(isConstantChild);
+                        free(tokens);
+                        free(children);
+                        *isConstant = 0;
+                        return NULL;
+                    }
+
+                    if (isFloat)
+                    {
+                        addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary % ('float')", left->tokens[0]));
+                        free(isConstantChild);
+                        free(tokens);
+                        free(children);
+                        *isConstant = 0;
+                        return NULL;
+                    }
+
+                    value_i %= right->tokens[0]->value.number;
+                }
+                break;
+            case TOKEN_FLOATINGPOINT:
+                if (node->tokens[currentOperator - 1]->type == TOKEN_STAR)
+                {
+                    if (isFloat)
+                    {
+                        value_f *= right->tokens[0]->value.floatingPoint;
+                    }
+                    else
+                    {
+                        value_f = value_i * right->tokens[0]->value.floatingPoint;
+                        isFloat = 1;
+                    }
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_SLASH)
+                {
+                    if (right->tokens[0]->value.number == 0)
+                    {
+                        addError(validator, createError(ERROR_VALIDATION, "Division by zero.", right->tokens[0]));
+                        free(isConstantChild);
+                        free(tokens);
+                        free(children);
+                        *isConstant = 0;
+                        return NULL;
+                    }
+
+                    if (isFloat)
+                    {
+                        value_f /= right->tokens[0]->value.floatingPoint;
+                    }
+                    else
+                    {
+                        value_f = value_i / right->tokens[0]->value.floatingPoint;
+                        isFloat = 1;
+                    }
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_PERCENT)
+                {
+                    if (isFloat)
+                    {
+                        addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary % ('float')", left->tokens[0]));    
+                    }
+                    addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary % ('float')", right->tokens[0]));
+                    free(isConstantChild);
+                    free(tokens);
+                    free(children);
+                    *isConstant = 0;
+                    return NULL;
+                }
+                break;
+            case TOKEN_CHARACTER:
+                if (node->tokens[currentOperator - 1]->type == TOKEN_STAR)
+                {
+                    if (isFloat)
+                    {
+                        value_f *= right->tokens[0]->value.character;
+                    }
+                    else
+                    {
+                        value_i *= right->tokens[0]->value.character;
+                    }
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_SLASH)
+                {
+                    if (right->tokens[0]->value.character == 0)
+                    {
+                        addError(validator, createError(ERROR_VALIDATION, "Division by zero.", right->tokens[0]));
+                        free(isConstantChild);
+                        free(tokens);
+                        free(children);
+                        *isConstant = 0;
+                        return NULL;
+                    }
+
+                    if (isFloat)
+                    {
+                        value_f /= right->tokens[0]->value.character;
+                    }
+                    else
+                    {
+                        value_i /= right->tokens[0]->value.character;
+                    }
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_PERCENT)
+                {
+                    if (right->tokens[0]->value.character == 0)
+                    {
+                        addError(validator, createError(ERROR_VALIDATION, "Division by zero.", right->tokens[0]));
+                        free(isConstantChild);
+                        free(tokens);
+                        free(children);
+                        *isConstant = 0;
+                        return NULL;
+                    }
+
+                    if (isFloat)
+                    {
+                        addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary % ('float')", left->tokens[0]));
+                        free(isConstantChild);
+                        free(tokens);
+                        free(children);
+                        *isConstant = 0;
+                        return NULL;
+                    }
+
+                    value_i %= right->tokens[0]->value.character;
+                }
+                break;
+            case TOKEN_STRING:
+                if (node->tokens[currentOperator - 1]->type == TOKEN_STAR)
+                {
+                    addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary * ('string')", right->tokens[0]));
+                }
+                else if (node->tokens[currentOperator - 1]->type == TOKEN_SLASH)
+                {
+                    addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary / ('string')", right->tokens[0]));
+                }
+                else
+                {
+                    if (isFloat)
+                    {
+                        addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary % ('float')", left->tokens[0]));
+                    }
+                    addError(validator, createError(ERROR_VALIDATION, "Invalid operand to binary % ('string')", right->tokens[0]));
+                }
+                free(isConstantChild);
+                free(tokens);
+                free(children);
+                *isConstant = 0;
+                return NULL;
+            default:
+                break;
+            }
+
+            if (isFloat)
+            {
+                newTokens[0] = createTokenFloat(NULL, left->tokens[0]->start, TOKEN_FLOATINGPOINT, value_f);
+            }
+            else
+            {
+                newTokens[0] = createTokenNumber(NULL, left->tokens[0]->start, TOKEN_INTEGER, value_i);
+            }
             addCreatedToken(validator, newTokens[0]);
             freeASTNode(left);
             left = createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
@@ -1964,12 +2320,23 @@ static ASTNode *foldUnaryExpression(Validator *validator, ASTNode *node, int *is
             else
             {
                 *isConstant = 0;
+                return deepCopyASTNode(node);
             }
         }
         else
         {
-            Symbol *type = findTypeSymbol(validator, node->children[0]);
-            //TODO: finish this
+            Symbol *typeSymobol = findTypeSymbol(validator, node->children[0]);
+            result = getSymbolSize(typeSymobol);
+            Token **newTokens = malloc(1 * sizeof(Token *));
+            if (newTokens == NULL)
+            {
+                fprintf(stderr, "Memory allocation for newTokens failed.\n");
+                return NULL;
+            }
+            newTokens[0] = createTokenNumber(NULL, node->children[0]->tokens[0]->start, TOKEN_INTEGER, result);
+            addCreatedToken(validator, newTokens[0]);
+            freeASTNode(node->children[0]);
+            return createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
         }
     }
     else if (node->tokenCount == 1)
@@ -1984,6 +2351,10 @@ static ASTNode *foldUnaryExpression(Validator *validator, ASTNode *node, int *is
             node->tokens[0]->type == TOKEN_DOUBLE_PLUS ||
             node->tokens[0]->type == TOKEN_DOUBLE_MINUS)
         {
+            if (isConstantChild)
+            {
+                addError(validator, createError(ERROR_VALIDATION, "Invalid operand to unary operator", node->tokens[0]));
+            }
             *isConstant = 0;
             return deepCopyASTNode(node);
         }
@@ -1991,65 +2362,93 @@ static ASTNode *foldUnaryExpression(Validator *validator, ASTNode *node, int *is
 
         if (isConstantChild)
         {
-            int value = 0;
+            int value_i = 0;
+            double value_f = 0.0;
+
+            int isFloat = 0;
             if (expression->tokens[0]->type == TOKEN_INTEGER || expression->tokens[0]->type == TOKEN_OCTAL || expression->tokens[0]->type == TOKEN_HEXADECIMAL)
             {
                 if (node->tokens[0]->type == TOKEN_PLUS)
                 {
-                    value = expression->tokens[0]->value.number;
+                    value_i = expression->tokens[0]->value.number;
                 }
                 else if (node->tokens[0]->type == TOKEN_MINUS)
                 {
-                    value = -expression->tokens[0]->value.number;
+                    value_i = -expression->tokens[0]->value.number;
                 }
                 else if (node->tokens[0]->type == TOKEN_BITWISE_NOT)
                 {
-                    value = ~expression->tokens[0]->value.number;
+                    value_i = ~expression->tokens[0]->value.number;
                 }
                 else if (node->tokens[0]->type == TOKEN_NOT)
                 {
-                    value = !expression->tokens[0]->value.number;
+                    value_i = !expression->tokens[0]->value.number;
                 }
             }
             else if (expression->tokens[0]->type == TOKEN_FLOATINGPOINT)
             {
+                isFloat = 1;
                 if (node->tokens[0]->type == TOKEN_PLUS)
                 {
-                    value = expression->tokens[0]->value.floatingPoint;
+                    value_f = expression->tokens[0]->value.floatingPoint;
                 }
                 else if (node->tokens[0]->type == TOKEN_MINUS)
                 {
-                    value = -expression->tokens[0]->value.floatingPoint;
+                    value_f = -expression->tokens[0]->value.floatingPoint;
                 }
+                else if (node->tokens[0]->type == TOKEN_BITWISE_NOT)
+                {
+                    addError(validator, createError(ERROR_VALIDATION, "Invalid operand to unary ~ ('float')", expression->tokens[0]));
+                    *isConstant = 0;
+                    return NULL;
+                } 
                 else if (node->tokens[0]->type == TOKEN_NOT)
                 {
-                    value = !expression->tokens[0]->value.floatingPoint;
+                    value_f = !expression->tokens[0]->value.floatingPoint;
                 }
             }
             else if (expression->tokens[0]->type == TOKEN_CHARACTER)
             {
                 if (node->tokens[0]->type == TOKEN_PLUS)
                 {
-                    value = expression->tokens[0]->value.character;
+                    value_i = expression->tokens[0]->value.character;
                 }
                 else if (node->tokens[0]->type == TOKEN_MINUS)
                 {
-                    value = -expression->tokens[0]->value.character;
+                    value_i = -expression->tokens[0]->value.character;
                 }
                 else if (node->tokens[0]->type == TOKEN_BITWISE_NOT)
                 {
-                    value = ~expression->tokens[0]->value.character;
+                    value_i = ~expression->tokens[0]->value.character;
                 }
                 else if (node->tokens[0]->type == TOKEN_NOT)
                 {
-                    value = !expression->tokens[0]->value.character;
+                    value_i = !expression->tokens[0]->value.character;
                 }
             }
             else if (expression->tokens[0]->type == TOKEN_STRING)
             {
-                if (node->tokens[0]->type == TOKEN_NOT)
+                if (node->tokens[0]->type == TOKEN_PLUS)
                 {
-                    value = !(expression->tokens[0]->value.string != NULL);
+                    addError(validator, createError(ERROR_VALIDATION, "Invalid operand to unary + ('string')", expression->tokens[0]));
+                    *isConstant = 0;
+                    return NULL;
+                }
+                else if (node->tokens[0]->type == TOKEN_MINUS)
+                {
+                    addError(validator, createError(ERROR_VALIDATION, "Invalid operand to unary - ('string')", expression->tokens[0]));
+                    *isConstant = 0;
+                    return NULL;
+                }
+                else if (node->tokens[0]->type == TOKEN_BITWISE_NOT)
+                {
+                    addError(validator, createError(ERROR_VALIDATION, "Invalid operand to unary ~ ('string')", expression->tokens[0]));
+                    *isConstant = 0;
+                    return NULL;
+                }
+                else if (node->tokens[0]->type == TOKEN_NOT)
+                {
+                    value_i = !(expression->tokens[0]->value.string != NULL);
                 }
             }
 
@@ -2059,7 +2458,14 @@ static ASTNode *foldUnaryExpression(Validator *validator, ASTNode *node, int *is
                 fprintf(stderr, "Memory allocation for newTokens failed.\n");
                 return NULL;
             }
-            newTokens[0] = createTokenNumber(NULL, expression->tokens[0]->start, TOKEN_INTEGER, value);
+            if (isFloat)
+            {
+                newTokens[0] = createTokenFloat(NULL, expression->tokens[0]->start, TOKEN_FLOATINGPOINT, value_f);
+            }
+            else 
+            {
+                newTokens[0] = createTokenNumber(NULL, expression->tokens[0]->start, TOKEN_INTEGER, value_i);
+            }
             addCreatedToken(validator, newTokens[0]);
             freeASTNode(expression);
             return createASTNode(AST_LITERAL, newTokens, 1, NULL, 0);
@@ -2069,7 +2475,6 @@ static ASTNode *foldUnaryExpression(Validator *validator, ASTNode *node, int *is
             *isConstant = 0;
         }
     }
-
 
     return deepCopyASTNode(node);
 }
@@ -2100,7 +2505,7 @@ static ASTNode *foldPrimaryExpression(Validator *validator, ASTNode *node, int *
     }
 }
 
-Symbol *findTypeSymbol(Validator *validator, ASTNode *node)
+static Symbol *findTypeSymbol(Validator *validator, ASTNode *node)
 {
     if (validator == NULL)
     {
@@ -2115,6 +2520,34 @@ Symbol *findTypeSymbol(Validator *validator, ASTNode *node)
     }
 
     return NULL;
+}
+
+static int getSymbolSize(Symbol *symbol)
+{
+    if (symbol == NULL)
+    {
+        return 0;
+    }
+
+    switch (symbol->type)
+    {
+    case SYMBOL_VARIABLE:
+        return symbol->data.variableSymbol->size;
+        break;
+    case SYMBOL_STRUCT:
+        return symbol->data.structureSymbol->size;
+    case SYMBOL_UNION:
+        return symbol->data.unionSymbol->size;
+        break;
+    case SYMBOL_ENUM:
+        return symbol->data.enumerationSymbol->size;
+        break;
+    case SYMBOL_TYPEDEF:
+        return getSymbolSize(symbol->data.typedefSymbol->type);
+        break;
+    default:
+        return 0;
+    }
 }
 
 /*****************************************************************************************************
