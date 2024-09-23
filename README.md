@@ -57,9 +57,9 @@ The compiler processes input source code and tokenizes it into a series of token
 Files to test the compiler on can be found in the tests directory, but feel free to create your own test file and test it on it.
 
 ### Removing the Compiler  
-    ```bash
-    make clean
-    ```
+```bash
+make clean
+```
 
 ## Contributing
 
