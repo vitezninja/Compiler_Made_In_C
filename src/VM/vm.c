@@ -436,7 +436,7 @@ static Flags *parseArgs(int argc, char **argv)
         }
     }
 
-    if (flags->fileCount == 0)
+    if (flags->fileCount == 0 && !flags->help)
     {
         fprintf(stderr, "No files to compile!\n");
         freeFlags(flags);
