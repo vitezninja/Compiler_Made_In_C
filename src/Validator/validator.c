@@ -10,7 +10,7 @@ static void addCreatedToken(Validator *validator, Token *token);
 
 static int typeCheck(Validator *validator);
 
-static int constantFold(Validator *validator);
+static int constantFold(Validator *validator, int optimize);
 
 static void findConstant(Validator *validator, ASTNode *node);
 
@@ -129,7 +129,7 @@ static int typeCheck(Validator *validator)
     return 1;
 }
 
-static int constantFold(Validator *validator)
+static int constantFold(Validator *validator, int optimize)
 {
     if (validator == NULL)
     {
@@ -137,7 +137,29 @@ static int constantFold(Validator *validator)
         return 0;
     }
 
-    findConstant(validator, validator->ASTroot);
+    if (optimize)
+    {
+        #if defined(_POSIX_VERSION)
+        for (size_t i = 0; i < validator->ASTroot->childCount; i++)
+        {
+            pid_t parent = fork();
+
+            if (!parent)
+            {
+                findConstant(validator, validator->ASTroot->children[i]);   
+                exit(0);
+            }
+        }
+        while (wait(NULL) > 0);
+        #else
+        //TODO: Implement threading for Windows
+        findConstant(validator, validator->ASTroot);
+        #endif
+    }
+    else
+    {
+        findConstant(validator, validator->ASTroot);
+    }
 
     return 1;
 }
@@ -2635,7 +2657,7 @@ void deleteValidator(Validator *validator)
     free(validator);
 }
 
-int validate(Validator *validator)
+int validate(Validator *validator, int optimize)
 {
     if (validator == NULL)
     {
@@ -2649,7 +2671,7 @@ int validate(Validator *validator)
         return 0;
     }
 
-    if (!constantFold(validator))
+    if (!constantFold(validator, optimize))
     {
         fprintf(stderr, "Constant folding failed!\n");
         return 0;

@@ -8,6 +8,11 @@
 #include "../src/utils/error.h"
 #include "../src/utils/my_string.h"
 
+#if defined(_WIN32) || defined(_WIN64)
+#else
+#include <unistd.h>
+#endif
+
 typedef struct symbol Symbol;
 
 typedef enum type
@@ -166,7 +171,7 @@ Validator *createValidator(ASTNode *ASTroot);
 
 void deleteValidator(Validator *validator);
 
-int validate(Validator *validator);
+int validate(Validator *validator, int optimize);
 
 ASTNode *copyASTNode(const Validator *const validator);
 

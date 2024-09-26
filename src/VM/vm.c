@@ -97,7 +97,7 @@ static Token **lexFile(const char *const fileContents, size_t *tokenCount);
 
 static ASTNode *parseTokens(Token **tokens, size_t tokenCount);
 
-static ASTNode *validateAST(ASTNode *node);
+static ASTNode *validateAST(ASTNode *node, int optimize);
 
 /*****************************************************************************************************
                                 PRIVATE MY_STRING FUNCTIONS START HERE
@@ -765,7 +765,7 @@ static ASTNode *parseTokens(Token **tokens, size_t tokenCount)
     return root;
 }
 
-static ASTNode *validateAST(ASTNode *node)
+static ASTNode *validateAST(ASTNode *node, int optimize)
 {
     if (node == NULL)
     {
@@ -774,7 +774,7 @@ static ASTNode *validateAST(ASTNode *node)
     }
 
     Validator *validator = createValidator(node);
-    int success = validate(validator);
+    int success = validate(validator, optimize);
     if (!success)
     {
         fprintf(stderr, "Validation failed!\n");
@@ -875,7 +875,7 @@ int runVM(int argc, char **argv)
     printASTNode(root, "", 0);
 
     //Validate the AST
-    ASTNode *validated = validateAST(root);
+    ASTNode *validated = validateAST(root, flags->optimization);
     if (validated == NULL)
     {
         freeFlags(flags);
