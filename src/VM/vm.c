@@ -75,16 +75,6 @@ typedef struct flags
     size_t headerCount;      /** Number of header files. */
 } Flags;
 
-static int getFileSize(FILE *file);
-
-static char *readFromFile(char *fileName);
-
-static char **readFromFiles(char **fileNames, const size_t fileCount);
-
-static void freeFileContent(char *fileContent);
-
-static void freeFileContents(char **fileContents, const size_t fileCount);
-
 static Flags *parseArgs(int argc, char **argv);
 
 static void freeFlags(Flags *flags);
@@ -93,201 +83,11 @@ static void printUsage();
 
 static void printHelp();
 
-static Token **lexFile(const char *const fileContents, size_t *tokenCount);
-
-static ASTNode *parseTokens(Token **tokens, size_t tokenCount);
-
 static ASTNode *validateAST(ASTNode *node);
 
 /*****************************************************************************************************
                                 PRIVATE MY_STRING FUNCTIONS START HERE
  *****************************************************************************************************/
-
-/**
- * Retrieves the size of a file in bytes.
- * 
- * The `getFileSize` function calculates the size of a file by seeking to the end 
- * of the file and determining the position of the file pointer, then returning 
- * the size in bytes.
- * 
- * @param file A pointer to the `FILE` object representing the open file. 
- *             The file must be opened in binary mode and positioned at the start.
- * 
- * @return The size of the file in bytes on success. 
- *         Returns -1 if the file pointer is `NULL`, if the file was not opened 
- *         at the start, if the file is empty, or if an error occurs.
- * 
- * @note The function assumes that the file is opened in binary mode. 
- *       The file pointer will be reset to the beginning of the file after 
- *       determining the size. Error messages are printed to `stderr` if any 
- *       issues are encountered.
- */
-static int getFileSize(FILE *file)
-{
-    if (file == NULL)
-    {
-        fprintf(stderr, "File is NULL!\n");
-        return -1;
-    }
-
-    if (ftell(file) != 0)
-    {
-        fprintf(stderr, "The file wasn't opened at the start or was already modifyed.\n");
-        return -1;
-    }
-    fseek(file, 0, SEEK_END);
-
-    int size = ftell(file) / sizeof(char);
-    if (size == 0)
-    {
-        fprintf(stderr, "The file was empty!\n");
-        return -1;
-    }
-
-    fseek(file, 0, SEEK_SET);
-
-    return size;
-}
-
-/**
- * Reads the contents of a file into a string.
- * 
- * The `readFromFile` function reads the contents of a file into a string, 
- * allocating memory for the string and returning a pointer to the string.
- * 
- * @param fileName A string containing the name of the file to read from.
- * 
- * @return A pointer to the string containing the file contents on success. 
- *         Returns `NULL` if the file name is `NULL`, if the file cannot be opened, 
- *         if the file cannot be read, or if memory allocation fails.
- * 
- * @note The function allocates memory for the string containing the file contents. 
- *       It is the caller's responsibility to free this memory when it is no longer needed by calling `freeFileContent`.
- */
-static char *readFromFile(char *fileName)
-{
-    if (fileName == NULL)
-    {
-        fprintf(stderr, "File name is NULL!\n");
-        return NULL;
-    }
-
-    FILE *file = fopen(fileName, "rb");
-    if (file == NULL)
-    {
-        fprintf(stderr, "Failed to open file %s!\n", fileName);
-        return NULL;
-    }
-
-    int size = getFileSize(file);
-    if (size == -1)
-    {
-        fclose(file);
-        return NULL;
-    }
-
-    char *content = malloc(size + 1 * sizeof(char));
-
-    if ((int)fread(content, sizeof(char), size, file) != size)
-    {
-        fprintf(stderr, "Failed reading from the file %s!\n", fileName);
-        free(content);
-        fclose(file);
-        return NULL;
-    }
-
-    content[size] = '\0';
-    fclose(file);
-    return content;
-}
-
-/**
- * Reads the contents of multiple files into an array of strings.
- *
- * The `readFromFiles` function takes an array of file names, reads the contents of 
- * each file, and stores them in an array of strings. Each string in the returned array 
- * corresponds to the contents of one file.
- *
- * @param fileNames An array of `char*` representing the file names to read from. 
- *                  The array should contain `fileCount` elements.
- * @param fileCount The number of files to read, i.e., the size of the `fileNames` array.
- *
- * @return An array of `char*` where each element contains the contents of a corresponding file.
- *         Returns `NULL` if the `fileNames` array is `NULL` or if memory allocation fails.
- * 
- * @note The caller is responsible for freeing the memory allocated for the file contents 
- *       using `freeFileContents`. If a file cannot be read, the corresponding 
- *       entry in the returned array may be `NULL`.
- */
-static char **readFromFiles(char **fileNames, const size_t fileCount)
-{
-    if (fileNames == NULL)
-    {
-        fprintf(stderr, "File name array is null!\n");
-        return NULL;
-    }
-
-    char **fileContents = malloc(fileCount * sizeof(char *));
-    for (size_t i = 0; i < fileCount; i++)
-    {
-        fileContents[i] = readFromFile(fileNames[i]);
-    }
-    
-    return fileContents;
-}
-
-/**
- * Frees the memory allocated for the contents of single file.
- *
- * The `freeFileContent` function deallocates the memory used to store the contents 
- * of a single file.
- *
- * @param fileContent A pointer to a `char` array representing the contents of a file.
- *
- * @note If `fileContent` is `NULL`, the function does nothing and logs an error 
- *       message to `stderr`. The caller should ensure `fileContent` is properly 
- *       allocated before passing it to this function.
- */
-static void freeFileContent(char *fileContent)
-{
-    if (fileContent == NULL)
-    {
-        fprintf(stderr, "File content is NULL!\n");
-        return;
-    }
-
-    free(fileContent);
-}
-
-/**
- * Frees the memory allocated for the contents of multiple files.
- *
- * The `freeFileContents` function deallocates the memory used to store the contents 
- * of multiple files, as well as the memory used for the array holding those contents.
- *
- * @param fileContents An array of `char*` where each element points to the contents 
- *                     of a file. The array should contain `fileCount` elements.
- * @param fileCount The number of files, i.e., the number of elements in the 
- *                  `FileContents` array.
- *
- * @note If `FileContents` is `NULL`, the function does nothing and logs an error 
- *       message to `stderr`. The caller should ensure `fileContents` is properly 
- *       allocated before passing it to this function.
- */
-void freeFileContents(char **fileContents, const size_t fileCount)
-{
-    if (fileContents == NULL)
-    {
-        fprintf(stderr, "File contents array is null!\n");
-        return;
-    }
-
-    for (size_t i = 0; i < fileCount; i++)
-    {
-        freeFileContent(fileContents[i]);
-    }
-    free(fileContents);
-}
 
 /**
  * Parses and handles command-line arguments to initialize and configure the `Flags` structure.
@@ -614,7 +414,7 @@ static void printHelp()
  *         Returns `NULL` if there is an error during lexing, such as memory allocation failure,
  *         invalid input, or errors encountered while parsing.
  */
-static Token **lexFile(const char *const fileContents, size_t *tokenCount)
+Token **lexFile(const char *const fileContents, size_t *tokenCount)
 {
     if (fileContents == NULL)
     {
@@ -713,7 +513,7 @@ static Token **lexFile(const char *const fileContents, size_t *tokenCount)
  *         Returns `NULL` if there is an error during parsing, such as memory allocation 
  *         failure, invalid input, or syntax errors in the tokens.
  */
-static ASTNode *parseTokens(Token **tokens, size_t tokenCount)
+ASTNode *parseTokens(Token **tokens, size_t tokenCount)
 {
     if (tokens == NULL)
     {
@@ -826,7 +626,7 @@ int runVM(int argc, char **argv)
     }
 
     //Read the contents of the files
-    char **fileContents = readFromFiles(flags->files, flags->fileCount);
+    char **fileContents = readFromFiles((const char **)flags->files, flags->fileCount);
     //TODO:
     //Handle multiple files, we only handle one file for now
     const char *const input = fileContents[0];
@@ -867,6 +667,7 @@ int runVM(int argc, char **argv)
     if (root == NULL)
     {
         freeFlags(flags);
+        deleteTokens(tokens, tokenCount);
         return -1;
     }
 

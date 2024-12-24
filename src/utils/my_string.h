@@ -36,4 +36,6 @@ char convertEscapeString(const char *const input);
 
 int covertStringToPreHash(const char *const input);
 
+char *stripFrom(char *string, char stripChar, int last);
+
 #endif // MY_STRING_H

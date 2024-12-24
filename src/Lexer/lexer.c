@@ -995,7 +995,7 @@ static Token *handleSimpleCase(Lexer *const lexer)
     size_t pos = 0;
     char currentChar = nextChar(lexer);
     text[pos++] = currentChar;
-    TokenType type;
+    My_TokenType type;
     switch (currentChar)
     {
     case '\0':

@@ -1,0 +1,8 @@
+# Checks if this simple function call get lexed correctly #
+\
+IDENTIFIER \
+OPEN_PARENTHESIS \
+STRING \
+CLOSE_PARENTHESIS \
+SEMICOLON \
+EOF \

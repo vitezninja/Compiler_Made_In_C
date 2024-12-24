@@ -4,6 +4,8 @@
                             PRIVATE AST FUNCTIONS DECLARATIONS START HERE
  *****************************************************************************************************/
 
+static ASTNode *flattenASTHelper(ASTNode *rootAstNode, ASTNode *flattened, size_t *count);
+
 /*****************************************************************************************************
                                 PRIVATE AST FUNCTIONS START HERE
  *****************************************************************************************************/
@@ -86,6 +88,22 @@ static const char *const ASTTypes[] = {
     [AST_JUMP_STATEMENT] = "JUMP_STATEMENT",
 };
 
+static ASTNode *flattenASTHelper(ASTNode *rootAstNode, ASTNode *flattened, size_t *count)
+{
+    if (rootAstNode == NULL)
+    {
+        return NULL;
+    }
+
+    flattened[(*count)++] = *rootAstNode;
+
+    for (size_t i = 0; i < rootAstNode->childCount; i++)
+    {
+        flattenASTHelper(rootAstNode->children[i], flattened, count);
+    }
+
+    return flattened;
+}
 
 /*****************************************************************************************************
                                 PUBLIC AST FUNCTIONS START HERE                                
@@ -247,4 +265,36 @@ void printASTNode(const ASTNode *const astNode, char *indent, int isLast)
     {
         printASTNode(astNode->children[i], newIndent, i == astNode->childCount - 1);
     }
+}
+
+char *getASTType(ASTType type)
+{
+    if (type >= 0 && type < AST_JUMP_STATEMENT + 1)
+    {
+        return (char *)ASTTypes[type];
+    }
+    else
+    {
+        return "UNKNOWN";
+    }
+}
+
+ASTNode *flattenAST(ASTNode *const rootAstNode, size_t *const count)
+{
+    if (rootAstNode == NULL)
+    {
+        return NULL;
+    }
+
+    ASTNode *flattened = (ASTNode *)malloc(sizeof(ASTNode) * 1024);
+    if (flattened == NULL)
+    {
+        fprintf(stderr, "Memory allocation for flattened AST failed!\n");
+        return NULL;
+    }
+
+    *count = 0;
+    flattenASTHelper(rootAstNode, flattened, count);
+
+    return flattened;
 }

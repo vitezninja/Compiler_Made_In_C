@@ -9,7 +9,7 @@
  */
 #define KEYWORDS_COUNT (sizeof(keywords) / sizeof(keywords[0]))
 
-static Token *createToken(const char *const text, const int start, const TokenType type, const TokenValue value);
+static Token *createToken(const char *const text, const int start, const My_TokenType type, const TokenValue value);
 
 static const char *escapeCharToString(const char escapeChar);
 
@@ -41,7 +41,7 @@ static const char *escapeCharToString(const char escapeChar);
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-static Token *createToken(const char *const text, const int start, const TokenType type, const TokenValue value)
+static Token *createToken(const char *const text, const int start, const My_TokenType type, const TokenValue value)
 {
     Token *token = (Token *)malloc(sizeof(Token));
     if (token == NULL)
@@ -153,7 +153,7 @@ static const char *const keywords[] = {
 };
 
 /**
- * Lookup table for TokenType
+ * Lookup table for My_TokenType
  */
 static const char *const tokenTypeStrings[] = {
     // Arithmetic Operators:
@@ -249,7 +249,7 @@ static const char *const tokenTypeStrings[] = {
                                 PUBLIC TOKEN FUNCTIONS START HERE                                
  *****************************************************************************************************/
 
-Token *createTokenNone(const char *const text, const int start, const TokenType type)
+Token *createTokenNone(const char *const text, const int start, const My_TokenType type)
 {
     TokenValue value = {0};
 
@@ -262,7 +262,7 @@ Token *createTokenNone(const char *const text, const int start, const TokenType 
     return token;
 }
 
-Token *createTokenNumber(const char *const text, const int start, const TokenType type, const int number)
+Token *createTokenNumber(const char *const text, const int start, const My_TokenType type, const int number)
 {
     TokenValue value = {.number = number};
 
@@ -275,7 +275,7 @@ Token *createTokenNumber(const char *const text, const int start, const TokenTyp
     return token;
 }
 
-Token *createTokenString(const char *const text, const int start, const TokenType type, const char *const string)
+Token *createTokenString(const char *const text, const int start, const My_TokenType type, const char *const string)
 {
     TokenValue value = {.string = string};
 
@@ -292,7 +292,7 @@ Token *createTokenString(const char *const text, const int start, const TokenTyp
     return token;
 }
 
-Token *createTokenChar(const char *const text, const int start, const TokenType type, const char character)
+Token *createTokenChar(const char *const text, const int start, const My_TokenType type, const char character)
 {
     TokenValue value = {.character = character};
 
@@ -305,7 +305,7 @@ Token *createTokenChar(const char *const text, const int start, const TokenType 
     return token;
 }
 
-Token *createTokenFloat(const char *const text, const int start, const TokenType type, const double floatingPoint)
+Token *createTokenFloat(const char *const text, const int start, const My_TokenType type, const double floatingPoint)
 {
     TokenValue value = {.floatingPoint = floatingPoint};
 
@@ -318,7 +318,7 @@ Token *createTokenFloat(const char *const text, const int start, const TokenType
     return token;
 }
 
-Token *createTokenKeyword(const char *const text, const int start, const TokenType type, const Keywords keyword)
+Token *createTokenKeyword(const char *const text, const int start, const My_TokenType type, const Keywords keyword)
 {
     TokenValue value = {.keyword = keyword};
 
@@ -444,7 +444,7 @@ void printToken(const Token *const token)
     }
 }
 
-char *getType(TokenType type)
+char *getType(My_TokenType type)
 {
     if (type >= 0 && type < TOKEN_TYPE_COUNT)
     {

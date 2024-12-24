@@ -91,3 +91,31 @@ int covertStringToPreHash(const char *const input)
 
     return result;
 }
+
+char *stripFrom(char *string, char stripChar, int last) 
+{
+    if (string == NULL)
+    {
+        fprintf(stderr, "String is NULL!\n");
+        return NULL;
+    }
+    
+    char *copyString = strdup(string);
+
+    char *delimiter;
+    if (last == 1)
+    {
+        delimiter = strrchr(copyString, stripChar);
+    }
+    else
+    {
+        delimiter = strchr(copyString, stripChar);
+    }
+    
+    if (delimiter != NULL) 
+    {
+        *delimiter = '\0';
+    }
+
+    return copyString;
+}

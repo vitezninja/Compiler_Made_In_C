@@ -1,10 +1,10 @@
 #ifndef VALIDATOR_H
 #define VALIDATOR_H
 
-#include "../src/utils/stack.h"
-#include "../src/utils/hashTable.h"
-#include "../src/utils/AST.h"
 #include "../src/utils/token.h"
+#include "../src/utils/AST.h"
+#include "../src/utils/hashTable.h"
+#include "../src/utils/stack.h"
 #include "../src/utils/error.h"
 #include "../src/utils/my_string.h"
 

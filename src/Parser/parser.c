@@ -8,9 +8,9 @@ static Token *nextToken(const Parser *const parser);
 
 static void consumeToken(Parser *const parser, const size_t count);
 
-static Token *matchToken(Parser *parser, TokenType type);
+static Token *matchToken(Parser *parser, My_TokenType type);
 
-static int isNextTokenTypeOf(Parser *parser, TokenType type, int consumeOnSuccess);
+static int isNextTokenTypeOf(Parser *parser, My_TokenType type, int consumeOnSuccess);
 
 static int isNextTokenKeywordWord(Parser *parser, Keywords keyword, int consumeOnSuccess);
 
@@ -344,7 +344,7 @@ static void consumeToken(Parser *const parser, const size_t count)
  * @return A pointer to the matched token if the type matches, or a placeholder token with type `TOKEN_UNKNOWN` if it does not.
  *         Returns NULL if memory allocation fails for the placeholder token.
  */
-static Token *matchToken(Parser *parser, const TokenType type)
+static Token *matchToken(Parser *parser, const My_TokenType type)
 {
     if(parser == NULL)
     {
@@ -379,7 +379,7 @@ static Token *matchToken(Parser *parser, const TokenType type)
  * Checks if the next token in the parser matches a specified type.
  * 
  * This function examines the next token in the parsers input stream to determine if it matches the 
- * specified `TokenType`. If the next token is of the given type, the function returns 1. 
+ * specified `My_TokenType`. If the next token is of the given type, the function returns 1. 
  * Optionally, if `consumeOnSuccess` is set to 1, the token will be consumed (i.e., removed 
  * from the parsers token stream) upon a successful match. If the token does not match or if the 
  * `Parser` is `NULL`, the function returns 0.
@@ -387,17 +387,17 @@ static Token *matchToken(Parser *parser, const TokenType type)
  * @param parser A pointer to the `Parser` object containing the token stream. It must be 
  *               initialized and not `NULL`.
  * 
- * @param type The `TokenType` to check against the next token in the stream.
+ * @param type The `My_TokenType` to check against the next token in the stream.
  * 
  * @param consumeOnSuccess If set to 1, the function will consume the token if it matches the specified type.
  *                         If set to 0, the token will not be consumed.
  * 
- * @return 1 if the next token matches the specified `TokenType`; 0 otherwise. Also returns 0 if 
+ * @return 1 if the next token matches the specified `My_TokenType`; 0 otherwise. Also returns 0 if 
  *         the `Parser` is `NULL`.
  * 
  * @note The function will print an error message to `stderr` if the `Parser` is `NULL`.
  */
-static int isNextTokenTypeOf(Parser *parser, TokenType type, int consumeOnSuccess)
+static int isNextTokenTypeOf(Parser *parser, My_TokenType type, int consumeOnSuccess)
 {
     if(parser == NULL)
     {

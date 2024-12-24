@@ -1,4 +1,4 @@
-#include "../VM/vm.h"
+#include "../src/VM/vm.h"
 
 int main(int argc, char *argv[])
 {

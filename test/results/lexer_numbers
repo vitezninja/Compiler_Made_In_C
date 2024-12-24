@@ -1,0 +1,7 @@
+# Checks if numbers get lexed correctly #
+\
+INTEGER \
+HEXADECIMAL \
+OCTAL \
+FLOATINGPOINT \
+EOF \

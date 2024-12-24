@@ -5,9 +5,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
-#include "../utils/token.h"
-#include "../utils/my_string.h"
-#include "../utils/error.h"
+#include "../src/utils/token.h"
+#include "../src/utils/my_string.h"
+#include "../src/utils/error.h"
 
 /**
  * Represents a lexical analyzer (lexer) for processing input text.

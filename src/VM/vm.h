@@ -4,13 +4,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../utils/my_string.h"
-#include "../utils/token.h"
-#include "../utils/AST.h"
-#include "../utils/error.h"
-#include "../Lexer/lexer.h"
-#include "../Parser/parser.h"
-#include "../Validator/validator.h"
+#include "../src/utils/token.h"
+#include "../src/utils/error.h"
+#include "../src/utils/AST.h"
+#include "../src/utils/my_string.h"
+#include "../src/Lexer/lexer.h"
+#include "../src/Parser/parser.h"
+#include "../src/Validator/validator.h"
+#include "../src/utils/file_reader.h"
 
 /**
  * Executes the virtual machine (VM) process for compiling a source file.
@@ -41,5 +42,9 @@
  * @note The caller is responsible for providing valid command-line arguments and input files to ensure proper execution.
  */
 int runVM(int argc, char **argv);
+
+Token **lexFile(const char *const fileContents, size_t *tokenCount);
+
+ASTNode *parseTokens(Token **tokens, size_t tokenCount);
 
 #endif // VM_H

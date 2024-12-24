@@ -1,0 +1,14 @@
+# Checks if this simple expression gets lexed correctly #
+\
+IDENTIFIER \
+PLUS \
+IDENTIFIER \
+MINUS \
+INTEGER \
+STAR \
+OPEN_PARENTHESIS \
+IDENTIFIER \
+SLASH \
+INTEGER \
+CLOSE_PARENTHESIS \
+EOF \

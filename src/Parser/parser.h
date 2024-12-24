@@ -3,9 +3,9 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "../utils/token.h"
-#include "../utils/AST.h"
-#include "../utils/error.h"
+#include "../src/utils/token.h"
+#include "../src/utils/AST.h"
+#include "../src/utils/error.h"
 
 /**
  * Represents the state and context of the parser during the parsing process.

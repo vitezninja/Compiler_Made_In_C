@@ -4,10 +4,12 @@ CFLAGS = -g -Og -Wall -Wextra -std=gnu99
 # Detect OS
 ifeq ($(OS),Windows_NT)
 	TARGET = cmc.exe
+	TEST_TARGET = test.exe
 else 
 	UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 	TARGET = cmc.out
+	TEST_TARGET = test.out
 endif
 endif
 
@@ -18,16 +20,20 @@ SRCS = $(wildcard src/*.c src/Lexer/*.c src/Parser/*.c src/VM/*.c src/Validator/
 
 OBJS = $(SRCS:.c=.o)
 
+TEST_OBJS = $(filter-out src/main.o, $(OBJS)) test/Tester/tester.o
+
+# Default target
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) -lm
 
+# Main
 main.o: src/main.c src/VM/vm.h
 	$(CC) $(CFLAGS) -c src/main.c -o src/main.o
 
 # VM
-vm.o: src/VM/vm.c src/VM/vm.h src/utils/token.h src/utils/error.h src/utils/AST.h src/utils/my_string.h src/Lexer/lexer.h src/Parser/parser.h src/Validator/validator.h
+vm.o: src/VM/vm.c src/VM/vm.h src/utils/token.h src/utils/error.h src/utils/AST.h src/utils/my_string.h src/Lexer/lexer.h src/Parser/parser.h src/Validator/validator.h src/utils/file_reader.h
 	$(CC) $(CFLAGS) -c src/VM/vm.c -o src/VM/vm.o
 
 # Lexer
@@ -49,10 +55,10 @@ my_string.o: src/utils/my_string.c src/utils/my_string.h
 token.o: src/utils/token.c src/utils/token.h
 	$(CC) $(CFLAGS) -c src/utils/token.c -o src/utils/token.o
 
-error.o: src/utils/error.c src/utils/error.h
+error.o: src/utils/error.c src/utils/error.h src/utils/token.h
 	$(CC) $(CFLAGS) -c src/utils/error.c -o src/utils/error.o
 
-AST.o: src/utils/AST.c src/utils/AST.h
+AST.o: src/utils/AST.c src/utils/AST.h src/utils/token.h
 	$(CC) $(CFLAGS) -c src/utils/AST.c -o src/utils/AST.o
 
 stack.o: src/utils/stack.c src/utils/stack.h
@@ -64,13 +70,26 @@ linked_list.o: src/utils/linked_list.c src/utils/linked_list.h
 hash_table.o: src/utils/hash_table.c src/utils/hash_table.h src/utils/linked_list.h
 	$(CC) $(CFLAGS) -c src/utils/hash_table.c -o src/utils/hash_table.o
 
+file_reader.o: src/utils/file_reader.c src/utils/file_reader.h src/utils/token.h src/utils/AST.h src/utils/error.h
+	$(CC) $(CFLAGS) -c src/utils/file_reader.c -o src/utils/file_reader.o
+
+# Test
+test: $(TEST_TARGET)
+
+$(TEST_TARGET): $(TEST_OBJS)
+	$(CC) $(CFLAGS) -o $(TEST_TARGET) $(TEST_OBJS) -lm
+
+# Tester
+tester.o: test/Tester/tester.c src/utils/file_reader.h src/utils/error.h src/utils/my_string.h src/utils/token.h src/utils/AST.h src/VM/vm.h
+	$(CC) $(CFLAGS) -c test/Tester/tester.c -o test/Tester/tester.o
+
 # Cleanup object files and executables
 clean:
 ifeq ($(OS),Windows_NT)
-	-del $(subst /,\,$(OBJS)) $(TARGET)
+	-del $(subst /,\,$(OBJS)) $(TARGET) $(subst /,\,$(TEST_OBJS)) $(TEST_TARGET)
 else 
 ifeq ($(UNAME_S),Linux)
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJS) $(TARGET) $(TEST_OBJS) $(TEST_TARGET)
 endif
 endif
 
@@ -90,4 +109,4 @@ ifeq ($(UNAME_S),Linux)
 endif
 endif
 
-.PHONY: all clean valgrind debug
+.PHONY: all test clean valgrind debug

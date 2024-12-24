@@ -8,7 +8,7 @@
 /**
  * Enum representing the different types of tokens recognized by the lexer.
  * 
- * The `TokenType` enum defines various categories of tokens, including operators, literals,
+ * The `My_TokenType` enum defines various categories of tokens, including operators, literals,
  * punctuation, whitespace, comments, and special tokens such as end of file or unknown. 
  * Each value in this enum corresponds to a specific type of token that the lexer can identify.
  * 
@@ -197,7 +197,7 @@ typedef enum tokenType
 
     // Total number of token types
     TOKEN_TYPE_COUNT // Keep this last
-} TokenType;
+} My_TokenType;
 
 /**
  * Enum representing various reserved keywords in the language.
@@ -309,7 +309,7 @@ typedef enum keywords
  * 
  * - `keyword`: A constant value from the `Keywords` enumeration representing keyword tokens.
  * 
- * The exact member to be used depends on the `TokenType` and the specific needs of the
+ * The exact member to be used depends on the `My_TokenType` and the specific needs of the
  * token being represented.
  * 
  * @note Ensure that the correct member of the union is accessed based on the token type.
@@ -334,11 +334,11 @@ typedef union tokenValue
  *            of the token. This string is typically dynamically allocated and represents
  *            the content of the token.
  * 
- * - `type`: An enumeration of type `TokenType` that specifies the category or type
+ * - `type`: An enumeration of type `My_TokenType` that specifies the category or type
  *           of the token (e.g., keyword, operator, identifier).
  * 
  * - `value`: A `TokenValue` union that holds additional data associated with the token.
- *            The type of data in this union depends on the `TokenType` and may include
+ *            The type of data in this union depends on the `My_TokenType` and may include
  *            numeric values, string literals, or other relevant information.
  * 
  * The `Token` struct is used by the lexer and other components to represent and process
@@ -353,7 +353,7 @@ typedef struct token
     const char *text; /**The text of the token. */
     int start;
     size_t length;
-    TokenType type;   /**The type of the token. */
+    My_TokenType type;   /**The type of the token. */
     TokenValue value; /**The value associated with the token. */
 } Token;
 
@@ -380,7 +380,7 @@ typedef struct token
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenNone(const char *const text, const int start, const TokenType type);
+Token *createTokenNone(const char *const text, const int start, const My_TokenType type);
 
 /**
  * Creates a new `Token` with the given text, start position, type, and integer value.
@@ -406,7 +406,7 @@ Token *createTokenNone(const char *const text, const int start, const TokenType 
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
  *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenNumber(const char *const text, const int start, const TokenType type, const int number);
+Token *createTokenNumber(const char *const text, const int start, const My_TokenType type, const int number);
 
 /**
  * Creates a new `Token` with the given text, start position, type, and string value.
@@ -436,7 +436,7 @@ Token *createTokenNumber(const char *const text, const int start, const TokenTyp
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. 
  *       This should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenString(const char *const text, const int start, const TokenType type, const char *const string);
+Token *createTokenString(const char *const text, const int start, const My_TokenType type, const char *const string);
 
 /**
  * Creates a new `Token` with the given text, start position, type, and character value.
@@ -465,7 +465,7 @@ Token *createTokenString(const char *const text, const int start, const TokenTyp
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. 
  *       This should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenChar(const char *const text, const int start, const TokenType type, const char character);
+Token *createTokenChar(const char *const text, const int start, const My_TokenType type, const char character);
 
 /**
  * Creates a new `Token` with the given text, start position, type, and floating-point value.
@@ -494,7 +494,7 @@ Token *createTokenChar(const char *const text, const int start, const TokenType 
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. 
  *       This should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenFloat(const char *const text, const int start, const TokenType type, const double floatingPoint);
+Token *createTokenFloat(const char *const text, const int start, const My_TokenType type, const double floatingPoint);
 
 /**
  * Creates a new `Token` with the given text, start position, type, and keyword value.
@@ -523,7 +523,7 @@ Token *createTokenFloat(const char *const text, const int start, const TokenType
  * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. 
  *       This should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
  */
-Token *createTokenKeyword(const char *const text, const int start, const TokenType type, const Keywords keyword);
+Token *createTokenKeyword(const char *const text, const int start, const My_TokenType type, const Keywords keyword);
 
 /**
  * Frees the memory associated with a `Token`.
@@ -584,21 +584,21 @@ Token *duplicateToken(Token *const token);
 void printToken(const Token *const token);
 
 /**
- * Retrieves the string representation of a given `TokenType`.
+ * Retrieves the string representation of a given `My_TokenType`.
  * 
- * This function maps a `TokenType` enumeration value to its corresponding
+ * This function maps a `My_TokenType` enumeration value to its corresponding
  * string representation. It returns a string that describes the type of the token.
- * If the provided `TokenType` is invalid (i.e., not within the defined range), 
+ * If the provided `My_TokenType` is invalid (i.e., not within the defined range), 
  * the function returns the string `"UNKNOWN"`.
  * 
- * @param type The `TokenType` value for which the string representation is requested.
- *              It should be a valid `TokenType` within the range of defined types.
+ * @param type The `My_TokenType` value for which the string representation is requested.
+ *              It should be a valid `My_TokenType` within the range of defined types.
  * 
- * @return A string representing the `TokenType`. If the type is valid, the corresponding
+ * @return A string representing the `My_TokenType`. If the type is valid, the corresponding
  *         string from the `tokenTypeStrings` array is returned. If the type is invalid,
  *         the string `"UNKNOWN"` is returned.
  */
-char *getType(TokenType type);
+char *getType(My_TokenType type);
 
 /**
  * Checks if the given input string is a reserved keyword.

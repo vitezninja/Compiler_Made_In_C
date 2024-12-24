@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "linkedList.h"
+#include "../src/utils/linkedList.h"
 
 typedef struct HashTable
 {

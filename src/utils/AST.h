@@ -1,7 +1,7 @@
 #ifndef AST_H
 #define AST_H
 
-#include "../utils/token.h"
+#include "../src/utils/token.h"
 
 /**
  * Enumeration of AST node types.
@@ -179,5 +179,9 @@ ASTNode *deepCopyASTNode(ASTNode *const astNode);
  * @param isLast Indicates whether the current node is the last child of its parent. This affects the tree formatting.
  */
 void printASTNode(const ASTNode *const astNode, char *indent, int isLast);
+
+char *getASTType(ASTType type);
+
+ASTNode *flattenAST(ASTNode *const rootAstNode, size_t *const count);
 
 #endif // AST_H

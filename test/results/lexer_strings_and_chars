@@ -1,0 +1,6 @@
+# Checks if strings and chars get lexed correctly #
+\
+STRING \
+CHARACTER \
+CHARACTER \
+EOF \

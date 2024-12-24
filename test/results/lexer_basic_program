@@ -1,0 +1,14 @@
+# Checks if this simple program gets lexed correctly #
+\
+KEYWORD \
+IDENTIFIER \
+OPEN_PARENTHESIS \
+CLOSE_PARENTHESIS \
+OPEN_CURLY \
+KEYWORD \
+IDENTIFIER \
+EQUALS \
+INTEGER \
+SEMICOLON \
+CLOSE_CURLY \
+EOF \
