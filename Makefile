@@ -97,7 +97,7 @@ endif
 valgrind: $(TARGET)
 ifneq ($(OS),Windows_NT)
 ifeq ($(UNAME_S),Linux)
-	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1 ./$(TARGET) tests/parser_tests/test3.c
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1 ./$(TARGET) -l test/inputs/lexer_all_tokens.cmc
 endif
 endif
 
