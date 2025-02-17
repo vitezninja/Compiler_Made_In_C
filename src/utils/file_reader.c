@@ -880,11 +880,11 @@ char ** readFromFolder(const char *folderPath, size_t *fileCount)
         FindClose(hFind);
     }
 #else
-    DIR *dir = opendir(folder_path);
+    DIR *dir = opendir(folderPath);
     if (dir == NULL) 
     {
         perror("Error opening directory");
-        return;
+        return NULL;
     }
 
     struct dirent *entry;
@@ -904,7 +904,7 @@ char ** readFromFolder(const char *folderPath, size_t *fileCount)
                     return NULL;
                 }
             }
-            fileNames[(*fileCount)++] = file_name;
+            fileNames[(*fileCount)++] = (char *)file_name;
         }
     }
 
