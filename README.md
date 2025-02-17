@@ -13,7 +13,6 @@ Stay tuned for updates as more components are developed and integrated into the 
 ## Current Features  
 - **Lexer:** Implements a lexical analyzer to parse and tokenize C-style language constructs into tokens.
 - **Parser:** Analyzes the tokenized input to builds an Abstract Syntax Tree.
-- **Validator:** Validates the Abstract Syntax Tree (AST) semantically and performs constant folding.
 - **Virtual Machine:** Executes the compilation steps.
 
 ## Grammar  
