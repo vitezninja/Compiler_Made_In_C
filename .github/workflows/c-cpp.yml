@@ -19,7 +19,7 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y build-essential
 
     - name: Set GCC 11 as default
-      run: sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 11
+      run: gcc --version && sudo apt install gcc-11 && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 11
 
     - name: Install Valgrind
       run: sudo apt-get install -y valgrind
@@ -44,7 +44,7 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y build-essential
 
     - name: Set GCC 11 as default
-      run: sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 11
+      run: gcc --version && sudo apt install gcc-11 && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 11
         
     - name: Build Tester
       run: make test
