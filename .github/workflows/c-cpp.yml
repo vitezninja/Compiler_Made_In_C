@@ -50,7 +50,7 @@ jobs:
       run: make test
     
     - name: Run Tests
-      run: ./test
+      run: test
     
     - name: Clean
       run: make clean
