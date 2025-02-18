@@ -50,7 +50,7 @@ jobs:
       run: make test
     
     - name: Run Tests
-      run: ./test.out
+      run: make run_tests
     
     - name: Clean
       run: make clean

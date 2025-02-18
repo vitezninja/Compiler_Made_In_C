@@ -83,6 +83,10 @@ $(TEST_TARGET): $(TEST_OBJS)
 tester.o: test/Tester/tester.c src/utils/file_reader.h src/utils/error.h src/utils/my_string.h src/utils/token.h src/utils/AST.h src/VM/vm.h
 	$(CC) $(CFLAGS) -c test/Tester/tester.c -o test/Tester/tester.o
 
+# Run testst
+run_tests: $(TEST_TARGET)
+	./$(TEST_TARGET)
+
 # Cleanup object files and executables
 clean:
 ifeq ($(OS),Windows_NT)
@@ -109,4 +113,4 @@ ifeq ($(UNAME_S),Linux)
 endif
 endif
 
-.PHONY: all test clean valgrind debug
+.PHONY: all test clean valgrind debug run_tests
