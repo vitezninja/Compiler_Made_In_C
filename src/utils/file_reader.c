@@ -848,7 +848,7 @@ char ** readFromFolder(const char *folderPath, size_t *fileCount)
     char **fileNames = malloc(100 * sizeof(char *));
     *fileCount = 0;
 
-#ifdef _WIN32
+#ifdef _WIN32 // WINDOWS
     WIN32_FIND_DATA findFileData;
     HANDLE hFind = FindFirstFile("test/inputs/*", &findFileData);
 
@@ -879,7 +879,7 @@ char ** readFromFolder(const char *folderPath, size_t *fileCount)
 
         FindClose(hFind);
     }
-#else
+#else //  UBUNTU
     DIR *dir = opendir(folderPath);
     if (dir == NULL) 
     {
