@@ -154,7 +154,9 @@ static int testLexer(const char * inputFileName, const char *resultFileName)
         }
     }
     
+    printf("Size of newTokens before: %d\n", sizeof(newTokens));
     newTokens = realloc(newTokens, newCount * sizeof(Token*));
+    printf("Size of newTokens after: %d\n", sizeof(newTokens));
     if (newTokens == NULL && newCount > 0)
     {
         fprintf(stderr, "Memory reallocation for Parser->tokens failed!\n");
