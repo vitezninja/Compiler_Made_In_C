@@ -131,13 +131,13 @@ static int testLexer(const char * inputFileName, const char *resultFileName)
         freeFileContent(fileContent);
         return -1;
     }
+    freeFileContent(fileContent);
 
     //Remove whitespace and comment tokens
     Token **newTokens = malloc(inputTokenCount * sizeof(Token*));
     if (newTokens == NULL)
     {
         fprintf(stderr, "Memory allocation for newTokens failed!\n");
-        freeFileContent(fileContent);
         return -1;
     }
 
@@ -154,25 +154,15 @@ static int testLexer(const char * inputFileName, const char *resultFileName)
         }
     }
     
-    printf("Size of newTokens before: %d\n", sizeof(newTokens));
-    newTokens = realloc(newTokens, newCount * sizeof(Token*));
-    printf("Size of newTokens after: %d\n", sizeof(newTokens));
-    if (newTokens == NULL && newCount > 0)
-    {
-        fprintf(stderr, "Memory reallocation for Parser->tokens failed!\n");
-        freeFileContent(fileContent);
-        return -1;
-    }
     inputTokens = newTokens;
     inputTokenCount = newCount;
-
-    freeFileContent(fileContent);
 
     //Read the result file
     size_t resultTokenCount = 0;
     My_TokenType *resultTokens = readLexerFile(resultFileName, &resultTokenCount);
     if (resultTokens == NULL)
     {
+        deleteTokens(inputTokens, inputTokenCount);
         return -1;
     }
 
@@ -180,6 +170,8 @@ static int testLexer(const char * inputFileName, const char *resultFileName)
     if (inputTokenCount != resultTokenCount)
     {
         printf("\tToken count mismatch: \n\t actual: %d \t  expected: %d\n", inputTokenCount, resultTokenCount);
+        deleteTokens(inputTokens, inputTokenCount);
+        free(resultTokens);
         return 1;
     }
     for (size_t i = 0; i < resultTokenCount; i++)
@@ -187,6 +179,8 @@ static int testLexer(const char * inputFileName, const char *resultFileName)
         if (inputTokens[i]->type != resultTokens[i])
         {
             printf("\tToken mismatch at index %d: %s != %s\n", i, getType(inputTokens[i]->type), getType(resultTokens[i]));
+            deleteTokens(inputTokens, inputTokenCount);
+            free(resultTokens);
             return 1;
         }
     }
