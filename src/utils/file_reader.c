@@ -890,7 +890,7 @@ char ** readFromFolder(const char *folderPath, size_t *fileCount)
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL) 
     {
-        const char *file_name = entry->d_name;
+        const char *file_name = strdup(entry->d_name);
 
         if (strcmp(file_name, ".") != 0 && strcmp(file_name, "..") != 0) 
         {

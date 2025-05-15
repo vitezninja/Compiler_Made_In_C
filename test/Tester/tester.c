@@ -57,8 +57,8 @@ int main()
             printf("\tInvalid test type: %s\n", testType);
             free(inputFilePath);
             free(resultFilePath);
-            free(testType);
             free(resultFileName);
+            free(testType);
             continue;
         }
 
