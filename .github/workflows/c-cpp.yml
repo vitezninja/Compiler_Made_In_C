@@ -20,9 +20,6 @@ jobs:
 
     - name: Set GCC 11 as default
       run: gcc --version && sudo apt install gcc-11 && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 11
-
-    - name: Install Valgrind
-      run: sudo apt-get install -y valgrind
         
     - name: Build
       run: make
@@ -46,11 +43,23 @@ jobs:
     - name: Set GCC 11 as default
       run: gcc --version && sudo apt install gcc-11 && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 11
         
+    - name: Install Valgrind
+      run: sudo apt-get install -y valgrind
+
+    - name: Build
+      run: make
+      
+    - name: Valgrind Check
+      run: make valgrind
+    
+    - name: Clean Build
+      run: make clean
+
     - name: Build Tester
       run: make test
     
     - name: Run Tests
       run: make run_tests
     
-    - name: Clean
+    - name: Clean Tester
       run: make clean
