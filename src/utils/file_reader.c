@@ -157,6 +157,7 @@ My_TokenType *readLexerFile(const char *fileName, size_t *tokenCount)
                 if (c == EOF || c == '\\')
                 {
                     free(tokensTypes);
+                    fclose(file);
                     return NULL;
                 }
             }
@@ -187,6 +188,8 @@ My_TokenType *readLexerFile(const char *fileName, size_t *tokenCount)
             if (c == EOF)
             {
                 free(tokensTypes);
+                free(line);
+                fclose(file);
                 return NULL;
             }
             line[i++] = c;
@@ -199,6 +202,7 @@ My_TokenType *readLexerFile(const char *fileName, size_t *tokenCount)
             if (tokensTypes == NULL)
             {
                 fprintf(stderr, "Memory reallocation for tokensTypes failed!\n");
+                free(line);
                 fclose(file);
                 return NULL;
             }
@@ -440,12 +444,15 @@ My_TokenType *readLexerFile(const char *fileName, size_t *tokenCount)
         {
             fprintf(stderr, "Unknown token type: %s\n", line);
             free(tokensTypes);
+            free(line);
+            fclose(file);
             return NULL;
         }
 
         (*tokenCount)++;
+        free(line);
     }
-
+    
     fclose(file);
     return tokensTypes;
 }
@@ -488,6 +495,7 @@ ASTType *readParserFile(const char *fileName, size_t *ASTTypeCount)
                 if (c == EOF || c == '\\')
                 {
                     free(astTypes);
+                    fclose(file);
                     return NULL;
                 }
             }
@@ -518,6 +526,8 @@ ASTType *readParserFile(const char *fileName, size_t *ASTTypeCount)
             if (c == EOF)
             {
                 free(astTypes);
+                free(line);
+                fclose(file);
                 return NULL;
             }
             line[i++] = c;
@@ -530,6 +540,7 @@ ASTType *readParserFile(const char *fileName, size_t *ASTTypeCount)
             if (astTypes == NULL)
             {
                 fprintf(stderr, "Memory reallocation for astTypes failed!\n");
+                free(line);
                 fclose(file);
                 return NULL;
             }
@@ -827,10 +838,13 @@ ASTType *readParserFile(const char *fileName, size_t *ASTTypeCount)
         {
             fprintf(stderr, "Unknown ASTNode type: %s\n", line);
             free(astTypes);
+            free(line);
+            fclose(file);
             return NULL;
         }
 
         (*ASTTypeCount)++;
+        free(line);
     }
 
     fclose(file);

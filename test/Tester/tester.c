@@ -133,30 +133,16 @@ static int testLexer(const char * inputFileName, const char *resultFileName)
     }
     freeFileContent(fileContent);
 
-    //Remove whitespace and comment tokens
-    Token **newTokens = malloc(inputTokenCount * sizeof(Token*));
-    if (newTokens == NULL)
-    {
-        fprintf(stderr, "Memory allocation for newTokens failed!\n");
-        return -1;
-    }
-
-    size_t newCount = 0;
+    //Count whitespaces and comment tokens
+    size_t removedTokens = 0;
     for (size_t i = 0; i < inputTokenCount; i++)
     {
         if (inputTokens[i]->type != TOKEN_WHITESPACE && inputTokens[i]->type != TOKEN_BLOCK_COMMENT && inputTokens[i]->type != TOKEN_LINE_COMMENT)
         {
-            newTokens[newCount++] = inputTokens[i];
-        }
-        else
-        {
-            free(inputTokens[i]);
+            removedTokens++;
         }
     }
     
-    inputTokens = newTokens;
-    inputTokenCount = newCount;
-
     //Read the result file
     size_t resultTokenCount = 0;
     My_TokenType *resultTokens = readLexerFile(resultFileName, &resultTokenCount);
@@ -167,27 +153,35 @@ static int testLexer(const char * inputFileName, const char *resultFileName)
     }
 
     //Compare the tokens
-    if (inputTokenCount != resultTokenCount)
+    if (inputTokenCount - removedTokens != resultTokenCount)
     {
-        printf("\tToken count mismatch: \n\t actual: %d \t  expected: %d\n", inputTokenCount, resultTokenCount);
+        printf("\tToken count mismatch: \n\t actual: %d \t  expected: %d\n", inputTokenCount - removedTokens, resultTokenCount);
         deleteTokens(inputTokens, inputTokenCount);
         free(resultTokens);
         return 1;
     }
-    for (size_t i = 0; i < resultTokenCount; i++)
+
+    size_t resultTokenIndex = 0;
+    for (size_t inputTokenIndex = 0; inputTokenIndex < resultTokenCount; inputTokenIndex++)
     {
-        if (inputTokens[i]->type != resultTokens[i])
+        if (inputTokens[inputTokenIndex]->type != TOKEN_WHITESPACE && inputTokens[inputTokenIndex]->type != TOKEN_BLOCK_COMMENT && inputTokens[inputTokenIndex]->type != TOKEN_LINE_COMMENT)
         {
-            printf("\tToken mismatch at index %d: %s != %s\n", i, getType(inputTokens[i]->type), getType(resultTokens[i]));
+            continue;
+        }
+
+        if (inputTokens[inputTokenIndex]->type != resultTokens[resultTokenIndex])
+        {
+            printf("\tToken mismatch at index %d: %s != %s\n", resultTokenIndex, getType(inputTokens[inputTokenIndex]->type), getType(resultTokens[resultTokenIndex]));
             deleteTokens(inputTokens, inputTokenCount);
             free(resultTokens);
             return 1;
         }
+        resultTokenIndex++;
     }
 
     //Delete input tokens
     deleteTokens(inputTokens, inputTokenCount);
-    //Delete result tokens types
+    //Delete result tokens
     free(resultTokens);
     return 0;
 }
