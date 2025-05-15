@@ -164,7 +164,7 @@ static int testLexer(const char * inputFileName, const char *resultFileName)
     size_t resultTokenIndex = 0;
     for (size_t inputTokenIndex = 0; inputTokenIndex < resultTokenCount; inputTokenIndex++)
     {
-        if (inputTokens[inputTokenIndex]->type != TOKEN_WHITESPACE && inputTokens[inputTokenIndex]->type != TOKEN_BLOCK_COMMENT && inputTokens[inputTokenIndex]->type != TOKEN_LINE_COMMENT)
+        if (inputTokens[inputTokenIndex]->type == TOKEN_WHITESPACE || inputTokens[inputTokenIndex]->type == TOKEN_BLOCK_COMMENT || inputTokens[inputTokenIndex]->type == TOKEN_LINE_COMMENT)
         {
             continue;
         }
