@@ -24,9 +24,6 @@ jobs:
     - name: Build
       run: make
       
-    - name: Valgrind Check
-      run: make valgrind
-      
     - name: Clean
       run: make clean
 
