@@ -984,7 +984,7 @@ static Token *handleSimpleCase(Lexer *const lexer)
         return NULL;
     }
 
-    size_t size = 3;
+    size_t size = 4;
     char *text = (char *)malloc(size * sizeof(char));
     if (text == NULL)
     {
