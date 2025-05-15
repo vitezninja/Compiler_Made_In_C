@@ -153,6 +153,18 @@ static int testLexer(const char * inputFileName, const char *resultFileName)
     }
 
     //Compare the tokens
+    printf("\tInput tokens:\n");
+    for (size_t i = 0; i < inputTokenCount; i++)
+    {
+        printToken(inputTokens[i]);
+    }
+
+    printf("\tResult tokens:\n");
+    for (size_t i = 0; i < resultTokenCount; i++)
+    {
+        printf("\t%s\n", getType(resultTokens[i]));
+    }
+        
     if (inputTokenCount - removedTokens != resultTokenCount)
     {
         printf("\tToken count mismatch: \n\t actual: %d \t  expected: %d\n", inputTokenCount - removedTokens, resultTokenCount);
