@@ -1,74 +1,68 @@
-#include "my_string.h"
+#include "utils/my_string.h"
 
-/*****************************************************************************************************
-                            PRIVATE MY_STRING FUNCTIONS DECLARATIONS START HERE
- *****************************************************************************************************/
-
-/*****************************************************************************************************
-                                PRIVATE MY_STRING FUNCTIONS START HERE
- *****************************************************************************************************/
-
-/*****************************************************************************************************
-                                PUBLIC MY_STRING FUNCTIONS START HERE                                
- *****************************************************************************************************/
-
-char *substring(const char *const from, const int start, const int end)
+String *string_create(Arena *arena, const char *name, size_t length, size_t hash)
 {
-    int length = strlen(from);
-    if (from == NULL || start < 0 || start >= length || end > length || end < start)
+    if (arena == NULL)
     {
-        fprintf(stderr, "Invalid substring range or NULL input.\n");
-        return NULL;
-    }
-    
-    char *text = (char *)malloc((end - start + 1) * sizeof(char));
-    if (text == NULL)
-    {
-        fprintf(stderr, "Memory allocation for substring failed.\n");
+        DEBUG_PRINT("string_create: arena is NULL\n");
         return NULL;
     }
 
-    strncpy(text, from + start, end - start);
-    text[end - start] = '\0';
-    return text;
+    if (name == NULL)
+    {
+        DEBUG_PRINT("string_create: name is NULL\n");
+        return NULL;
+    }
+
+    String *string = (String *)arena_alloc(arena, sizeof(String), alignof(String));
+    if (string == NULL)
+    {
+        if (errno == ENOMEM)
+        {
+            DEBUG_PRINT("string_create: arena_alloc failed with errno %d\n", errno);
+        }
+        else
+        {
+            DEBUG_PRINT("string_create: arena_alloc failed with unknown error\n");
+        }
+
+        return NULL;
+    }
+
+    string->name = (char *)arena_alloc(arena, length + 1, alignof(char));
+    if (string->name == NULL)
+    {
+        if (errno == ENOMEM)
+        {
+            DEBUG_PRINT("string_create: arena_alloc failed for name with errno %d\n", errno);
+        }
+        else
+        {
+            DEBUG_PRINT("string_create: arena_alloc failed for name with unknown error\n");
+        }
+
+        return NULL;
+    }
+
+    strncpy(string->name, name, length);
+    string->name[length] = '\0'; // Ensure null-termination
+    string->length = length;
+    string->hash = hash;
+
+    return string;
 }
 
-char convertEscapeString(const char *const input)
+void string_print(const String *string)
 {
-    if (input == NULL || strlen(input) != 2 || input[0] != '\\')
+    if (string == NULL)
     {
-        fprintf(stderr, "Invalid escape string format.\n");
-        return '\0';
+        DEBUG_PRINT("string_print: string is NULL\n");
+        return;
     }
 
-    switch (input[1])
-    {
-    case 'a':
-        return '\a';
-    case 'b':
-        return '\b';
-    case 'e':
-        return '\e';
-    case 'f':
-        return '\f';
-    case 'n':
-        return '\n';
-    case 'r':
-        return '\r';
-    case 't':
-        return '\t';
-    case 'v':
-        return '\v';
-    case '\\':
-        return '\\';
-    case '\'':
-        return '\'';
-    case '\"':
-        return '\"';
-    case '?':
-        return '\?';
-    default:
-        fprintf(stderr, "Unknown escape character: %c\n", input[1]);
-        return '\0';
-    }
+    printf("String {\n");
+    printf("    name: \"%s\",\n", string->name);
+    printf("    length: %zu,\n", string->length);
+    printf("    hash: %zu\n", string->hash);
+    printf("}\n");
 }

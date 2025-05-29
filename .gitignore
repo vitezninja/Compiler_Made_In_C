@@ -1,4 +1,7 @@
 .vscode
+build
+*.log
 *.o
-*.out
+*.d
 *.exe
+*.out

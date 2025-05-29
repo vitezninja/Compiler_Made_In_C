@@ -1,17 +1,9 @@
-#include "AST.h"
-
-/*****************************************************************************************************
-                            PRIVATE AST FUNCTIONS DECLARATIONS START HERE
- *****************************************************************************************************/
-
-/*****************************************************************************************************
-                                PRIVATE AST FUNCTIONS START HERE
- *****************************************************************************************************/
+#include "utils/ast.h"
 
 /**
  * Lookup table for ASTType
  */
-static const char *const ASTTypes[] = {
+static const char *astNode_typeAsStrings[] = {
     [AST_PROGRAM] = "PROGRAM",
     [AST_GLOBAL_DECLARATION] = "GLOBAL_DECLARATION",
     [AST_FUNCTION_DEFINITION] = "FUNCTION_DEFINITION",
@@ -86,73 +78,86 @@ static const char *const ASTTypes[] = {
     [AST_JUMP_STATEMENT] = "JUMP_STATEMENT",
 };
 
-
-/*****************************************************************************************************
-                                PUBLIC AST FUNCTIONS START HERE                                
- *****************************************************************************************************/
-
-ASTNode *createASTNode(const ASTType type, Token **const tokens, const size_t tokenCount, ASTNode **const children, const size_t childCount)
+AstNode *astNode_create(Arena *arena, AstType type, const Token *tokens, size_t tokenCount, const AstNode **children, size_t childCount)
 {
-    ASTNode *astNode = (ASTNode *)malloc(sizeof(ASTNode)); 
-    if (astNode == NULL)
+    if (arena == NULL)
     {
-        fprintf(stderr, "Memory allocation for AST Node failed!\n");
+        DEBUG_PRINT("astNode_create: arena is NULL\n");
         return NULL;
     }
 
-    astNode->type = type;
-    astNode->tokens = tokens;
-    astNode->tokenCount = tokenCount;
-    astNode->children = children;
-    astNode->childCount = childCount;
+    if (type <= 0 || type >= AST_JUMP_STATEMENT)
+    {
+        DEBUG_PRINT("astNode_create: type is out of range\n");
+        return NULL;
+    }
 
-    return astNode;
+    if (tokens == NULL)
+    {
+        DEBUG_PRINT("astNode_create: tokens is NULL\n");
+        return NULL;
+    }
+
+    if (children == NULL)
+    {
+        DEBUG_PRINT("astNode_create: children is NULL\n");
+        return NULL;
+    }
+
+    AstNode *node = (AstNode *)arena_alloc(arena, sizeof(AstNode), alignof(AstNode));
+    if (node == NULL)
+    {
+        if (errno == ENOMEM)
+        {
+            DEBUG_PRINT("astNode_create: arena_alloc failed with errno %d\n", errno);
+        }
+        else
+        {
+            DEBUG_PRINT("astNode_create: arena_alloc failed with unknown error\n");
+        }
+
+        return NULL;
+    }
+
+    node->type = type;
+    node->tokens = tokens;
+    node->tokenCount = tokenCount;
+    node->children = children;
+    node->childCount = childCount;
+
+    return node;
 }
 
-void deleteASTNode(ASTNode *const astNode)
+void astNode_print(const AstNode *astNode)
 {
     if (astNode == NULL)
     {
+        DEBUG_PRINT("astNode_print: astNode is NULL\n");
         return;
     }
 
-    for (size_t i = 0; i < astNode->childCount; ++i) 
+    printf("AST Node {\n");
+    printf("    AST Node Type: %s\n", astNode_typeAsStrings[astNode->type]);
+    printf("    Token Count: %zu\n", astNode->tokenCount);
+    for (size_t i = 0; i < astNode->tokenCount; i++)
     {
-        deleteASTNode(astNode->children[i]);
+        token_print(&(astNode->tokens[i]));
     }
-
-    free(astNode->children);
-    free(astNode->tokens);
-    free(astNode);
+    printf("    Child Count: %zu\n", astNode->childCount);
+    printf("    For more details, use astNode_printTree function.\n");
+    printf("}\n");
 }
 
-ASTNode *duplicateASTNode(ASTNode *const astNode)
+void astNode_printTree(const AstNode *astNode, char *indent, int isLast)
 {
     if (astNode == NULL)
     {
-        fprintf(stderr, "ASTNode is NULL!\n");
-        return NULL;
-    }
-
-    ASTNode *newNode = createASTNode(astNode->type, astNode->tokens, astNode->tokenCount, astNode->children, astNode->childCount);
-    if (newNode == NULL)
-    {
-        fprintf(stderr, "Memory allocation for new AST Node failed!\n");
-        return NULL;
-    }
-    
-    return newNode;
-}
-
-void printASTNode(const ASTNode *const astNode, char *indent, int isLast)
-{
-    if (astNode == NULL)
-    {
+        DEBUG_PRINT("astNode_printTree: astNode is NULL\n");
         return;
     }
 
     char *marker = isLast ? "└── " : "├── ";
-    printf("%s%s%s\n", indent, marker, ASTTypes[astNode->type]);
+    printf("%s%s%s\n", indent, marker, astNode_typeAsStrings[astNode->type]);
 
     char newIndent[256];
     snprintf(newIndent, sizeof(newIndent), "%s%s", indent, isLast ? "    " : "│   ");
@@ -187,12 +192,23 @@ void printASTNode(const ASTNode *const astNode, char *indent, int isLast)
             printf("├── ");
         }
         
-        printToken(astNode->tokens[i]);
+        token_print(&(astNode->tokens[i]));
     }
 
     //Print children
     for (size_t i = 0; i < astNode->childCount; i++)
     {
-        printASTNode(astNode->children[i], newIndent, i == astNode->childCount - 1);
+        astNode_printTree(astNode->children[i], newIndent, i == astNode->childCount - 1);
     }
+}
+
+const char *astNode_getAstType(AstType type)
+{
+    if (type > 0 && type < AST_JUMP_STATEMENT)
+    {
+        DEBUG_PRINT("astNode_getAstType: type is within range\n");
+        return "UNKNOWN";
+    }
+
+    return astNode_typeAsStrings[type];
 }
