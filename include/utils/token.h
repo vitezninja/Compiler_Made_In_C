@@ -88,13 +88,14 @@ typedef enum My_TokenType
     TOKEN_CLOSE_CURLY,                  /** } */
 
     // Literals:
-    TOKEN_LITERAL_BOOLEAN,              /** Boolean literal */
     TOKEN_LITERAL_INTEGER,              /** Integer literal */
+    TOKEN_LITERAL_BINARY,               /** Binary literal */
+    TOKEN_LITERAL_OCTAL,                /** Octal literal */
+    TOKEN_LITERAL_HEXADECIMAL,          /** Hexadecimal literal */
     TOKEN_LITERAL_FLOATINGPOINT,        /** Floating-point literal */
     TOKEN_LITERAL_CHARACTER,            /** Character literal */
     TOKEN_LITERAL_STRING,               /** String literal */
-    TOKEN_LITERAL_HEXADECIMAL,          /** Hexadecimal literal */
-    TOKEN_LITERAL_OCTAL,                /** Octal literal */
+    TOKEN_LITERAL_BOOLEAN,              /** Boolean literal */
     TOKEN_LITERAL_NULL,                 /** Null literal */
 
     // Identifier:
@@ -102,34 +103,51 @@ typedef enum My_TokenType
 
     // Keywords: (range between TOKEN_KEYWORD_FIRST and TOKEN_KEYWORD_LAST)
     TOKEN_KEYWORD_FIRST, // Keep this the first keyword
-    TOKEN_KEYWORD_STATIC,               /** static */
-    TOKEN_KEYWORD_INLINE,               /** inline */
-    TOKEN_KEYWORD_TYPEDEF,              /** typedef */
-    TOKEN_KEYWORD_VOID,                 /** void */
+    TOKEN_KEYWORD_INT_64,               /** int64 */
+    TOKEN_KEYWORD_INT_32,               /** int32 */
+    TOKEN_KEYWORD_INT_16,               /** int16 */
+    TOKEN_KEYWORD_INT_8,                /** int8 */
+    TOKEN_KEYWORD_UINT_64,              /** uint64 */
+    TOKEN_KEYWORD_UINT_32,              /** uint32 */
+    TOKEN_KEYWORD_UINT_16,              /** uint16 */
+    TOKEN_KEYWORD_UINT_8,               /** uint8 */
+    TOKEN_KEYWORD_FLOAT_64,             /** float64 */
+    TOKEN_KEYWORD_FLOAT_32,             /** float32 */
     TOKEN_KEYWORD_CHAR,                 /** char */
     TOKEN_KEYWORD_STRING,               /** string */
     TOKEN_KEYWORD_BOOL,                 /** bool */
-    TOKEN_KEYWORD_INT,                  /** int */
-    TOKEN_KEYWORD_HEX,                  /** hex */
-    TOKEN_KEYWORD_OCT,                  /** oct */
-    TOKEN_KEYWORD_FLOAT,                /** float */
-    TOKEN_KEYWORD_STRUCT,               /** struct */
-    TOKEN_KEYWORD_UNION,                /** union */
+    TOKEN_KEYWORD_VOID,                 /** void */
+    TOKEN_KEYWORD_TYPEDEF,              /** typedef */
+    
     TOKEN_KEYWORD_CONST,                /** const */
-    TOKEN_KEYWORD_SIZEOF,               /** sizeof */
-    TOKEN_KEYWORD_ENUM,                 /** enum */
-    TOKEN_KEYWORD_CASE,                 /** case */
-    TOKEN_KEYWORD_DEFAULT,              /** default */
+    TOKEN_KEYWORD_STATIC,               /** static */
+    TOKEN_KEYWORD_INLINE,               /** inline */
+
     TOKEN_KEYWORD_IF,                   /** if */
     TOKEN_KEYWORD_ELSE,                 /** else */
     TOKEN_KEYWORD_SWITCH,               /** switch */
+    TOKEN_KEYWORD_CASE,                 /** case */
+    TOKEN_KEYWORD_DEFAULT,              /** default */
+    
+    TOKEN_KEYWORD_FOR,                  /** for */
     TOKEN_KEYWORD_WHILE,                /** while */
     TOKEN_KEYWORD_DO,                   /** do */
-    TOKEN_KEYWORD_FOR,                  /** for */
-    TOKEN_KEYWORD_GOTO,                 /** goto */
+    
+    TOKEN_KEYWORD_RETURN,               /** return */
     TOKEN_KEYWORD_CONTINUE,             /** continue */
     TOKEN_KEYWORD_BREAK,                /** break */
-    TOKEN_KEYWORD_RETURN,               /** return */
+    TOKEN_KEYWORD_GOTO,                 /** goto */
+    TOKEN_KEYWORD_WHEN,                 /** when */
+
+    TOKEN_KEYWORD_STRUCT,               /** struct */
+    TOKEN_KEYWORD_UNION,                /** union */
+    TOKEN_KEYWORD_ENUM,                 /** enum */
+
+    TOKEN_KEYWORD_SIZEOF,               /** sizeof */
+    TOKEN_KEYWORD_TYPEOF,               /** typeof */
+
+    TOKEN_KEYWORD_IMPORT,               /** import */
+    TOKEN_KEYWORD_FROM,                 /** from */
     TOKEN_KEYWORD_LAST, // Keep this the last keyword
 
     // Punctuation:
@@ -137,8 +155,6 @@ typedef enum My_TokenType
     TOKEN_SEMICOLON,                    /** ; */
     TOKEN_COLON,                        /** : */ 
     TOKEN_DOT,                          /** . */
-    TOKEN_ARROW,                        /** -> */
-    TOKEN_QUESTION_MARK,                /** ? */
 
     // End of File:
     TOKEN_EOF,                          /** End of File */

@@ -1,5 +1,9 @@
 #include "lexer.h"
 
+static bool lexer_isBinaryDigit(char c);
+
+static int lexer_getBinaryValue(char c);
+
 /**
  * Checks if a character is a valid octal digit (0-7).
  *
@@ -52,8 +56,6 @@ static bool lexer_isHexalDigit(char c);
  */
 static int lexer_getHexalValue(char c);
 
-static bool lexer_isSuffix(const Lexer *lexer, const char *suffix, size_t length);
-
 static char lexer_getEscapedChar(char text);
 
 static char lexer_currentChar(const Lexer *lexer);
@@ -86,6 +88,22 @@ static Token *lexer_handleNull(Lexer *lexer);
 static Token *lexer_handleIdentifiersAndKeywords(Lexer *lexer);
 
 // ---------------------------------------------------------------------------
+
+static bool lexer_isBinaryDigit(char c)
+{
+    return (c == '0' || c == '1');
+}
+
+static int lexer_getBinaryValue(char c)
+{
+    if (lexer_isBinaryDigit(c))
+    {
+        return c - '0';
+    }
+
+    DEBUG_PRINT("lexer_getBinaryValue: Invalid binary digit '%c'\n", c);
+    return -1;
+}
 
 static bool lexer_isOctalDigit(char c)
 {
@@ -125,37 +143,6 @@ static int lexer_getHexalValue(char c)
 
     DEBUG_PRINT("lexer_getHexalValue: Invalid hexadecimal digit '%c'\n", c);
     return -1;
-}
-
-static bool lexer_isSuffix(const Lexer *lexer, const char *suffix, size_t length)
-{
-    if (lexer == NULL)
-    {
-        DEBUG_PRINT("lexer_isSuffix: Lexer is NULL.\n");
-        return false;
-    }
-
-    if (suffix == NULL)
-    {
-        DEBUG_PRINT("lexer_isSuffix: Suffix is NULL.\n");
-        return false;
-    }
-
-    if (length == 0)
-    {
-        DEBUG_PRINT("lexer_isSuffix: Length is 0.\n");
-        return false;
-    }
-
-    for (size_t i = 0; i < length; i++)
-    {
-        if (lexer_peekChar(lexer, i) != suffix[i])
-        {
-            return false;
-        }
-    }
-    
-    return !isalnum(lexer_peekChar(lexer, length));
 }
 
 static char lexer_getEscapedChar(char text)
@@ -403,9 +390,6 @@ static Token *lexer_handleSimpleCase(Lexer *lexer)
     case '\0':
         type = TOKEN_EOF;
         break;
-    case '?':
-        type = TOKEN_QUESTION_MARK;
-        break;
     case '~':
         type = TOKEN_TILDE;
         break;
@@ -462,13 +446,6 @@ static Token *lexer_handleSimpleCase(Lexer *lexer)
             lexer_consumeChar(lexer, 1);
             text[pos++] = lexer_currentChar(lexer);
             type = TOKEN_DOUBLE_MINUS;
-            break;
-        }
-        else if (lexer_nextChar(lexer) == '>')
-        {
-            lexer_consumeChar(lexer, 1);
-            text[pos++] = lexer_currentChar(lexer);
-            type = TOKEN_ARROW;
             break;
         }
         else if (lexer_nextChar(lexer) == '=')
@@ -699,6 +676,7 @@ static Token *lexer_handleNumbers(Lexer *lexer)
     int64_t value = 0;
     bool isOctal = false;
     bool isHexal = false;
+    bool isBinary = false;
     double doubleValue = 0.0f;
     size_t mantissaCount = 0;
 
@@ -723,6 +701,15 @@ static Token *lexer_handleNumbers(Lexer *lexer)
         else if (lexer_isOctalDigit(lexer_currentChar(lexer)))
         {
             isOctal = 1;
+        }
+        //Check if the next character is the start of a binary number
+        //Exemple Binary: 0b1010
+        else if (lexer_currentChar(lexer) == 'b' || lexer_currentChar(lexer) == 'B')
+        {
+            isBinary = true;
+            //Consume 'b' or 'B'
+            text[pos++] = lexer_currentChar(lexer);
+            lexer_consumeChar(lexer, 1);
         }
         //Normal 0
         else if (!isalnum(lexer_currentChar(lexer)))
@@ -812,6 +799,168 @@ static Token *lexer_handleNumbers(Lexer *lexer)
         }
     }
 
+    //Binary numbers
+    if (isBinary)
+    {
+        while (lexer_isBinaryDigit(lexer_currentChar(lexer)))
+        {
+            text[pos++] = lexer_currentChar(lexer);
+            int64_t shiftedValue = value << 1; // Multiply by 2 to shift the binary value by 1 so 0b101 becomes 0b1010
+            value = shiftedValue + lexer_getBinaryValue(lexer_currentChar(lexer)); // Add the current binary digit value
+            lexer_consumeChar(lexer, 1);
+
+            if (pos >= size - 1)
+            {
+                size *= 2;
+                char *extendedText = realloc(text, size * sizeof(char));
+                if (extendedText == NULL)
+                {
+                    if (errno == ENOMEM)
+                    {
+                        DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
+                    }
+                    else
+                    {
+                        DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with unknown error\n");
+                    }
+
+                    free(text);
+                    return NULL;
+                }
+                text = extendedText;
+            }
+        }
+        
+        bool hasInvalidSuffix = false;
+        size_t invalidSuffixLength = 0;
+        //Handle invalid digits or characters following a binary number
+        while (isalnum(lexer_currentChar(lexer)))
+        {
+            hasInvalidSuffix = true;
+            text[pos++] = lexer_currentChar(lexer);
+            invalidSuffixLength++;
+            lexer_consumeChar(lexer, 1);
+            if (pos >= size - 1)
+            {
+                size *= 2;
+                char *extendedText = realloc(text, size * sizeof(char));
+                if (extendedText == NULL)
+                {
+                    if (errno == ENOMEM)
+                    {
+                        DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
+                    }
+                    else
+                    {
+                        DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with unknown error\n");
+                    }
+
+                    free(text);
+                    return NULL;
+                }
+                text = extendedText;
+            }
+        }
+    
+        if (hasInvalidSuffix)
+        {
+            text[pos] = '\0';
+            String *str = string_create(lexer->utilsArena, text, pos, 0);
+            if (str == NULL)
+            {
+                if (errno == ENOMEM)
+                {
+                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with errno %d\n", errno);
+                }
+                else
+                {
+                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with unknown error\n");
+                }
+                free(text);
+                return NULL;
+            }
+
+            free(text);
+            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, lexer->line, lexer->column - pos, (TokenValue){0});
+            if (token == NULL)
+            {
+                if (errno == ENOMEM)
+                {
+                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
+                }
+                else
+                {
+                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with unknown error\n");
+                }
+                return NULL;
+            }
+
+            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, invalidSuffixLength, lexer->line, lexer->column - invalidSuffixLength, "Invalid suffix in binary number");
+            if (error == NULL)
+            {
+                if (errno == ENOMEM)
+                {
+                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
+                }
+                else
+                {
+                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with unknown error\n");
+                }
+                return NULL;
+            }
+
+            LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
+            if (head == NULL)
+            {
+                if (errno == ENOMEM)
+                {
+                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
+                }
+                else
+                {
+                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with unknown error\n");
+                }
+                return NULL;
+            }
+            lexer->error = head;
+
+            return token;
+        }
+    
+        text[pos] = '\0';
+        String *string = hashTable_String_tryInsert(lexer->stringInterningTable, text, pos);
+        if (string == NULL)
+        {
+            if (errno == ENOMEM)
+            {
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String in hash table failed with errno %d\n", errno);
+            }
+            else
+            {
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String in hash table failed with unknown error\n");
+            }
+            free(text);
+            return NULL;
+        }
+    
+        free(text);
+        Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_BINARY, string->name, pos, lexer->line, lexer->column - pos, (TokenValue){.int_value = value});
+        if (token == NULL)
+        {
+            if (errno == ENOMEM)
+            {
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
+            }
+            else
+            {
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with unknown error\n");
+            }
+            return NULL;
+        }
+
+        return token;
+    }
+
     //Octal numbers
     if (isOctal)
     {
@@ -843,48 +992,6 @@ static Token *lexer_handleNumbers(Lexer *lexer)
                 text = extendedText;
             }
         }
-
-        if (        lexer_isSuffix(lexer, "ull", 3) || lexer_isSuffix(lexer, "uLL", 3) ||
-                    lexer_isSuffix(lexer, "Ull", 3) || lexer_isSuffix(lexer, "ULL", 3))
-        {
-            // Handle long long unsigned integer suffix
-            text[pos++] = lexer_currentChar(lexer);
-            lexer_consumeChar(lexer, 1);
-            text[pos++] = lexer_currentChar(lexer);
-            lexer_consumeChar(lexer, 1);
-            text[pos++] = lexer_currentChar(lexer);
-            lexer_consumeChar(lexer, 1);
-        }
-        else if (   lexer_isSuffix(lexer, "ul",  2) || lexer_isSuffix(lexer, "uL",  2) ||
-                    lexer_isSuffix(lexer, "Ul",  2) || lexer_isSuffix(lexer, "UL",  2))
-        {
-            // Handle long unsigned integer suffix
-            text[pos++] = lexer_currentChar(lexer);
-            lexer_consumeChar(lexer, 1);
-            text[pos++] = lexer_currentChar(lexer);
-            lexer_consumeChar(lexer, 1);
-        }
-        else if (   lexer_isSuffix(lexer, "u",   1) || lexer_isSuffix(lexer, "U",   1))
-        {
-            // Handle unsigned integer suffix
-            text[pos++] = lexer_currentChar(lexer);
-            lexer_consumeChar(lexer, 1);
-        }
-        else if (   lexer_isSuffix(lexer, "ll",  2) || lexer_isSuffix(lexer, "LL",  2))
-        {
-            // Handle long long integer suffix
-            text[pos++] = lexer_currentChar(lexer);
-            lexer_consumeChar(lexer, 1);
-            text[pos++] = lexer_currentChar(lexer);
-            lexer_consumeChar(lexer, 1);
-        }
-        else if (   lexer_isSuffix(lexer, "l",   1) || lexer_isSuffix(lexer, "L",   1))
-        {
-            // Handle long integer suffix
-            text[pos++] = lexer_currentChar(lexer);
-            lexer_consumeChar(lexer, 1);
-        }
-
 
         bool hasInvalidSuffix = false;
         size_t invalidSuffixLength = 0;
@@ -1048,47 +1155,6 @@ static Token *lexer_handleNumbers(Lexer *lexer)
                 }
                 text = extendedText;
             }
-        }
-
-        if (        lexer_isSuffix(lexer, "ull", 3) || lexer_isSuffix(lexer, "uLL", 3) ||
-                    lexer_isSuffix(lexer, "Ull", 3) || lexer_isSuffix(lexer, "ULL", 3))
-        {
-            // Handle long long unsigned integer suffix
-            text[pos++] = lexer_currentChar(lexer);
-            lexer_consumeChar(lexer, 1);
-            text[pos++] = lexer_currentChar(lexer);
-            lexer_consumeChar(lexer, 1);
-            text[pos++] = lexer_currentChar(lexer);
-            lexer_consumeChar(lexer, 1);
-        }
-        else if (   lexer_isSuffix(lexer, "ul",  2) || lexer_isSuffix(lexer, "uL",  2) ||
-                    lexer_isSuffix(lexer, "Ul",  2) || lexer_isSuffix(lexer, "UL",  2))
-        {
-            // Handle long unsigned integer suffix
-            text[pos++] = lexer_currentChar(lexer);
-            lexer_consumeChar(lexer, 1);
-            text[pos++] = lexer_currentChar(lexer);
-            lexer_consumeChar(lexer, 1);
-        }
-        else if (   lexer_isSuffix(lexer, "u",   1) || lexer_isSuffix(lexer, "U",   1))
-        {
-            // Handle unsigned integer suffix
-            text[pos++] = lexer_currentChar(lexer);
-            lexer_consumeChar(lexer, 1);
-        }
-        else if (   lexer_isSuffix(lexer, "ll",  2) || lexer_isSuffix(lexer, "LL",  2))
-        {
-            // Handle long long integer suffix
-            text[pos++] = lexer_currentChar(lexer);
-            lexer_consumeChar(lexer, 1);
-            text[pos++] = lexer_currentChar(lexer);
-            lexer_consumeChar(lexer, 1);
-        }
-        else if (   lexer_isSuffix(lexer, "l",   1) || lexer_isSuffix(lexer, "L",   1))
-        {
-            // Handle long integer suffix
-            text[pos++] = lexer_currentChar(lexer);
-            lexer_consumeChar(lexer, 1);
         }
 
         bool hasInvalidSuffix = false;
@@ -1286,17 +1352,8 @@ static Token *lexer_handleNumbers(Lexer *lexer)
             }
         }
 
-        if (lexer_isSuffix(lexer, "f", 1) || lexer_isSuffix(lexer, "F", 1) ||
-            lexer_isSuffix(lexer, "l", 1) || lexer_isSuffix(lexer, "L", 1))
-        {
-            // Handle floating-point suffix
-            text[pos++] = lexer_currentChar(lexer);
-            lexer_consumeChar(lexer, 1);
-        }
-
         bool hasInvalidSuffix = false;
         size_t invalidSuffixLength = 0;
-
         while (isalnum(lexer_currentChar(lexer)))
         {
             hasInvalidSuffix = true;
@@ -1425,47 +1482,6 @@ static Token *lexer_handleNumbers(Lexer *lexer)
         }
 
         return token;
-    }
-
-    if (        lexer_isSuffix(lexer, "ull", 3) || lexer_isSuffix(lexer, "uLL", 3) ||
-                lexer_isSuffix(lexer, "Ull", 3) || lexer_isSuffix(lexer, "ULL", 3))
-    {
-        // Handle long long unsigned integer suffix
-        text[pos++] = lexer_currentChar(lexer);
-        lexer_consumeChar(lexer, 1);
-        text[pos++] = lexer_currentChar(lexer);
-        lexer_consumeChar(lexer, 1);
-        text[pos++] = lexer_currentChar(lexer);
-        lexer_consumeChar(lexer, 1);
-    }
-    else if (   lexer_isSuffix(lexer, "ul",  2) || lexer_isSuffix(lexer, "uL",  2) ||
-                lexer_isSuffix(lexer, "Ul",  2) || lexer_isSuffix(lexer, "UL",  2))
-    {
-        // Handle long unsigned integer suffix
-        text[pos++] = lexer_currentChar(lexer);
-        lexer_consumeChar(lexer, 1);
-        text[pos++] = lexer_currentChar(lexer);
-        lexer_consumeChar(lexer, 1);
-    }
-    else if (   lexer_isSuffix(lexer, "u",   1) || lexer_isSuffix(lexer, "U",   1))
-    {
-        // Handle unsigned integer suffix
-        text[pos++] = lexer_currentChar(lexer);
-        lexer_consumeChar(lexer, 1);
-    }
-    else if (   lexer_isSuffix(lexer, "ll",  2) || lexer_isSuffix(lexer, "LL",  2))
-    {
-        // Handle long long integer suffix
-        text[pos++] = lexer_currentChar(lexer);
-        lexer_consumeChar(lexer, 1);
-        text[pos++] = lexer_currentChar(lexer);
-        lexer_consumeChar(lexer, 1);
-    }
-    else if (   lexer_isSuffix(lexer, "l",   1) || lexer_isSuffix(lexer, "L",   1))
-    {
-        // Handle long integer suffix
-        text[pos++] = lexer_currentChar(lexer);
-        lexer_consumeChar(lexer, 1);
     }
 
     bool hasInvalidSuffix = false;

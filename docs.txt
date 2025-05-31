@@ -170,22 +170,10 @@ Language syntax:
 Types:
 - int                            (maybe versions of this like int64, int32, int16, int8)
 - float                          (maybe versions of this like float64, float32, float16, float8)
-- oct
-- hex
 - char
 - string
 - bool
 - void (not really a type)
-
-Type suffixes:                   (longs could be removed if length specific types are made)
-   int | hex | oct:
-      - u   | U                  (unsigned)
-      - l   | L                  (long)
-      - ul  | uL  | Ul  | UL     (unsigned long)
-      - ull | uLL | Ull | ULL    (unsigned long long)
-   float:
-      - f | F                    (float)
-      - l | L                    (double / long)
 
 Type specifiers:
 - const
@@ -214,7 +202,6 @@ Binart operators:
 - *
 - /
 - %
-- **                             (decide this)
 - ==
 - !=
 - <
@@ -245,20 +232,21 @@ Suffix operators:
 - ++
 - --
 - .                              (decide this)
-- ->                             (decide this)
 
 Literals:
 - integer number
-- floating-point number
-- hexadecimal number
+- binary number
 - octal number
-- boolean
+- hexadecimal number
+- floating-point number
 - character
 - string
+- boolean
 - null value                     (not really a literal)
 
 Keywords:
 - if
+- else
 - switch
 - case
 - default
@@ -277,6 +265,7 @@ Keywords:
 - const
 - enum
 - goto
+- when
 
 Rules:
 (Type is offten refered to this could be a built in type a struct union enum or typedefed type)
@@ -323,7 +312,7 @@ Statement:                                            (aka stm)
 {branch stm} | {loop stm} | {compound stm} | {expression stm} | {jump stm} | " {label declaration} : "
 
 Branch stm:
-if ( {expression} ) {statement}
+if ( {expression} ) {statement} ?" else {statement} "
 |
 switch ( {expression} ) { 
    +" case {constant exp} : {statement} "            (this can contain break)
@@ -352,7 +341,7 @@ Expression stm:
 Jump stm:
 goto {name};                                          (name is a label)
 |
-goto {name} when ({expression});                      (name is a label, runtime check)
+goto {name} when ( {expression} );                    (name is a label, runtime check)
 
 Expression:
 {assignment} | {function call} | {arithmetic op}

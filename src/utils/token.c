@@ -43,49 +43,58 @@ static const char *token_typeAsStrings[] = {
     [TOKEN_CLOSE_BRACKET] = "TOKEN_CLOSE_BRACKET",
     [TOKEN_OPEN_CURLY] = "TOKEN_OPEN_CURLY",
     [TOKEN_CLOSE_CURLY] = "TOKEN_CLOSE_CURLY",
-    [TOKEN_LITERAL_BOOLEAN] = "TOKEN_LITERAL_BOOLEAN",
     [TOKEN_LITERAL_INTEGER] = "TOKEN_LITERAL_INTEGER",
+    [TOKEN_LITERAL_BINARY] = "TOKEN_LITERAL_BINARY",
+    [TOKEN_LITERAL_OCTAL] = "TOKEN_LITERAL_OCTAL",
+    [TOKEN_LITERAL_HEXADECIMAL] = "TOKEN_LITERAL_HEXADECIMAL",
     [TOKEN_LITERAL_FLOATINGPOINT] = "TOKEN_LITERAL_FLOATINGPOINT",
     [TOKEN_LITERAL_CHARACTER] = "TOKEN_LITERAL_CHARACTER",
     [TOKEN_LITERAL_STRING] = "TOKEN_LITERAL_STRING",
-    [TOKEN_LITERAL_HEXADECIMAL] = "TOKEN_LITERAL_HEXADECIMAL",
-    [TOKEN_LITERAL_OCTAL] = "TOKEN_LITERAL_OCTAL",
+    [TOKEN_LITERAL_BOOLEAN] = "TOKEN_LITERAL_BOOLEAN",
     [TOKEN_LITERAL_NULL] = "TOKEN_LITERAL_NULL",
     [TOKEN_IDENTIFIER] = "TOKEN_IDENTIFIER",
-    [TOKEN_KEYWORD_STATIC] = "TOKEN_KEYWORD_STATIC",
-    [TOKEN_KEYWORD_INLINE] = "TOKEN_KEYWORD_INLINE",
-    [TOKEN_KEYWORD_TYPEDEF] = "TOKEN_KEYWORD_TYPEDEF",
-    [TOKEN_KEYWORD_VOID] = "TOKEN_KEYWORD_VOID",
+    [TOKEN_KEYWORD_INT_64] = "TOKEN_KEYWORD_INT_64",
+    [TOKEN_KEYWORD_INT_32] = "TOKEN_KEYWORD_INT_32",
+    [TOKEN_KEYWORD_INT_16] = "TOKEN_KEYWORD_INT_16",
+    [TOKEN_KEYWORD_INT_8] = "TOKEN_KEYWORD_INT_8",
+    [TOKEN_KEYWORD_UINT_64] = "TOKEN_KEYWORD_UINT_64",
+    [TOKEN_KEYWORD_UINT_32] = "TOKEN_KEYWORD_UINT_32",
+    [TOKEN_KEYWORD_UINT_16] = "TOKEN_KEYWORD_UINT_16",
+    [TOKEN_KEYWORD_UINT_8] = "TOKEN_KEYWORD_UINT_8",
+    [TOKEN_KEYWORD_FLOAT_64] = "TOKEN_KEYWORD_FLOAT_64",
+    [TOKEN_KEYWORD_FLOAT_32] = "TOKEN_KEYWORD_FLOAT_32",
     [TOKEN_KEYWORD_CHAR] = "TOKEN_KEYWORD_CHAR",
     [TOKEN_KEYWORD_STRING] = "TOKEN_KEYWORD_STRING",
     [TOKEN_KEYWORD_BOOL] = "TOKEN_KEYWORD_BOOL",
-    [TOKEN_KEYWORD_INT] = "TOKEN_KEYWORD_INT",
-    [TOKEN_KEYWORD_HEX] = "TOKEN_KEYWORD_HEX",
-    [TOKEN_KEYWORD_OCT] = "TOKEN_KEYWORD_OCT",
-    [TOKEN_KEYWORD_FLOAT] = "TOKEN_KEYWORD_FLOAT",
-    [TOKEN_KEYWORD_STRUCT] = "TOKEN_KEYWORD_STRUCT",
-    [TOKEN_KEYWORD_UNION] = "TOKEN_KEYWORD_UNION",
+    [TOKEN_KEYWORD_VOID] = "TOKEN_KEYWORD_VOID",
+    [TOKEN_KEYWORD_TYPEDEF] = "TOKEN_KEYWORD_TYPEDEF",
     [TOKEN_KEYWORD_CONST] = "TOKEN_KEYWORD_CONST",
-    [TOKEN_KEYWORD_SIZEOF] = "TOKEN_KEYWORD_SIZEOF",
-    [TOKEN_KEYWORD_ENUM] = "TOKEN_KEYWORD_ENUM",
-    [TOKEN_KEYWORD_CASE] = "TOKEN_KEYWORD_CASE",
-    [TOKEN_KEYWORD_DEFAULT] = "TOKEN_KEYWORD_DEFAULT",
+    [TOKEN_KEYWORD_STATIC] = "TOKEN_KEYWORD_STATIC",
+    [TOKEN_KEYWORD_INLINE] = "TOKEN_KEYWORD_INLINE",
     [TOKEN_KEYWORD_IF] = "TOKEN_KEYWORD_IF",
     [TOKEN_KEYWORD_ELSE] = "TOKEN_KEYWORD_ELSE",
     [TOKEN_KEYWORD_SWITCH] = "TOKEN_KEYWORD_SWITCH",
+    [TOKEN_KEYWORD_CASE] = "TOKEN_KEYWORD_CASE",
+    [TOKEN_KEYWORD_DEFAULT] = "TOKEN_KEYWORD_DEFAULT",
+    [TOKEN_KEYWORD_FOR] = "TOKEN_KEYWORD_FOR",
     [TOKEN_KEYWORD_WHILE] = "TOKEN_KEYWORD_WHILE",
     [TOKEN_KEYWORD_DO] = "TOKEN_KEYWORD_DO",
-    [TOKEN_KEYWORD_FOR] = "TOKEN_KEYWORD_FOR",
-    [TOKEN_KEYWORD_GOTO] = "TOKEN_KEYWORD_GOTO",
+    [TOKEN_KEYWORD_RETURN] = "TOKEN_KEYWORD_RETURN",
     [TOKEN_KEYWORD_CONTINUE] = "TOKEN_KEYWORD_CONTINUE",
     [TOKEN_KEYWORD_BREAK] = "TOKEN_KEYWORD_BREAK",
-    [TOKEN_KEYWORD_RETURN] = "TOKEN_KEYWORD_RETURN",
+    [TOKEN_KEYWORD_GOTO] = "TOKEN_KEYWORD_GOTO",
+    [TOKEN_KEYWORD_WHEN] = "TOKEN_KEYWORD_WHEN",
+    [TOKEN_KEYWORD_STRUCT] = "TOKEN_KEYWORD_STRUCT",
+    [TOKEN_KEYWORD_UNION] = "TOKEN_KEYWORD_UNION",
+    [TOKEN_KEYWORD_ENUM] = "TOKEN_KEYWORD_ENUM",
+    [TOKEN_KEYWORD_SIZEOF] = "TOKEN_KEYWORD_SIZEOF",
+    [TOKEN_KEYWORD_TYPEOF] = "TOKEN_KEYWORD_TYPEOF",
+    [TOKEN_KEYWORD_IMPORT] = "TOKEN_KEYWORD_IMPORT",
+    [TOKEN_KEYWORD_FROM] = "TOKEN_KEYWORD_FROM",
     [TOKEN_COMMA] = "TOKEN_COMMA",
     [TOKEN_SEMICOLON] = "TOKEN_SEMICOLON",
     [TOKEN_COLON] = "TOKEN_COLON",
     [TOKEN_DOT] = "TOKEN_DOT",
-    [TOKEN_ARROW] = "TOKEN_ARROW",
-    [TOKEN_QUESTION_MARK] = "TOKEN_QUESTION_MARK",
     [TOKEN_EOF] = "TOKEN_EOF",
     [TOKEN_UNKNOWN] = "TOKEN_UNKNOWN",
 };
@@ -94,34 +103,44 @@ static const char *token_typeAsStrings[] = {
  * Lookup table for keywords
  */
 static const char *token_keywordsAsStrings[] = {
-    [TOKEN_KEYWORD_STATIC] = "static",
-    [TOKEN_KEYWORD_INLINE] = "inline",
-    [TOKEN_KEYWORD_TYPEDEF] = "typedef",
-    [TOKEN_KEYWORD_VOID] = "void",
+    [TOKEN_KEYWORD_INT_64] = "int64",
+    [TOKEN_KEYWORD_INT_32] = "int32",
+    [TOKEN_KEYWORD_INT_16] = "int16",
+    [TOKEN_KEYWORD_INT_8] = "int8",
+    [TOKEN_KEYWORD_UINT_64] = "uint64",
+    [TOKEN_KEYWORD_UINT_32] = "uint32",
+    [TOKEN_KEYWORD_UINT_16] = "uint16",
+    [TOKEN_KEYWORD_UINT_8] = "uint8",
+    [TOKEN_KEYWORD_FLOAT_64] = "float64",
+    [TOKEN_KEYWORD_FLOAT_32] = "float32",
     [TOKEN_KEYWORD_CHAR] = "char",
     [TOKEN_KEYWORD_STRING] = "string",
     [TOKEN_KEYWORD_BOOL] = "bool",
-    [TOKEN_KEYWORD_INT] = "int",
-    [TOKEN_KEYWORD_HEX] = "hex",
-    [TOKEN_KEYWORD_OCT] = "oct",
-    [TOKEN_KEYWORD_FLOAT] = "float",
-    [TOKEN_KEYWORD_STRUCT] = "struct",
-    [TOKEN_KEYWORD_UNION] = "union",
+    [TOKEN_KEYWORD_VOID] = "void",
+    [TOKEN_KEYWORD_TYPEDEF] = "typedef",
     [TOKEN_KEYWORD_CONST] = "const",
-    [TOKEN_KEYWORD_SIZEOF] = "sizeof",
-    [TOKEN_KEYWORD_ENUM] = "enum",
-    [TOKEN_KEYWORD_CASE] = "case",
-    [TOKEN_KEYWORD_DEFAULT] = "default",
+    [TOKEN_KEYWORD_STATIC] = "static",
+    [TOKEN_KEYWORD_INLINE] = "inline",
     [TOKEN_KEYWORD_IF] = "if",
     [TOKEN_KEYWORD_ELSE] = "else",
     [TOKEN_KEYWORD_SWITCH] = "switch",
+    [TOKEN_KEYWORD_CASE] = "case",
+    [TOKEN_KEYWORD_DEFAULT] = "default",
+    [TOKEN_KEYWORD_FOR] = "for",
     [TOKEN_KEYWORD_WHILE] = "while",
     [TOKEN_KEYWORD_DO] = "do",
-    [TOKEN_KEYWORD_FOR] = "for",
-    [TOKEN_KEYWORD_GOTO] = "goto",
+    [TOKEN_KEYWORD_RETURN] = "return",
     [TOKEN_KEYWORD_CONTINUE] = "continue",
     [TOKEN_KEYWORD_BREAK] = "break",
-    [TOKEN_KEYWORD_RETURN] = "return",
+    [TOKEN_KEYWORD_GOTO] = "goto",
+    [TOKEN_KEYWORD_WHEN] = "when",
+    [TOKEN_KEYWORD_STRUCT] = "struct",
+    [TOKEN_KEYWORD_UNION] = "union",
+    [TOKEN_KEYWORD_ENUM] = "enum",
+    [TOKEN_KEYWORD_SIZEOF] = "sizeof",
+    [TOKEN_KEYWORD_TYPEOF] = "typeof",
+    [TOKEN_KEYWORD_IMPORT] = "import",
+    [TOKEN_KEYWORD_FROM] = "from",
 };
 
 Token *token_create(Arena *arena, My_TokenType type, const char *text, size_t length, size_t line, size_t column, TokenValue value)
@@ -223,11 +242,17 @@ void token_print(const Token *token)
         case TOKEN_LITERAL_INTEGER:
             printf("%" PRId64 "\n", token->value.int_value);
             break;
+        case TOKEN_LITERAL_BINARY:
+            printf("0b%" PRIx64 "\n", token->value.int_value); // TODO handle binary format
+            break;
+        case TOKEN_LITERAL_OCTAL:
+            printf("0%" PRIo64" \n", token->value.int_value);
+            break;
+        case TOKEN_LITERAL_HEXADECIMAL:
+            printf("0x%" PRIx64 "\n", token->value.int_value);
+            break;
         case TOKEN_LITERAL_FLOATINGPOINT:
             printf("%lf\n", token->value.float_value);
-            break;
-        case TOKEN_LITERAL_BOOLEAN:
-            printf("%s\n", token->value.boolean_value ? "true" : "false");
             break;
         case TOKEN_LITERAL_CHARACTER:
             printf("'%d'\n", token->value.char_value);
@@ -235,11 +260,8 @@ void token_print(const Token *token)
         case TOKEN_LITERAL_STRING:
             printf("\"%s\"\n", token->value.string_value);
             break;
-        case TOKEN_LITERAL_HEXADECIMAL:
-            printf("0x%" PRIx64 "\n", token->value.int_value);
-            break;
-        case TOKEN_LITERAL_OCTAL:
-            printf("0%" PRIo64" \n", token->value.int_value);
+        case TOKEN_LITERAL_BOOLEAN:
+            printf("%s\n", token->value.boolean_value ? "true" : "false");
             break;
         case TOKEN_LITERAL_NULL:
             printf("NULL\n");
