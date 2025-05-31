@@ -102,11 +102,6 @@ typedef enum My_TokenType
 
     // Keywords: (range between TOKEN_KEYWORD_FIRST and TOKEN_KEYWORD_LAST)
     TOKEN_KEYWORD_FIRST, // Keep this the first keyword
-    TOKEN_KEYWORD_EXTERN,               /** extern */
-    TOKEN_KEYWORD_AUTO,                 /** auto */
-    TOKEN_KEYWORD_REGISTER,             /** register */
-    TOKEN_KEYWORD_RESTRICT,             /** restrict */
-    TOKEN_KEYWORD_VOLATILE,             /** volatile */
     TOKEN_KEYWORD_STATIC,               /** static */
     TOKEN_KEYWORD_INLINE,               /** inline */
     TOKEN_KEYWORD_TYPEDEF,              /** typedef */
@@ -114,15 +109,10 @@ typedef enum My_TokenType
     TOKEN_KEYWORD_CHAR,                 /** char */
     TOKEN_KEYWORD_STRING,               /** string */
     TOKEN_KEYWORD_BOOL,                 /** bool */
-    TOKEN_KEYWORD_SHORT,                /** short */
     TOKEN_KEYWORD_INT,                  /** int */
     TOKEN_KEYWORD_HEX,                  /** hex */
     TOKEN_KEYWORD_OCT,                  /** oct */
-    TOKEN_KEYWORD_LONG,                 /** long */
     TOKEN_KEYWORD_FLOAT,                /** float */
-    TOKEN_KEYWORD_DOUBLE,               /** double */
-    TOKEN_KEYWORD_SIGNED,               /** signed */
-    TOKEN_KEYWORD_UNSIGNED,             /** unsigned */
     TOKEN_KEYWORD_STRUCT,               /** struct */
     TOKEN_KEYWORD_UNION,                /** union */
     TOKEN_KEYWORD_CONST,                /** const */
