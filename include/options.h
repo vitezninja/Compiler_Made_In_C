@@ -33,7 +33,6 @@ typedef enum OptionFlags
 {
     OPTION_FLAG_NONE,              /** No flags set. */
     OPTION_FLAG_HELP,              /** Print help message. */
-    OPTION_FLAG_ONLY_LEX,          /** Only lex the input and print tokens. */
     OPTION_FLAG_NO_LINK,           /** Compile source files without linking. */
     OPTION_FLAG_IS_OUTPUT_FILE,    /** Specify the output file. */
     OPTION_FLAG_WARN_ALL,          /** Enable all warnings. */

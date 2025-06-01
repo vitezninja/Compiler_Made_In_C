@@ -83,10 +83,6 @@ Options options_create(int argc, char** argv)
             {
                 bitset64_set(&(options.flags), OPTION_FLAG_HELP);
             }
-            else if (strcmp(argv[i], "-l") == 0)
-            {
-                bitset64_set(&(options.flags), OPTION_FLAG_ONLY_LEX);
-            }
             else if (strcmp(argv[i], "-c") == 0)
             {
                 bitset64_set(&(options.flags), OPTION_FLAG_NO_LINK);
@@ -207,10 +203,6 @@ void options_print(const Options *options)
     {
         printf("        - Help\n");
     }
-    if (bitset64_test(&(options->flags), OPTION_FLAG_ONLY_LEX))
-    {
-        printf("        - Only Lex\n");
-    }
     if (bitset64_test(&(options->flags), OPTION_FLAG_NO_LINK))
     {
         printf("        - No Link\n");
@@ -281,7 +273,6 @@ bool options_tryPrintHelp(const Options *options)
     printf("Usage: cmc [options] <source files>\n");
     printf("Options:\n");
     printf("  -h \t\t\tPrint this help message\n");
-    printf("  -l \t\t\tOnly lex the input and print the tokens\n");
     printf("  -c \t\t\tCompiles the source files without linking.\n");
     printf("  -o <output_file> \tSpecify the output file\n");
     printf("  -Wall \t\tEnable all warnings\n");
