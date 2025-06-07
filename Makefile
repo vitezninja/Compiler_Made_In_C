@@ -53,7 +53,7 @@ BUILD_DIR := build
 TEST_DIR := tests
 
 # Flags
-DEV_FLAGS := $(STD) -Wall -Wextra -g -Og -lm -Wpedantic -Werror -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wno-unused-parameter -fstack-protector-strong -Iinclude
+DEV_FLAGS := $(STD) -Wall -Wextra -g -Og -lm -Wpedantic -Werror -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wno-unused-parameter -fstack-protector-strong -Iinclude -DDEBUG
 ifneq ($(HOST_OS),windows)
 	DEV_FLAGS += -fsanitize=address,undefined
 endif

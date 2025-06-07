@@ -182,6 +182,26 @@ LinkedList *linkedList_String_create(Arena *arena, LinkedList *head, String *dat
     return node;
 }
 
+LinkedList *linkedList_Ast_create(Arena *arena, LinkedList *head, AstNode *data)
+{
+    LinkedList *node = linkedList_createEnd(arena, head, (void *)data);
+    if (node == NULL)
+    {
+        if (errno == ENOMEM)
+        {
+            DEBUG_PRINT("linkedList_Ast_create: linkedList_createEnd failed with errno %d\n", errno);
+        }
+        else
+        {
+            DEBUG_PRINT("linkedList_Ast_create: linkedList_createEnd failed with unknown error\n");
+        }
+
+        return NULL;
+    }
+
+    return node;
+}
+
 void linkedList_print(const LinkedList *node, PrintFunction printFn)
 {
     if (node == NULL)

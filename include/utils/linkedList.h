@@ -24,6 +24,7 @@ struct LinkedList;
 #include "utils/hashTable.h"
 #include "utils/symbol.h"
 #include "utils/my_string.h"
+#include "utils/ast.h"
 
 /**
  * @struct LinkedList
@@ -104,6 +105,19 @@ LinkedList *linkedList_Symbol_create(Arena *arena, LinkedList *head, Symbol *dat
  * @return Pointer to the head of the linked list. Set `errno` to indicate the error.
  */
 LinkedList *linkedList_String_create(Arena *arena, LinkedList *head, String *data);
+
+/**
+ * @brief Creates a new linked list node with the given AST node data.
+ * 
+ * This function allocates memory for a new LinkedList node and initializes it
+ * with the provided AST node data and chains it to the end of the linked list.
+ * 
+ * @param arena Memory arena used for allocation.
+ * @param head Pointer to the head of the linked list (can be NULL).
+ * @param data Pointer to the AST node data to be stored in the node.
+ * @return Pointer to the head of the linked list. Set `errno` to indicate the error.
+ */
+LinkedList *linkedList_Ast_create(Arena *arena, LinkedList *head, struct AstNode *data);
 
 /**
  * @brief Prints the contents of a linked list node.

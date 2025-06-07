@@ -120,8 +120,8 @@ typedef enum My_TokenType
     TOKEN_KEYWORD_TYPEDEF,              /** typedef */
     
     TOKEN_KEYWORD_CONST,                /** const */
-    TOKEN_KEYWORD_STATIC,               /** static */
-    TOKEN_KEYWORD_INLINE,               /** inline */
+    TOKEN_KEYWORD_CONST_PTR,            /** const_ptr */
+    TOKEN_KEYWORD_PTR,                  /** ptr */
 
     TOKEN_KEYWORD_IF,                   /** if */
     TOKEN_KEYWORD_ELSE,                 /** else */
@@ -148,6 +148,7 @@ typedef enum My_TokenType
 
     TOKEN_KEYWORD_IMPORT,               /** import */
     TOKEN_KEYWORD_FROM,                 /** from */
+    TOKEN_KEYWORD_EXPORT,               /** export */
     TOKEN_KEYWORD_LAST, // Keep this the last keyword
 
     // Punctuation:

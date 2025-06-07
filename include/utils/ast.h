@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdalign.h>
 #include <errno.h>
+#include <stdbool.h>
 
 // Forward declaration of the AstNode structure
 struct AstNode;
@@ -21,6 +22,7 @@ struct AstNode;
 #include "utils/logger.h"
 #include "utils/token.h"
 #include "utils/arena.h"
+#include "utils/linkedList.h"
 
 /**
  * @enum AstType
@@ -32,8 +34,12 @@ struct AstNode;
 typedef enum AstType
 {
     AST_PROGRAM,
-    AST_GLOBAL_DECLARATION,
+    AST_IMPORT,
+    AST_IMPORT_FROM,
+
     AST_FUNCTION_DEFINITION,
+    AST_GLOBAL_VARIABLE_DECLARATION,
+
     AST_DECLARATION_SPECIFIERS,
     AST_STORAGE_CLASS_SPECIFIER,
     AST_TYPE_SPECIFIER,
@@ -115,10 +121,8 @@ typedef enum AstType
 typedef struct AstNode
 {
     AstType type;               /** Type of the AST node. */
-    const Token *tokens;        /** Array of tokens associated with this node. */
-    size_t tokenCount;          /** Number of tokens in the array. */
-    const struct AstNode **children;  /** Array of child AST nodes. */
-    size_t childCount;          /** Number of child nodes. */
+    struct LinkedList *tokens;         /** Array of tokens associated with this node. */
+    struct LinkedList *children;       /** Array of child AST nodes. */
 } AstNode;
 
 /**
@@ -135,7 +139,7 @@ typedef struct AstNode
  * @param childCount Number of children.
  * @return Pointer to the newly created ASTNode. Set `errno` to indicate the error.
  */
-AstNode *astNode_create(Arena *arena, AstType type, const Token *tokens, size_t tokenCount, const AstNode **children, size_t childCount);
+AstNode *astNode_create(Arena *arena, AstType type, struct LinkedList *tokens, struct LinkedList *children);
 
 /**
  * @brief Prints a brief summary of an AST node.
@@ -155,7 +159,7 @@ void astNode_print(const AstNode *astNode);
  * @param indent Current indentation string (use "" for root).
  * @param isLast Flag indicating whether this node is the last child in its parent.
  */
-void astNode_printTree(const AstNode *astNode, char *indent, int isLast);
+void astNode_printTree(const AstNode *astNode, char *indent, bool isLast);
 
 /**
  * @brief Returns the string name of an AST type.

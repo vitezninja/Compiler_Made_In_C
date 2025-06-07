@@ -69,8 +69,8 @@ static const char *token_typeAsStrings[] = {
     [TOKEN_KEYWORD_VOID] = "TOKEN_KEYWORD_VOID",
     [TOKEN_KEYWORD_TYPEDEF] = "TOKEN_KEYWORD_TYPEDEF",
     [TOKEN_KEYWORD_CONST] = "TOKEN_KEYWORD_CONST",
-    [TOKEN_KEYWORD_STATIC] = "TOKEN_KEYWORD_STATIC",
-    [TOKEN_KEYWORD_INLINE] = "TOKEN_KEYWORD_INLINE",
+    [TOKEN_KEYWORD_CONST_PTR] = "TOKEN_KEYWORD_CONST_PTR",
+    [TOKEN_KEYWORD_PTR] = "TOKEN_KEYWORD_PTR",
     [TOKEN_KEYWORD_IF] = "TOKEN_KEYWORD_IF",
     [TOKEN_KEYWORD_ELSE] = "TOKEN_KEYWORD_ELSE",
     [TOKEN_KEYWORD_SWITCH] = "TOKEN_KEYWORD_SWITCH",
@@ -91,6 +91,7 @@ static const char *token_typeAsStrings[] = {
     [TOKEN_KEYWORD_TYPEOF] = "TOKEN_KEYWORD_TYPEOF",
     [TOKEN_KEYWORD_IMPORT] = "TOKEN_KEYWORD_IMPORT",
     [TOKEN_KEYWORD_FROM] = "TOKEN_KEYWORD_FROM",
+    [TOKEN_KEYWORD_EXPORT] = "TOKEN_KEYWORD_EXPORT",
     [TOKEN_COMMA] = "TOKEN_COMMA",
     [TOKEN_SEMICOLON] = "TOKEN_SEMICOLON",
     [TOKEN_COLON] = "TOKEN_COLON",
@@ -119,8 +120,8 @@ static const char *token_keywordsAsStrings[] = {
     [TOKEN_KEYWORD_VOID] = "void",
     [TOKEN_KEYWORD_TYPEDEF] = "typedef",
     [TOKEN_KEYWORD_CONST] = "const",
-    [TOKEN_KEYWORD_STATIC] = "static",
-    [TOKEN_KEYWORD_INLINE] = "inline",
+    [TOKEN_KEYWORD_CONST_PTR] = "const_ptr",
+    [TOKEN_KEYWORD_PTR] = "ptr",
     [TOKEN_KEYWORD_IF] = "if",
     [TOKEN_KEYWORD_ELSE] = "else",
     [TOKEN_KEYWORD_SWITCH] = "switch",
@@ -141,6 +142,7 @@ static const char *token_keywordsAsStrings[] = {
     [TOKEN_KEYWORD_TYPEOF] = "typeof",
     [TOKEN_KEYWORD_IMPORT] = "import",
     [TOKEN_KEYWORD_FROM] = "from",
+    [TOKEN_KEYWORD_EXPORT] = "export",
 };
 
 Token *token_create(Arena *arena, My_TokenType type, const char *text, size_t length, size_t line, size_t column, TokenValue value)

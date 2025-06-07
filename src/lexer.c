@@ -165,7 +165,6 @@ static char lexer_getEscapedChar(char text)
         case '\\': return '\\'; // Backslash
         case '\'': return '\''; // Single quote
         case '"': return '"';   // Double quote
-        case '?': return '?';   // Question mark
         case '0': return '\0';  // Null character
         default:
             return -1; // Invalid escape sequence
@@ -231,7 +230,6 @@ static void lexer_consumeChar(Lexer *lexer, size_t count)
     if (lexer->currentPosition + count >= lexer->sourceBufferSize)
     {
         lexer->currentPosition = lexer->sourceBufferSize; // Move to end of file
-        DEBUG_PRINT("lexer_consumeChar: Reached end of source buffer becuse lexer_consumeChar got too big of a count.\n");
         return;
     }
 
@@ -677,7 +675,7 @@ static Token *lexer_handleNumbers(Lexer *lexer)
     bool isOctal = false;
     bool isHexal = false;
     bool isBinary = false;
-    double doubleValue = 0.0f;
+    double doubleValue = 0.0;
     size_t mantissaCount = 0;
 
     //Check if the number is either hexadecimal or octal
@@ -697,10 +695,13 @@ static Token *lexer_handleNumbers(Lexer *lexer)
             lexer_consumeChar(lexer, 1);
         }
         //Check if the next character is the start of an octal number
-        //Exemple Octal: 0123
-        else if (lexer_isOctalDigit(lexer_currentChar(lexer)))
+        //Exemple Octal: 0o123
+        else if (lexer_currentChar(lexer) == 'o' || lexer_currentChar(lexer) == 'O')
         {
             isOctal = 1;
+            //Consume 'o' or 'O'
+            text[pos++] = lexer_currentChar(lexer);
+            lexer_consumeChar(lexer, 1);
         }
         //Check if the next character is the start of a binary number
         //Exemple Binary: 0b1010
@@ -716,7 +717,7 @@ static Token *lexer_handleNumbers(Lexer *lexer)
         {
             
         }
-        //Invalid octal constant
+        //Invalid integer
         else
         {
             while (isalnum(lexer_currentChar(lexer)))
@@ -764,7 +765,7 @@ static Token *lexer_handleNumbers(Lexer *lexer)
             }
             free(text);
 
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, pos, lexer->line, lexer->column - pos, "Invalid octal constant");
+            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, pos, lexer->line, lexer->column - pos, "Invalid integer constant starting with 0");
             if (error == NULL)
             {
                 if (errno == ENOMEM)
@@ -797,6 +798,71 @@ static Token *lexer_handleNumbers(Lexer *lexer)
 
             return token;
         }
+    }
+
+    //Check if the numbers second character is a 0
+    if (lexer_currentChar(lexer) == '0')
+    {
+        text[pos] = '\0';
+        String *str = string_create(lexer->utilsArena, text, pos, 0);
+        if (str == NULL)
+        {
+            if (errno == ENOMEM)
+            {
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with errno %d\n", errno);
+            }
+            else
+            {
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with unknown error\n");
+            }
+            free(text);
+            return NULL;
+        }
+        
+        free(text);
+        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, lexer->line, lexer->column - pos, (TokenValue){0});
+        if (token == NULL)
+        {
+            if (errno == ENOMEM)
+            {
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
+            }
+            else
+            {
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with unknown error\n");
+            }
+            return NULL;
+        }
+
+        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, pos , lexer->column, lexer->line, "Invalid integer constant starting with 0");
+        if (error == NULL)
+        {
+            if (errno == ENOMEM)
+            {
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
+            }
+            else
+            {
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with unknown error\n");
+            }
+            return NULL;
+        }
+
+        LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
+        if (head == NULL)
+        {
+            if (errno == ENOMEM)
+            {
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
+            }
+            else
+            {
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with unknown error\n");
+            }
+            return NULL;
+        }
+        lexer->error = head;
+        return token;
     }
 
     //Binary numbers

@@ -6,6 +6,7 @@ This project will be on github where it will use github actions automation.
 I want to use external dependencys only when needed.
 
 The project structure will be:
+```
 compiler
 - .github/workflow/c-cpp.yml
 - src/
@@ -60,6 +61,7 @@ compiler
 - .gitignore
 - README.md
 - LICENSE (MIT License)
+```
 
 Done:
    .github/workflow/c-cpp.yml
@@ -88,14 +90,14 @@ Todo:
 
    stack.c/h + documentation
    dynamicArray.c/h + documentation
-   lexer.c/h + documentation
+   lexer.c/h documentation
    parser.c/h + documentation
    validator.c/h + documentation
    codeGenerator.c/h + documentation
 
 Testing will be done with runing the test_script. This will compile the files needed for testing then run them then clean up there files.
 
-Memory managment:
+## Memory managment:
 For now I have only made plans until the parsing is finished.
 I will have 2 arenas. For easier explanation I will call them Alpha, Beta. (Maybe I will need more)
 There will be also another arena for string inturning but i will leave that one out as it will have full lifetime.
@@ -104,7 +106,7 @@ Errors are a linkedList when I refer to storing them I also mean that as a linke
 
 (Here could be a part for handeling the command line arguments and a loop to handle multiple files)
 
-Step 1 (file reading):
+### Step 1 (file reading):
 1. Create Alpha.
 2. Store data like fileSystem and any error that occure during this process in Aplha.
 3. File contents won't be stored in an arena this will be needed for error messages so it needs to have full lifetime during the whole compilation.
@@ -114,7 +116,7 @@ Memory summery:
 Alpha has content
 Beta is empty
 
-Step 2 (lexing):
+### Step 2 (lexing):
 1. Create the lexer and store it in Alpha.
 2. Create Beta.
 3. Lex the file contents and create tokens into a linkedList that will have its memory in Beta.
@@ -125,7 +127,7 @@ Memory summery:
 Alpha is empty
 Beta has content
 
-Step 3 (parsing):
+### Step 3 (parsing):
 1. Create the parser and store it in Beta.
 2. Parse the tokens in Beta.
    This will create an AST that will be stored in Alpha as well as copy any tokens that are neccecery for the AST.
@@ -137,7 +139,7 @@ Memory summery:
 Alpha has content
 Beta is empty
 
-Step 4 (validation): This is not made yet
+### Step 4 (validation): This is not made yet
 1. Create the validator into Beta.
 2. Create symbol table (hash table + linkedList) in Beta.
 3. Constant fold the AST. If this creates new AST node or tokens store them in Alpha.
@@ -152,7 +154,7 @@ Memory summery:
 Alpha has content
 Beta is empty
 
-Step 5 (code generation): This is not made yet
+### Step 5 (code generation): This is not made yet
 1. Create the code generator into Beta.
 2. Create fileSystem into Beta.
 3. Generate NASM code from the AST.
@@ -164,217 +166,3 @@ x. Clear Beta.
 Memory summery:
 Alpha ?
 Beta ?
-
-Language syntax:
-
-Types:
-- int                            (maybe versions of this like int64, int32, int16, int8)
-- float                          (maybe versions of this like float64, float32, float16, float8)
-- char
-- string
-- bool
-- void (not really a type)
-
-Type specifiers:
-- const
-- static
-- inline
-
-Name:
-- identifier
-
-Assignment operators:
-- =
-- +=
-- -=
-- *=
-- /=
-- %=
-- <<=
-- >>=
-- |=
-- &=
-- ^=
-
-Binart operators:
-- +
-- -
-- *
-- /
-- %
-- ==
-- !=
-- <
-- >
-- <=
-- >=
-- &&
-- &
-- ||
-- |
-- ^
-- <<
-- >>
-
-Unary operators:
-- -
-- +
-- !
-- ~
-
-Prefix operators:
-- ++
-- --
-- *
-- &
-
-Suffix operators:
-- ++
-- --
-- .                              (decide this)
-
-Literals:
-- integer number
-- binary number
-- octal number
-- hexadecimal number
-- floating-point number
-- character
-- string
-- boolean
-- null value                     (not really a literal)
-
-Keywords:
-- if
-- else
-- switch
-- case
-- default
-- for
-- while
-- do
-- return
-- break
-- continue
-- {types}
-- typedef
-- sizeof
-- typeof
-- struct
-- union                          (maybe removed, don't see much use for them)
-- const
-- enum
-- goto
-- when
-
-Rules:
-(Type is offten refered to this could be a built in type a struct union enum or typedefed type)
-
-Name:
-identifier
-
-Import:                                               (imports globals like variables functions enums, structs)
-import ( {name} *" , {name} " ) from {name} ;
-
-Program:                                              (global variables allow)
-*{import} " *{function declaration} | {var declaration} | {struct | union | enum declaration} | {typedef} " EOF
-
-Function declaration:                                 (allow multiple return values, ignore function order when called, can have return in its statement)
-( {type} *" , {type} " ) {name} ( ?" {type} {name} *" , {type} {name} " " ) {statement}
-
-Variable declaration:                                 (const const | instead of const * const)
-*{type specifier} {type} {name} *" , *{type specifier} {type} {name} " = {expression} | {declarator}
-
-Structs declaration:
-struct {name} {
-   +" *{type specifier} {type} ; "
-} ;
-
-Union declaration:                                    (same as struct but with union keyword, maybe removed later)
-
-Enums declaration:
-enum {name} {
-   +" {name} ?" {assignment_operator} {const expression} " , "
-};
-
-Typedef:
-typedef {type} {name} ;
-
-Lables declaration:
-{name}
-
-Declarator:
-{ +" .{name} = {expression} , " }                     (for structs | unions)
-|
-{ +" {expression} , " }                               (for arrays)
-
-Statement:                                            (aka stm)
-{branch stm} | {loop stm} | {compound stm} | {expression stm} | {jump stm} | " {label declaration} : "
-
-Branch stm:
-if ( {expression} ) {statement} ?" else {statement} "
-|
-switch ( {expression} ) { 
-   +" case {constant exp} : {statement} "            (this can contain break)
-   default : {statement}
-}
-
-Loop stm:                                             (can have break and continue in its statement)
-for ( ?{assignment | var declaration} ; ?{expression} ; ?{expression} ) {statement}
-|
-for ( {expression} ) {statement}                      (basicly a while loop)
-|
-for {name} : {name} {statement}                       (second name has to be iteratable)
-|
-while ( {expression} ) {statement}
-|
-do {statement} while ( {expression} ) ;
-
-Compound stm:
-{ *" {statement} " }
-
-Expression stm:
-{expression} ;
-|
-{var declaration} ;
-
-Jump stm:
-goto {name};                                          (name is a label)
-|
-goto {name} when ( {expression} );                    (name is a label, runtime check)
-
-Expression:
-{assignment} | {function call} | {arithmetic op}
-
-Const expression:                                     (can only contain const values / variables)
-{arithmetic op}
-
-Assignment:
-" {name} | {array indexing} " *" {name} | {array indexing} " {assignment_operator} {expression}
-
-Function call:
-{name} ( ?" {name} *" , {name} " " )
-
-Arithmetic operation:
-{binary op} | (unary op) | {prefix op} | {suffix op} | {type cast} | {parenthesizes op} | {array indexing}
-
-Binary operation:
-{name} {binary operator} {name}
-
-Unary operation:
-{unary operator} {name}
-
-Prefix operation:
-{prefix operator} {name}
-
-Suffix operation:
-{name} {suffix}
-
-Type cast:
-( {type} ) {name}
-
-Parenthesizes operation:
-( {arithmetic op} )
-
-Array indexing:
-{name} [ {index} ]

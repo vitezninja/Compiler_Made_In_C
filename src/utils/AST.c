@@ -5,8 +5,12 @@
  */
 static const char *astNode_typeAsStrings[] = {
     [AST_PROGRAM] = "PROGRAM",
-    [AST_GLOBAL_DECLARATION] = "GLOBAL_DECLARATION",
+    [AST_IMPORT] = "IMPORT",
+    [AST_IMPORT_FROM] = "IMPORT_FROM",
+
     [AST_FUNCTION_DEFINITION] = "FUNCTION_DEFINITION",
+    [AST_GLOBAL_VARIABLE_DECLARATION] = "GLOBAL_VARIABLE_DECLARATION",
+
     [AST_DECLARATION_SPECIFIERS] = "DECLARATION_SPECIFIERS",
     [AST_STORAGE_CLASS_SPECIFIER] = "STORAGE_CLASS_SPECIFIER",
     [AST_TYPE_SPECIFIER] = "TYPE_SPECIFIER",
@@ -78,7 +82,7 @@ static const char *astNode_typeAsStrings[] = {
     [AST_JUMP_STATEMENT] = "JUMP_STATEMENT",
 };
 
-AstNode *astNode_create(Arena *arena, AstType type, const Token *tokens, size_t tokenCount, const AstNode **children, size_t childCount)
+AstNode *astNode_create(Arena *arena, AstType type, LinkedList *tokens, LinkedList *children)
 {
     if (arena == NULL)
     {
@@ -86,21 +90,9 @@ AstNode *astNode_create(Arena *arena, AstType type, const Token *tokens, size_t 
         return NULL;
     }
 
-    if (type <= 0 || type >= AST_JUMP_STATEMENT)
+    if (type < 0 || type >= AST_JUMP_STATEMENT)
     {
         DEBUG_PRINT("astNode_create: type is out of range\n");
-        return NULL;
-    }
-
-    if (tokens == NULL)
-    {
-        DEBUG_PRINT("astNode_create: tokens is NULL\n");
-        return NULL;
-    }
-
-    if (children == NULL)
-    {
-        DEBUG_PRINT("astNode_create: children is NULL\n");
         return NULL;
     }
 
@@ -121,9 +113,7 @@ AstNode *astNode_create(Arena *arena, AstType type, const Token *tokens, size_t 
 
     node->type = type;
     node->tokens = tokens;
-    node->tokenCount = tokenCount;
     node->children = children;
-    node->childCount = childCount;
 
     return node;
 }
@@ -138,17 +128,12 @@ void astNode_print(const AstNode *astNode)
 
     printf("AST Node {\n");
     printf("    AST Node Type: %s\n", astNode_typeAsStrings[astNode->type]);
-    printf("    Token Count: %zu\n", astNode->tokenCount);
-    for (size_t i = 0; i < astNode->tokenCount; i++)
-    {
-        token_print(&(astNode->tokens[i]));
-    }
-    printf("    Child Count: %zu\n", astNode->childCount);
-    printf("    For more details, use astNode_printTree function.\n");
+    linkedList_printRecursive(astNode->tokens, (PrintFunction)token_print);
+    astNode_printTree(astNode, "", false);
     printf("}\n");
 }
 
-void astNode_printTree(const AstNode *astNode, char *indent, int isLast)
+void astNode_printTree(const AstNode *astNode, char *indent, bool isLast)
 {
     if (astNode == NULL)
     {
@@ -163,7 +148,7 @@ void astNode_printTree(const AstNode *astNode, char *indent, int isLast)
     snprintf(newIndent, sizeof(newIndent), "%s%s", indent, isLast ? "    " : "│   ");
 
     //Print tokens
-    if (astNode->childCount == 0)
+    if (astNode->children == NULL)
     {
         printf("%s└── Tokens:\n", newIndent);
     }
@@ -172,9 +157,10 @@ void astNode_printTree(const AstNode *astNode, char *indent, int isLast)
         printf("%s├── Tokens:\n", newIndent);
     }
 
-    for (size_t i = 0; i < astNode->tokenCount; i++)
+    LinkedList *node = astNode->tokens;
+    while (node != NULL)
     {
-        if (astNode->childCount == 0)
+        if (astNode->children == NULL)
         {
             printf("%s    ", newIndent);
         }
@@ -183,7 +169,7 @@ void astNode_printTree(const AstNode *astNode, char *indent, int isLast)
             printf("%s│   ", newIndent);
         }
         
-        if (i + 1 >= astNode->tokenCount)
+        if (node->next == NULL)
         {
             printf("└── ");
         }
@@ -192,13 +178,17 @@ void astNode_printTree(const AstNode *astNode, char *indent, int isLast)
             printf("├── ");
         }
         
-        token_print(&(astNode->tokens[i]));
+        printf("Token: %s\n", token_typeToString(((Token *)node->data)->type));
+
+        node = node->next;
     }
 
     //Print children
-    for (size_t i = 0; i < astNode->childCount; i++)
+    node = astNode->children;
+    while (node != NULL)
     {
-        astNode_printTree(astNode->children[i], newIndent, i == astNode->childCount - 1);
+        astNode_printTree((AstNode *)node->data, newIndent, node->next == NULL);
+        node = node->next;
     }
 }
 
