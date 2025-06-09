@@ -1,8 +1,8 @@
 #include "lexer.h"
 
-static bool lexer_isBinaryDigit(char c);
+bool lexer_isBinaryDigit(char c);
 
-static int lexer_getBinaryValue(char c);
+int lexer_getBinaryValue(char c);
 
 /**
  * Checks if a character is a valid octal digit (0-7).
@@ -15,7 +15,7 @@ static int lexer_getBinaryValue(char c);
  * 
  * @return 1 if the character is an octal digit (0-7), 0 otherwise.
  */
-static bool lexer_isOctalDigit(char c);
+bool lexer_isOctalDigit(char c);
 
 /**
  * Converts a character to its octal digit value.
@@ -28,7 +28,7 @@ static bool lexer_isOctalDigit(char c);
  * 
  * @return The integer value of the octal digit, or -1 if the character is not a valid octal digit.
  */
-static int lexer_getOctalValue(char c);
+int lexer_getOctalValue(char c);
 
 /**
  * Checks if a character is a valid hexadecimal digit (0-9, A-F, a-f).
@@ -41,7 +41,7 @@ static int lexer_getOctalValue(char c);
  * 
  * @return 1 if the character is a hexadecimal digit (0-9, A-F, a-f), 0 otherwise.
  */
-static bool lexer_isHexalDigit(char c);
+bool lexer_isHexalDigit(char c);
 
 /**
  * Converts a character to its hexadecimal digit value.
@@ -54,47 +54,47 @@ static bool lexer_isHexalDigit(char c);
  * 
  * @return The integer value of the hexadecimal digit, or -1 if the character is not a valid hexadecimal digit.
  */
-static int lexer_getHexalValue(char c);
+int lexer_getHexalValue(char c);
 
-static char lexer_getEscapedChar(char text);
+char lexer_getEscapedChar(char text);
 
-static char lexer_currentChar(const Lexer *lexer);
+char lexer_currentChar(const Lexer *lexer);
 
-static char lexer_nextChar(const Lexer *lexer);
+char lexer_nextChar(const Lexer *lexer);
 
-static char lexer_peekChar(const Lexer *lexer, size_t offset);
+char lexer_peekChar(const Lexer *lexer, size_t offset);
 
-static void lexer_consumeChar(Lexer *lexer, size_t count);
+void lexer_consumeChar(Lexer *lexer, size_t count);
 
-static bool lexer_deleteWhitespaces(Lexer *lexer);
+bool lexer_deleteWhitespaces(Lexer *lexer);
 
-static bool lexer_deleteComments(Lexer *lexer);
+bool lexer_deleteComments(Lexer *lexer);
 
 // TEMPORARY FUNCTION UNTIL PREPROCESSOR DIRECTIVES ARE IMPLEMENTED
-static bool lexer_deletePreprocessorDirectives(Lexer *lexer);
+bool lexer_deletePreprocessorDirectives(Lexer *lexer);
 
-static Token *lexer_handleSimpleCase(Lexer *lexer);
+Token *lexer_handleSimpleCase(Lexer *lexer);
 
-static Token *lexer_handleNumbers(Lexer *lexer);
+Token *lexer_handleNumbers(Lexer *lexer);
 
-static Token *lexer_handleCharacters(Lexer *lexer);
+Token *lexer_handleCharacters(Lexer *lexer);
 
-static Token *lexer_handleStrings(Lexer *lexer);
+Token *lexer_handleStrings(Lexer *lexer);
 
-static Token *lexer_handleBooleans(Lexer *lexer);
+Token *lexer_handleBooleans(Lexer *lexer);
 
-static Token *lexer_handleNull(Lexer *lexer);
+Token *lexer_handleNull(Lexer *lexer);
 
-static Token *lexer_handleIdentifiersAndKeywords(Lexer *lexer);
+Token *lexer_handleIdentifiersAndKeywords(Lexer *lexer);
 
 // ---------------------------------------------------------------------------
 
-static bool lexer_isBinaryDigit(char c)
+bool lexer_isBinaryDigit(char c)
 {
     return (c == '0' || c == '1');
 }
 
-static int lexer_getBinaryValue(char c)
+int lexer_getBinaryValue(char c)
 {
     if (lexer_isBinaryDigit(c))
     {
@@ -105,12 +105,12 @@ static int lexer_getBinaryValue(char c)
     return -1;
 }
 
-static bool lexer_isOctalDigit(char c)
+bool lexer_isOctalDigit(char c)
 {
     return c >= '0' && c <= '7';
 }
 
-static int lexer_getOctalValue(char c)
+int lexer_getOctalValue(char c)
 {
     if (lexer_isOctalDigit(c))
     {
@@ -121,12 +121,12 @@ static int lexer_getOctalValue(char c)
     return -1;
 }
 
-static bool lexer_isHexalDigit(char c)
+bool lexer_isHexalDigit(char c)
 {
     return (isxdigit(c) != 0);
 }
 
-static int lexer_getHexalValue(char c)
+int lexer_getHexalValue(char c)
 {
     if (isdigit(c))
     {
@@ -145,7 +145,7 @@ static int lexer_getHexalValue(char c)
     return -1;
 }
 
-static char lexer_getEscapedChar(char text)
+char lexer_getEscapedChar(char text)
 {
     if (text == '\0')
     {
@@ -171,7 +171,7 @@ static char lexer_getEscapedChar(char text)
     }
 }
 
-static char lexer_currentChar(const Lexer *lexer)
+char lexer_currentChar(const Lexer *lexer)
 {
     if (lexer == NULL)
     {
@@ -187,7 +187,7 @@ static char lexer_currentChar(const Lexer *lexer)
     return lexer->sourceBuffer[lexer->currentPosition];
 }
 
-static char lexer_nextChar(const Lexer *lexer)
+char lexer_nextChar(const Lexer *lexer)
 {
     if (lexer == NULL)
     {
@@ -203,7 +203,7 @@ static char lexer_nextChar(const Lexer *lexer)
     return lexer->sourceBuffer[lexer->currentPosition + 1];
 }
 
-static char lexer_peekChar(const Lexer *lexer, size_t offset)
+char lexer_peekChar(const Lexer *lexer, size_t offset)
 {
     if (lexer == NULL)
     {
@@ -219,7 +219,7 @@ static char lexer_peekChar(const Lexer *lexer, size_t offset)
     return lexer->sourceBuffer[lexer->currentPosition + offset];
 }
 
-static void lexer_consumeChar(Lexer *lexer, size_t count)
+void lexer_consumeChar(Lexer *lexer, size_t count)
 {
     if (lexer == NULL)
     {
@@ -254,7 +254,7 @@ static void lexer_consumeChar(Lexer *lexer, size_t count)
     lexer->currentPosition = endPos;
 }
 
-static bool lexer_deleteWhitespaces(Lexer *lexer)
+bool lexer_deleteWhitespaces(Lexer *lexer)
 {
     if (lexer == NULL)
     {
@@ -275,7 +275,7 @@ static bool lexer_deleteWhitespaces(Lexer *lexer)
     return false;
 }
 
-static bool lexer_deleteComments(Lexer *lexer)
+bool lexer_deleteComments(Lexer *lexer)
 {
     if (lexer == NULL)
     {
@@ -341,7 +341,7 @@ static bool lexer_deleteComments(Lexer *lexer)
     return false;
 }
 
-static bool lexer_deletePreprocessorDirectives(Lexer *lexer)
+bool lexer_deletePreprocessorDirectives(Lexer *lexer)
 {
     if (lexer == NULL)
     {
@@ -370,7 +370,7 @@ static bool lexer_deletePreprocessorDirectives(Lexer *lexer)
     return false;
 }
 
-static Token *lexer_handleSimpleCase(Lexer *lexer)
+Token *lexer_handleSimpleCase(Lexer *lexer)
 {
     if (lexer == NULL)
     {
@@ -640,7 +640,7 @@ static Token *lexer_handleSimpleCase(Lexer *lexer)
     return token;
 }
 
-static Token *lexer_handleNumbers(Lexer *lexer)
+Token *lexer_handleNumbers(Lexer *lexer)
 {
     if (lexer == NULL)
     {
@@ -1681,7 +1681,7 @@ static Token *lexer_handleNumbers(Lexer *lexer)
     return token;
 }
 
-static Token *lexer_handleCharacters(Lexer *lexer)
+Token *lexer_handleCharacters(Lexer *lexer)
 {
     if (lexer == NULL)
     {
@@ -2036,7 +2036,7 @@ static Token *lexer_handleCharacters(Lexer *lexer)
     return token;
 }
 
-static Token *lexer_handleStrings(Lexer *lexer)
+Token *lexer_handleStrings(Lexer *lexer)
 {
     if (lexer == NULL)
     {
@@ -2200,7 +2200,7 @@ static Token *lexer_handleStrings(Lexer *lexer)
     return token;
 }
 
-static Token *lexer_handleBooleans(Lexer *lexer)
+Token *lexer_handleBooleans(Lexer *lexer)
 {
     if (lexer == NULL)
     {
@@ -2313,7 +2313,7 @@ static Token *lexer_handleBooleans(Lexer *lexer)
     return token;
 }
 
-static Token *lexer_handleNull(Lexer *lexer)
+Token *lexer_handleNull(Lexer *lexer)
 {
     if (lexer == NULL)
     {
@@ -2396,7 +2396,7 @@ static Token *lexer_handleNull(Lexer *lexer)
     return token;
 }
 
-static Token *lexer_handleIdentifiersAndKeywords(Lexer *lexer)
+Token *lexer_handleIdentifiersAndKeywords(Lexer *lexer)
 {
     if (lexer == NULL)
     {

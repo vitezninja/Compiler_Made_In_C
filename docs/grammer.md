@@ -164,7 +164,7 @@ Import = ( "import" String_literal )
 
 Identifier_list = identifier { "," identifier } ;
 
-Function_declaration = "(" Return_parameter_list ")" identifier "(" Function_parameter_list_ ")" Statement ;
+Function_declaration = "(" Return_parameter_list ")" identifier "(" [ Function_parameter_list ] ")" Statement ;
 
 Return_parameter_list = Return_parameter { "," Return_parameter } ;
 
@@ -174,7 +174,7 @@ Function_parameter_list = Function_parameter { "," Function_parameter } ;
 
 Function_parameter = [ Type_specifier ] Type identifier ;
 
-Global_variables_declaration = [ Type_specifier ] Type identifier [ "=" Constant_expression | Constant_Struct_Union_declarator ";" ] ;
+Global_variables_declaration = [ Type_specifier ] Type identifier [ "=" Expression | Struct_Union_declarator ";" ] ;
 
 Struct_declaration = "struct" identifier "{" Struct_Union_member_declaration "}" ;
 
@@ -182,24 +182,31 @@ Union_declaration = "union" identifier "{" Struct_Union_member_declaration "}" ;
 
 Struct_Union_member_declaration = [ Type_specifier ] Type identifier ";" { Struct_Union_member_declaration } ;
 
-Constant_Struct_Union_declarator = [ "(" [ Type_specifier ] Type ")" ] "{" Constant_expression { "," Constant_expression } "}" ;
+Struct_Union_declarator = [ "(" [ Type_specifier ] Type ")" ] "{" Expression { "," Expression } "}" ;
 
 Enum_declaration = "enum" identifier "{" Enum_value_declaration "}" ;
 
-Enum_value_declaration = identifier [ "=" Constant_expression ] "," { Enum_value_declaration } ;
+Enum_value_declaration = identifier [ "=" Expression ] "," { Enum_value_declaration } ;
 
-Typedef = "typedef" Type identifier ;
+Typedef = "typedef" [ Type_specifier ] Type identifier ;
 
 Statement = Branch_statement | Loop_statement | Compound_statement | Expression_statement | Jump_statement ;
 
-Branch_statement = ( "if" "(" Expression ")" Statement [ "else" Statement ] )
-                 | ( "switch" "(" Expression ")" "{" { "case" Constant_expression ":" Statement } "default" ":" Statement "}" ) ;
+Branch_statement = If_statement | Switch_statement ;
 
-Loop_statement = ( "for" "(" ( Assignment | Variable_declaration ) ";" Expression ";" Expression ")" Statement )
-               | ( "for" "(" Expression ")" Statement )
-               | ( "for" [ Type_specifier ] Type identifier ":" identifier Statement)
-               | ( "while" "(" Expression ")" Statement )
-               | ( "do" Statement "while" "(" Expression ")" ";" ) ;
+If_statement = "if" "(" Expression ")" Statement [ "else" Statement ] ;
+
+Switch_statement = "switch" "(" Expression ")" "{" { "case" Expression ":" Statement } "default" ":" Statement "}" ;
+
+Loop_statement = For_statement | Foreach_statement | While_statement | Do_while_statement ; 
+
+For_statement = "for" "(" ( Assignment | Variable_declaration ) ";" Expression ";" Expression ")" Statement ;
+
+Foreach_statement = "for" [ Type_specifier ] Type identifier ":" identifier Statement ;
+
+While_statement = "while" "(" Expression ")" Statement ;
+
+Do_while_statement = "do" Statement "while" "(" Expression ")" ";" ;
 
 Compound_statement = "{" { Statement | Label } "}";
 
@@ -211,19 +218,13 @@ Expression_statement = ( Expression ";" )
 
 Variable_declaration = [ Type_specifier ] Type identifier "=" Expression | Struct_Union_declarator ;
 
-Struct_Union_declarator = [ "(" [ Type_specifier ] Type ")" ] "{" Expression { "," Expression } "}" ;
-
 Jump_statement = ( "goto" identifier ";" )
                | ( "goto" identifier "when" "(" Expression ")" ";" ) 
                | ( "return" [ Expression ] ";" )
                | ( "break" ";" )
                | ( "continue" ";" ) ;
 
-/* TODO: */
-
 Expression = Function_call | Assignment_expression | Logical_OR_expression ;
-
-Constant_expression = Logical_OR_expression ;
 
 Function_call = identifier "(" [ Expression { "," Expression } ] ")" ;
 

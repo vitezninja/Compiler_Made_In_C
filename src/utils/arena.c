@@ -7,6 +7,7 @@ Arena *arena_create(void)
     if (!arena) 
     {
         DEBUG_PRINT("arena_create: failed to allocate Arena struct\n");
+        fprintf(stderr, "Memory allocation failed with error: %s\n", strerror(errno));
         return NULL;
     }
 
@@ -15,6 +16,7 @@ Arena *arena_create(void)
     if (!arena->memory)
     {
         DEBUG_PRINT("arena_create: failed to allocate memory block\n");
+        fprintf(stderr, "Memory allocation failed with error: %s\n", strerror(errno));
         free(arena);
         return NULL;
     }
@@ -58,6 +60,7 @@ void *arena_alloc(Arena *arena, size_t size, size_t alignment)
     if (arena->offset + padding + size > arena->capacity)
     {
         DEBUG_PRINT("arena_alloc: not enough memory in arena\n");
+        fprintf(stderr, "Memory allocation failed with error: %s\n", strerror(ENOMEM));
         errno = ENOMEM;
         return NULL;
     }
