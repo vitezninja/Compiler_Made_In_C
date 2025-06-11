@@ -99,12 +99,13 @@ Type = "int64"   | "int32"   | "int16"  | "int8"
      | "char"    | "string"
      | "bool"
      | "void" 
-     | identifier ;
+     | identifier
+     | ( ( "struct" | "union" | "enum" ) identifier ) ;
 ```
 
 ## Type specifiers:
 ```ebnf
-Type_specifier = ( const { ( const_ptr | ptr ) } )
+Type_specifiers = ( const { ( const_ptr | ptr ) } )
                | ( ( const_ptr | ptr ) { ( const_ptr | ptr ) } )  ;
 ```
 
@@ -119,8 +120,7 @@ Escape_characters = "\a"
                  | "\v"
                  | "\\"
                  | "\'"
-                 | "\""
-                 | "\0" ;
+                 | "\"" ;
 ```
 
 ## Literals:
@@ -157,38 +157,42 @@ Null_literal           = "null" | "NULL" ;
 
 ## Rules:
 ```ebnf
-Program = { Import } { [ "export" ] ( Function_declaration | Global_variables_declaration | Struct_declaration | Union_declaration | Enum_declaration | Typedef ) } end_of_file ;
+Program = { Import } { ( Function_declaration | Global_variables_declaration | Struct_declaration | Union_declaration | Enum_declaration | Typedef ) } end_of_file ;
 
 Import = ( "import" String_literal ) 
        | ( "import" Identifier_list "from" String_literal ) ;
 
 Identifier_list = identifier { "," identifier } ;
 
-Function_declaration = "(" Return_parameter_list ")" identifier "(" [ Function_parameter_list ] ")" Statement ;
+Function_declaration = [ "export" ] "(" Return_parameter_list ")" identifier "(" [ Function_parameter_list ] ")" Statement ;
 
 Return_parameter_list = Return_parameter { "," Return_parameter } ;
 
-Return_parameter = [ Type_specifier ] Type ;
+Return_parameter = [ Type_specifiers ] Type ;
 
 Function_parameter_list = Function_parameter { "," Function_parameter } ;
 
-Function_parameter = [ Type_specifier ] Type identifier ;
+Function_parameter = [ Type_specifiers ] Type identifier ;
 
-Global_variables_declaration = [ Type_specifier ] Type identifier [ "=" Expression | Struct_Union_declarator ";" ] ;
+Global_variables_declaration = [ "export" ] [ Type_specifiers ] Type identifier [ "=" Expression ";" ] ;
 
-Struct_declaration = "struct" identifier "{" Struct_Union_member_declaration "}" ;
+Struct_declaration = [ "export" ] "struct" identifier "{" Struct_Union_member_declaration "}" ;
 
-Union_declaration = "union" identifier "{" Struct_Union_member_declaration "}" ;
+Union_declaration = [ "export" ] "union" identifier "{" Struct_Union_member_declaration "}" ;
 
-Struct_Union_member_declaration = [ Type_specifier ] Type identifier ";" { Struct_Union_member_declaration } ;
+Struct_Union_member_declaration = [ Type_specifiers ] Type identifier ";" { [ Type_specifiers ] Type identifier ";" } ;
 
-Struct_Union_declarator = [ "(" [ Type_specifier ] Type ")" ] "{" Expression { "," Expression } "}" ;
+Struct_Union_declarator = [ "(" [ Type_specifiers ] Type ")" ] "{" ( Struct_Union_indirect_declarator | Struct_Union_direct_declarator ) "}" ;
 
-Enum_declaration = "enum" identifier "{" Enum_value_declaration "}" ;
+Struct_Union_indirect_declarator = Expression { "," Expression } ;
+
+Struct_Union_direct_declarator = "." identifier "=" Expression { "," "." identifier "=" Expression } ;
+
+Enum_declaration = [ "export" ] "enum" identifier "{" Enum_value_declaration "}" ;
 
 Enum_value_declaration = identifier [ "=" Expression ] "," { Enum_value_declaration } ;
 
-Typedef = "typedef" [ Type_specifier ] Type identifier ;
+Typedef = [ "export" ] "typedef" [ Type_specifiers ] Type identifier ;
 
 Statement = Branch_statement | Loop_statement | Compound_statement | Expression_statement | Jump_statement ;
 
@@ -202,7 +206,7 @@ Loop_statement = For_statement | Foreach_statement | While_statement | Do_while_
 
 For_statement = "for" "(" ( Assignment | Variable_declaration ) ";" Expression ";" Expression ")" Statement ;
 
-Foreach_statement = "for" [ Type_specifier ] Type identifier ":" identifier Statement ;
+Foreach_statement = "for" [ Type_specifiers ] Type identifier ":" identifier Statement ;
 
 While_statement = "while" "(" Expression ")" Statement ;
 
@@ -216,7 +220,7 @@ Expression_statement = ( Expression ";" )
                      | ( Variable_declaration ";" ) 
                      | ";" ;
 
-Variable_declaration = [ Type_specifier ] Type identifier "=" Expression | Struct_Union_declarator ;
+Variable_declaration = [ Type_specifiers ] Type identifier "=" Expression ;
 
 Jump_statement = ( "goto" identifier ";" )
                | ( "goto" identifier "when" "(" Expression ")" ";" ) 
@@ -251,7 +255,7 @@ Additive_expression = Multiplicative_expression { Additive_operator Multiplicati
 Multiplicative_expression = Type_cast_expression { Multiplicative_operator Type_cast_expression } ;
 
 Type_cast_expression = Unary_expression
-                     | ( "(" [Type_specifier] Type ")" Type_cast_expression ) ;
+                     | ( "(" [ Type_specifiers ] Type ")" Type_cast_expression ) ;
 
 Unary_expression = Postfix_expression
                  | ( Prefix_operator Unary_expression ) 

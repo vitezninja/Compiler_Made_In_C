@@ -70,8 +70,7 @@ bool lexer_deleteWhitespaces(Lexer *lexer);
 
 bool lexer_deleteComments(Lexer *lexer);
 
-// TEMPORARY FUNCTION UNTIL PREPROCESSOR DIRECTIVES ARE IMPLEMENTED
-bool lexer_deletePreprocessorDirectives(Lexer *lexer);
+bool lexer_deletePreprocessorDirectives(Lexer *lexer); // TEMPORARY FUNCTION UNTIL PREPROCESSOR DIRECTIVES ARE IMPLEMENTED
 
 Token *lexer_handleSimpleCase(Lexer *lexer);
 
@@ -165,7 +164,6 @@ char lexer_getEscapedChar(char text)
         case '\\': return '\\'; // Backslash
         case '\'': return '\''; // Single quote
         case '"': return '"';   // Double quote
-        case '0': return '\0';  // Null character
         default:
             return -1; // Invalid escape sequence
     }

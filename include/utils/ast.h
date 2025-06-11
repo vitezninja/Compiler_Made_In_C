@@ -34,7 +34,7 @@ struct AstNode;
 typedef enum AstType
 {
     AST_TYPE,
-    AST_TYPE_SPECIFIER,
+    AST_TYPE_SPECIFIERS,
     AST_LITERAL,
     AST_PROGRAM,
     AST_IMPORT,

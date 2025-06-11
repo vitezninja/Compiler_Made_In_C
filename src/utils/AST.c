@@ -5,7 +5,7 @@
  */
 static const char *astNode_typeAsStrings[] = {
     [AST_TYPE] = "AST_TYPE",
-    [AST_TYPE_SPECIFIER] = "AST_TYPE_SPECIFIER",
+    [AST_TYPE_SPECIFIERS] = "AST_TYPE_SPECIFIERS",
     [AST_LITERAL] = "AST_LITERAL",
     [AST_PROGRAM] = "AST_PROGRAM",
     [AST_IMPORT] = "AST_IMPORT",

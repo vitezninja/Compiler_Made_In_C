@@ -1,10 +1,14 @@
 #include "parser.h"
 
-AstNode *parser_parseType(Parser *parser); // TODO
+bool parser_isType(Parser *parser);
 
-AstNode *parser_parseTypeSpecifier(Parser *parser); // TODO
+AstNode *parser_parseType(Parser *parser);
 
-AstNode *parser_parseLiteral(Parser *parser); // TODO
+bool parser_isTypeSpecifier(Parser *parser);
+
+AstNode *parser_parseTypeSpecifiers(Parser *parser);
+
+AstNode *parser_parseLiteral(Parser *parser);
 
 AstNode *parser_parseProgram(Parser *parser);
 
@@ -14,13 +18,13 @@ AstNode *parser_parseIdentifierList(Parser *parser);
 
 AstNode *parser_parseFunctionDefinition(Parser *parser); // TODO
 
-AstNode *parser_parseReturnParameterList(Parser *parser); // TODO
+AstNode *parser_parseReturnParameterList(Parser *parser);
 
-AstNode *parser_parseReturnParameter(Parser *parser); // TODO
+AstNode *parser_parseReturnParameter(Parser *parser);
 
-AstNode *parser_parseFunctionParameterList(Parser *parser); // TODO
+AstNode *parser_parseFunctionParameterList(Parser *parser);
 
-AstNode *parser_parseFunctionParameter(Parser *parser); // TODO
+AstNode *parser_parseFunctionParameter(Parser *parser);
 
 AstNode *parser_parseVariableGlobalDeclaration(Parser *parser); // TODO
 
@@ -104,19 +108,320 @@ AstNode *parser_parsePrimaryExpression(Parser *parser); // TODO
 
 // --------------------------------------------------------------------------------
 
-AstNode *parser_parseType(Parser *parser)
+bool parser_isType(Parser *parser)
 {
-    return NULL; // TODO: Implement type parsing
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_isType: No tokens available to check type.\n");
+        return false;
+    }
+
+    My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
+    switch (currentTokenType)
+    {
+    case TOKEN_KEYWORD_INT_64:
+    case TOKEN_KEYWORD_INT_32:
+    case TOKEN_KEYWORD_INT_16:
+    case TOKEN_KEYWORD_INT_8:
+    case TOKEN_KEYWORD_UINT_64:
+    case TOKEN_KEYWORD_UINT_32:
+    case TOKEN_KEYWORD_UINT_16:
+    case TOKEN_KEYWORD_UINT_8:
+    case TOKEN_KEYWORD_FLOAT_64:
+    case TOKEN_KEYWORD_FLOAT_32:
+    case TOKEN_KEYWORD_CHAR:
+    case TOKEN_KEYWORD_STRING:
+    case TOKEN_KEYWORD_BOOL:
+    case TOKEN_KEYWORD_VOID:
+    case TOKEN_IDENTIFIER:
+    case TOKEN_KEYWORD_STRUCT:
+    case TOKEN_KEYWORD_UNION:
+    case TOKEN_KEYWORD_ENUM:
+        return true;
+    default:
+        return false; 
+    }
 }
 
-AstNode *parser_parseTypeSpecifier(Parser *parser)
+AstNode *parser_parseType(Parser *parser)
 {
-    return NULL; // TODO: Implement type specifier parsing
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_parseType: Parser is NULL.\n");
+        return NULL;
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseType: No tokens available to parse type.\n");
+        return NULL;
+    }
+
+    if (!parser_isType(parser))
+    {
+        DEBUG_PRINT("parser_parseType: Expected a type, got %s.\n", token_typeToString(((Token *)parser->tokens->data)->type));
+        return NULL;
+    }
+
+    LinkedList *tokens = NULL;
+
+    My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
+    if (currentTokenType == TOKEN_KEYWORD_INT_64 ||
+        currentTokenType == TOKEN_KEYWORD_INT_32 ||
+        currentTokenType == TOKEN_KEYWORD_INT_16 ||
+        currentTokenType == TOKEN_KEYWORD_INT_8 ||
+        currentTokenType == TOKEN_KEYWORD_UINT_64 ||
+        currentTokenType == TOKEN_KEYWORD_UINT_32 ||
+        currentTokenType == TOKEN_KEYWORD_UINT_16 ||
+        currentTokenType == TOKEN_KEYWORD_UINT_8 ||
+        currentTokenType == TOKEN_KEYWORD_FLOAT_64 ||
+        currentTokenType == TOKEN_KEYWORD_FLOAT_32 ||
+        currentTokenType == TOKEN_KEYWORD_CHAR ||
+        currentTokenType == TOKEN_KEYWORD_STRING ||
+        currentTokenType == TOKEN_KEYWORD_BOOL ||
+        currentTokenType == TOKEN_KEYWORD_VOID || 
+        currentTokenType == TOKEN_IDENTIFIER)
+    {
+        Token *typeToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
+        if (typeToken == NULL)
+        {
+            DEBUG_PRINT("parser_parseType: token_copy failed with errno %d\n", errno);
+            return NULL;
+        }
+
+        LinkedList *head = linkedList_Token_create(parser->astArena, tokens, typeToken);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseType: linkedList_Token_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        tokens = head;
+        parser->tokens = parser->tokens->next; // Move past the type token
+    }
+    else // stuct or union or enum case
+    {
+        Token *structUnionEnumToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
+        if (structUnionEnumToken == NULL)
+        {
+            DEBUG_PRINT("parser_parseType: token_copy failed with errno %d\n", errno);
+            return NULL;
+        }
+
+        LinkedList *head = linkedList_Token_create(parser->astArena, tokens, structUnionEnumToken);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseType: linkedList_Token_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        tokens = head;
+        parser->tokens = parser->tokens->next; // Move past the struct/union/enum token
+
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseType: No tokens available after struct/union/enum keyword.\n");
+            return NULL;
+        }
+
+        if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
+        {
+            Token *unexpectedToken = (Token *)parser->tokens->data;
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, unexpectedToken->length, unexpectedToken->line, unexpectedToken->column, "Expected identifier after struct/union/enum keyword.");
+            if (error == NULL)
+            {
+                DEBUG_PRINT("parser_parseType: error_create failed with errno %d\n", errno);
+                return NULL;
+            }
+
+            head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+            if (head == NULL)
+            {
+                DEBUG_PRINT("parser_parseType: linkedList_Error_create failed with errno %d\n", errno);
+                return NULL;
+            }
+            parser->errors = head;
+            parser->tokens = parser->tokens->next; // Skip the unexpected token
+            return NULL;
+        }
+
+        Token *identifierToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
+        if (identifierToken == NULL)
+        {
+            DEBUG_PRINT("parser_parseType: token_copy failed with errno %d\n", errno);
+            return NULL;
+        }
+
+        head = linkedList_Token_create(parser->astArena, tokens, identifierToken);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseType: linkedList_Token_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        tokens = head;
+        parser->tokens = parser->tokens->next; // Move past the identifier token
+    }
+
+    AstNode *typeNode = astNode_create(parser->astArena, AST_TYPE, tokens, NULL);
+    if (typeNode == NULL)
+    {
+        DEBUG_PRINT("parser_parseType: astNode_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    return typeNode;
+}
+
+bool parser_isTypeSpecifier(Parser *parser)
+{
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_isTypeSpecifier: No tokens available to check type specifier.\n");
+        return false;
+    }
+
+    My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
+    switch (currentTokenType)
+    {
+    case TOKEN_KEYWORD_CONST:
+    case TOKEN_KEYWORD_CONST_PTR:
+    case TOKEN_KEYWORD_PTR:
+        return true;    
+    default:
+        return false;
+    }
+}
+
+AstNode *parser_parseTypeSpecifiers(Parser *parser)
+{
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_parseTypeSpecifiers: Parser is NULL.\n");
+        return NULL;
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseTypeSpecifiers: No tokens available to parse type specifiers.\n");
+        return NULL;
+    }
+
+    if (!parser_isTypeSpecifier(parser))
+    {
+        DEBUG_PRINT("parser_parseTypeSpecifiers: Expected a type specifier, got %s.\n", token_typeToString(((Token *)parser->tokens->data)->type));
+        return NULL;
+    }
+
+    LinkedList *tokens = NULL;
+
+    bool isFirst = true;
+    while (parser_isTypeSpecifier(parser))
+    {
+        My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
+        if (!isFirst && currentTokenType == TOKEN_KEYWORD_CONST)
+        {
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Only the first type specifier can be 'const'.");
+            if (error == NULL)
+            {
+                DEBUG_PRINT("parser_parseTypeSpecifiers: error_create failed with errno %d\n", errno);
+                return NULL;
+            }
+
+            LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+            if (head == NULL)
+            {
+                DEBUG_PRINT("parser_parseTypeSpecifiers: linkedList_Error_create failed with errno %d\n", errno);
+                return NULL;
+            }
+            parser->errors = head;
+            parser->tokens = parser->tokens->next; // Skip the 'const' token
+            return NULL;
+        }
+
+        isFirst = false;
+        Token *typeSpecifierToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
+        if (typeSpecifierToken == NULL)
+        {
+            DEBUG_PRINT("parser_parseTypeSpecifiers: token_copy failed with errno %d\n", errno);
+            return NULL;
+        }
+
+        LinkedList *head = linkedList_Token_create(parser->astArena, tokens, typeSpecifierToken);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseTypeSpecifiers: linkedList_Token_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        tokens = head;
+        parser->tokens = parser->tokens->next; // Move past the type specifier token
+
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseTypeSpecifiers: No tokens available after type specifier.\n");
+            return NULL;
+        }
+    }
+
+    AstNode *typeSpecifierNode = astNode_create(parser->astArena, AST_TYPE_SPECIFIERS, tokens, NULL);
+    if (typeSpecifierNode == NULL)
+    {
+        DEBUG_PRINT("parser_parseTypeSpecifiers: astNode_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    return typeSpecifierNode;
 }
 
 AstNode *parser_parseLiteral(Parser *parser)
 {
-    return NULL; // TODO: Implement literal parsing
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_parseLiteral: Parser is NULL.\n");
+        return NULL;
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseLiteral: No tokens available to parse literal.\n");
+        return NULL;
+    }
+
+    My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
+    if (currentTokenType != TOKEN_LITERAL_INTEGER &&
+        currentTokenType != TOKEN_LITERAL_BINARY &&
+        currentTokenType != TOKEN_LITERAL_OCTAL &&
+        currentTokenType != TOKEN_LITERAL_HEXADECIMAL &&
+        currentTokenType != TOKEN_LITERAL_FLOATINGPOINT &&
+        currentTokenType != TOKEN_LITERAL_CHARACTER &&
+        currentTokenType != TOKEN_LITERAL_STRING &&
+        currentTokenType != TOKEN_LITERAL_BOOLEAN &&
+        currentTokenType != TOKEN_LITERAL_NULL)
+    {
+        DEBUG_PRINT("parser_parseLiteral: Expected a literal, got %s.\n", token_typeToString(currentTokenType));
+        return NULL;
+    }
+
+    LinkedList *tokens = NULL;
+
+    Token *literalToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
+    if (literalToken == NULL)
+    {
+        DEBUG_PRINT("parser_parseLiteral: token_copy failed with errno %d\n", errno);
+        return NULL;
+    }
+
+    LinkedList *head = linkedList_Token_create(parser->astArena, tokens, literalToken);
+    if (head == NULL)
+    {
+        DEBUG_PRINT("parser_parseLiteral: linkedList_Token_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    tokens = head;
+    parser->tokens = parser->tokens->next; // Move past the literal token
+
+    AstNode *literalNode = astNode_create(parser->astArena, AST_LITERAL, tokens, NULL);
+    if (literalNode == NULL)
+    {
+        DEBUG_PRINT("parser_parseLiteral: astNode_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    return literalNode;
 }
 
 AstNode *parser_parseProgram(Parser *parser)
@@ -259,24 +564,7 @@ AstNode *parser_parseProgram(Parser *parser)
             }
             children = head;
         }
-        else if (   currentTokenType == TOKEN_KEYWORD_CONST || 
-                    currentTokenType == TOKEN_KEYWORD_CONST_PTR || 
-                    currentTokenType == TOKEN_KEYWORD_PTR ||
-                    currentTokenType == TOKEN_KEYWORD_INT_64 ||
-                    currentTokenType == TOKEN_KEYWORD_INT_32 ||
-                    currentTokenType == TOKEN_KEYWORD_INT_16 ||
-                    currentTokenType == TOKEN_KEYWORD_INT_8 ||
-                    currentTokenType == TOKEN_KEYWORD_UINT_64 ||
-                    currentTokenType == TOKEN_KEYWORD_UINT_32 ||
-                    currentTokenType == TOKEN_KEYWORD_UINT_16 ||
-                    currentTokenType == TOKEN_KEYWORD_UINT_8 ||
-                    currentTokenType == TOKEN_KEYWORD_FLOAT_64 ||
-                    currentTokenType == TOKEN_KEYWORD_FLOAT_32 ||
-                    currentTokenType == TOKEN_KEYWORD_CHAR ||
-                    currentTokenType == TOKEN_KEYWORD_STRING ||
-                    currentTokenType == TOKEN_KEYWORD_BOOL ||
-                    currentTokenType == TOKEN_KEYWORD_VOID ||
-                    currentTokenType == TOKEN_IDENTIFIER )
+        else if (parser_isType(parser) || parser_isTypeSpecifier(parser))
         {
             AstNode *globalDeclaration = parser_parseVariableGlobalDeclaration(parser); // Sets parser->tokens to the next token after the global declaration statement
             if (globalDeclaration == NULL)
@@ -651,6 +939,7 @@ AstNode *parser_parseIdentifierList(Parser *parser)
     return identifierListNode;
 }
 
+// TODO
 AstNode *parser_parseFunctionDefinition(Parser *parser)
 {
     if (parser == NULL)
@@ -667,24 +956,364 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
 
 AstNode *parser_parseReturnParameterList(Parser *parser)
 {
-    return NULL; // TODO: Implement return parameter list parsing
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_parseReturnParameterList: Parser is NULL.\n");
+        return NULL;
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseReturnParameterList: No tokens available to parse return parameter list.\n");
+        return NULL;
+    }
+
+    if (!parser_isType(parser) && !parser_isTypeSpecifier(parser))
+    {
+        DEBUG_PRINT("parser_parseReturnParameterList: Expected a type or type specifier, got %s.\n", token_typeToString(((Token *)parser->tokens->data)->type));
+        return NULL;
+    }
+
+    LinkedList *children = NULL;
+
+    bool hasNext = false;
+    Token *lastCommaToken = NULL;
+    while (parser_isType(parser) || parser_isTypeSpecifier(parser))
+    {
+        AstNode *returnParameterNode = parser_parseReturnParameter(parser);
+        if (returnParameterNode == NULL)
+        {
+            DEBUG_PRINT("parser_parseReturnParameterList: Failed to parse return parameter.\n");
+            return NULL;
+        }
+
+        LinkedList *head = linkedList_Ast_create(parser->astArena, children, returnParameterNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseReturnParameterList: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseReturnParameterList: No tokens available to parse return parameter list.\n");
+            return NULL;
+        }
+
+        if (((Token *)parser->tokens->data)->type == TOKEN_COMMA)
+        {
+            hasNext = true;
+            lastCommaToken = parser->tokens->data; // Store the last comma token for error reporting
+            parser->tokens = parser->tokens->next; // Move past the comma token
+        }
+        else
+        {
+            hasNext = false;
+        }
+    }
+
+    if (hasNext)
+    {
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, lastCommaToken->length, lastCommaToken->line, lastCommaToken->column, "Unexpected comma at the end of return parameter list.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("parser_parseReturnParameterList: error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+
+        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseReturnParameterList: linkedList_Error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        parser->errors = head;
+        return NULL;
+    }
+
+    AstNode *returnParameterListNode = astNode_create(parser->astArena, AST_RETURN_PARAMETER_LIST, NULL, children);
+    if (returnParameterListNode == NULL)
+    {
+        DEBUG_PRINT("parser_parseReturnParameterList: astNode_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    return returnParameterListNode;
 }
 
 AstNode *parser_parseReturnParameter(Parser *parser)
 {
-    return NULL; // TODO: Implement return parameter parsing
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_parseReturnParameter: Parser is NULL.\n");
+        return NULL;
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseReturnParameter: No tokens available to parse return parameter.\n");
+        return NULL;
+    }
+
+    if (!parser_isType(parser) && !parser_isTypeSpecifier(parser))
+    {
+        DEBUG_PRINT("parser_parseReturnParameter: Expected TOKEN_IDENTIFIER or TOKEN_KEYWORD_VOID, got %s.\n", token_typeToString(((Token *)parser->tokens->data)->type));
+        return NULL;
+    }
+
+    LinkedList *children = NULL;
+
+    if (parser_isTypeSpecifier(parser))
+    {
+        AstNode *typeSpecifiersNode = parser_parseTypeSpecifiers(parser);
+        if (typeSpecifiersNode == NULL)
+        {
+            DEBUG_PRINT("parser_parseReturnParameter: Failed to parse type specifiers.\n");
+            return NULL;
+        }
+
+        LinkedList *head = linkedList_Ast_create(parser->astArena, children, typeSpecifiersNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseReturnParameter: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseReturnParameter: No tokens available after type specifier.\n");
+            return NULL;
+        }
+    }
+
+    AstNode *typeNode = parser_parseType(parser);
+    if (typeNode == NULL)
+    {
+        DEBUG_PRINT("parser_parseReturnParameter: Failed to parse type.\n");
+        return NULL;
+    }
+
+    LinkedList *head = linkedList_Ast_create(parser->astArena, children, typeNode);
+    if (head == NULL)
+    {
+        DEBUG_PRINT("parser_parseReturnParameter: linkedList_Ast_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    children = head;
+
+    AstNode *retunrParameterNode = astNode_create(parser->astArena, AST_RETURN_PARAMETER, NULL, children);
+    if (retunrParameterNode == NULL)
+    {
+        DEBUG_PRINT("parser_parseReturnParameter: astNode_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    return retunrParameterNode;
 }
 
 AstNode *parser_parseFunctionParameterList(Parser *parser)
 {
-    return NULL; // TODO: Implement function parameter list parsing
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_parseFunctionParameterList: Parser is NULL.\n");
+        return NULL;
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseFunctionParameterList: No tokens available to parse function parameter list.\n");
+        return NULL;
+    }
+
+    if (!parser_isType(parser) && !parser_isTypeSpecifier(parser))
+    {
+        DEBUG_PRINT("parser_parseFunctionParameterList: Expected a type or type specifier, got %s.\n", token_typeToString(((Token *)parser->tokens->data)->type));
+        return NULL;
+    }
+
+    LinkedList *children = NULL;
+
+    bool hasNext = false;
+    Token *lastCommaToken = NULL;
+    while (parser_isType(parser) || parser_isTypeSpecifier(parser))
+    {
+        AstNode *functionParameterNode = parser_parseFunctionParameter(parser);
+        if (functionParameterNode == NULL)
+        {
+            DEBUG_PRINT("parser_parseFunctionParameterList: Failed to parse function parameter.\n");
+            return NULL;
+        }
+
+        LinkedList *head = linkedList_Ast_create(parser->astArena, children, functionParameterNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseFunctionParameterList: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseFunctionParameterList: No tokens available to parse function parameter list.\n");
+            return NULL;
+        }
+
+        if (((Token *)parser->tokens->data)->type == TOKEN_COMMA)
+        {
+            hasNext = true;
+            lastCommaToken = parser->tokens->data; // Store the last comma token for error reporting
+            parser->tokens = parser->tokens->next; // Move past the comma token
+        }
+        else
+        {
+            hasNext = false;
+        }
+    }
+
+    if (hasNext)
+    {
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, lastCommaToken->length, lastCommaToken->line, lastCommaToken->column, "Unexpected comma at the end of function parameter list.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("parser_parseFunctionParameterList: error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+
+        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseFunctionParameterList: linkedList_Error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        parser->errors = head;
+        return NULL;
+    }
+
+    AstNode *functionParameterListNode = astNode_create(parser->astArena, AST_FUNCTION_PARAMETER_LIST, NULL, children);
+    if (functionParameterListNode == NULL)
+    {
+        DEBUG_PRINT("parser_parseFunctionParameterList: astNode_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    return functionParameterListNode;
 }
 
 AstNode *parser_parseFunctionParameter(Parser *parser)
 {
-    return NULL; // TODO: Implement function parameter parsing
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_parseFunctionParameter: Parser is NULL.\n");
+        return NULL;
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseFunctionParameter: No tokens available to parse function parameter.\n");
+        return NULL;
+    }
+
+    if (!parser_isType(parser) && !parser_isTypeSpecifier(parser))
+    {
+        DEBUG_PRINT("parser_parseFunctionParameter: Expected a type specifier, got %s.\n", token_typeToString(((Token *)parser->tokens->data)->type));
+        return NULL;
+    }
+
+    LinkedList *tokens = NULL;
+    LinkedList *children = NULL;
+
+    if (parser_isTypeSpecifier(parser))
+    {
+        AstNode *typeSpecifiersNode = parser_parseTypeSpecifiers(parser);
+        if (typeSpecifiersNode == NULL)
+        {
+            DEBUG_PRINT("parser_parseFunctionParameter: Failed to parse type specifiers.\n");
+            return NULL;
+        }
+
+        LinkedList *head = linkedList_Ast_create(parser->astArena, children, typeSpecifiersNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseFunctionParameter: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseFunctionParameter: No tokens available after type specifier.\n");
+            return NULL;
+        }
+    }
+
+    AstNode *typeNode = parser_parseType(parser);
+    if (typeNode == NULL)
+    {
+        DEBUG_PRINT("parser_parseFunctionParameter: Failed to parse type.\n");
+        return NULL;
+    }
+
+    LinkedList *head = linkedList_Ast_create(parser->astArena, children, typeNode);
+    if (head == NULL)
+    {
+        DEBUG_PRINT("parser_parseFunctionParameter: linkedList_Ast_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    children = head;
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseFunctionParameter: No tokens available after type.\n");
+        return NULL;
+    }
+
+    if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
+    {
+        Token *unexpectedToken = (Token *)parser->tokens->data;
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, unexpectedToken->length, unexpectedToken->line, unexpectedToken->column, "Expected identifier after type in function parameter.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("parser_parseFunctionParameter: error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+
+        head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseFunctionParameter: linkedList_Error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        parser->errors = head;
+
+        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        return NULL;
+    }
+
+    Token *identifierToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
+    if (identifierToken == NULL)
+    {
+        DEBUG_PRINT("parser_parseFunctionParameter: token_copy failed with errno %d\n", errno);
+        return NULL;
+    }
+
+    head = linkedList_Token_create(parser->astArena, tokens, identifierToken);
+    if (head == NULL)
+    {
+        DEBUG_PRINT("parser_parseFunctionParameter: linkedList_Token_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    tokens = head;
+    parser->tokens = parser->tokens->next; // Move past the identifier token
+
+    AstNode *functionParameterNode = astNode_create(parser->astArena, AST_FUNCTION_PARAMETER, tokens, children);
+    if (functionParameterNode == NULL)
+    {
+        DEBUG_PRINT("parser_parseFunctionParameter: astNode_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    return functionParameterNode;
 }
 
+// TODO
 AstNode *parser_parseVariableGlobalDeclaration(Parser *parser)
 {
     if (parser == NULL)
@@ -713,7 +1342,8 @@ AstNode *parser_parseStructDeclaration(Parser *parser)
         return NULL;
     }
 
-    if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_IMPORT)
+    My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
+    if (currentTokenType != TOKEN_KEYWORD_STRUCT && currentTokenType != TOKEN_KEYWORD_EXPORT)
     {
         DEBUG_PRINT("parser_parseStructDeclaration: Expected TOKEN_KEYWORD_STRUCT, got %s.\n", token_typeToString(((Token *)parser->tokens->data)->type));
         return NULL;
@@ -722,6 +1352,31 @@ AstNode *parser_parseStructDeclaration(Parser *parser)
     LinkedList *tokens = NULL;
     LinkedList *children = NULL;
 
+    if (currentTokenType == TOKEN_KEYWORD_EXPORT)
+    {
+        Token *exportToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
+        if (exportToken == NULL)
+        {
+            DEBUG_PRINT("parser_parseStructDeclaration: token_copy failed with errno %d\n", errno);
+            return NULL;
+        }
+
+        LinkedList *head = linkedList_Token_create(parser->astArena, tokens, exportToken);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseStructDeclaration: linkedList_Token_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        tokens = head;
+
+        parser->tokens = parser->tokens->next; // Move past the export token
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseTypedefDeclaration: No tokens available after export keyword.\n");
+        return NULL;
+    }
     parser->tokens = parser->tokens->next; // Move past the struct token
 
     if (parser->tokens == NULL)
@@ -892,7 +1547,8 @@ AstNode *parser_parseUnionDeclaration(Parser *parser)
         return NULL;
     }
 
-    if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_UNION)
+    My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
+    if (currentTokenType != TOKEN_KEYWORD_UNION && currentTokenType != TOKEN_KEYWORD_EXPORT)
     {
         DEBUG_PRINT("parser_parseUnionDeclaration: Expected TOKEN_KEYWORD_UNION, got %s.\n", token_typeToString(((Token *)parser->tokens->data)->type));
         return NULL;
@@ -901,6 +1557,31 @@ AstNode *parser_parseUnionDeclaration(Parser *parser)
     LinkedList *tokens = NULL;
     LinkedList *children = NULL;
 
+    if (currentTokenType == TOKEN_KEYWORD_EXPORT)
+    {
+        Token *exportToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
+        if (exportToken == NULL)
+        {
+            DEBUG_PRINT("parser_parseUnionDeclaration: token_copy failed with errno %d\n", errno);
+            return NULL;
+        }
+
+        LinkedList *head = linkedList_Token_create(parser->astArena, tokens, exportToken);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseUnionDeclaration: linkedList_Token_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        tokens = head;
+
+        parser->tokens = parser->tokens->next; // Move past the export token
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseTypedefDeclaration: No tokens available after export keyword.\n");
+        return NULL;
+    }
     parser->tokens = parser->tokens->next; // Move past the union token
 
     if (parser->tokens == NULL)
@@ -1057,16 +1738,19 @@ AstNode *parser_parseUnionDeclaration(Parser *parser)
     return unionNode;
 }
 
+// TODO
 AstNode *parser_parseStructUnionMemberDeclaration(Parser *parser)
 {
     return NULL; // Placeholder for the actual implementation
 }
 
+// TODO
 AstNode *parser_parseStructUniondeclarator(Parser *parser)
 {
     return NULL; // Placeholder for the actual implementation
 }
 
+// TODO
 AstNode *parser_parseEnumDeclaration(Parser *parser)
 {
     if (parser == NULL)
@@ -1081,6 +1765,7 @@ AstNode *parser_parseEnumDeclaration(Parser *parser)
     return NULL;
 }
 
+// TODO
 AstNode *parser_parseEnumValueDeclaration(Parser *parser)
 {
     return NULL; // Placeholder for the actual implementation
@@ -1100,7 +1785,8 @@ AstNode *parser_parseTypedefDeclaration(Parser *parser)
         return NULL;
     }
 
-    if (((Token *)parser->tokens->data)->type == TOKEN_KEYWORD_TYPEDEF)
+    My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
+    if (currentTokenType == TOKEN_KEYWORD_TYPEDEF && currentTokenType != TOKEN_KEYWORD_EXPORT)
     {
         DEBUG_PRINT("parser_parseTypedefDeclaration: Expected TOKEN_KEYWORD_TYPEDEF, got %s.\n", token_typeToString(((Token *)parser->tokens->data)->type));
         return NULL;
@@ -1109,6 +1795,31 @@ AstNode *parser_parseTypedefDeclaration(Parser *parser)
     LinkedList *tokens = NULL;
     LinkedList *children = NULL;
 
+    if (currentTokenType == TOKEN_KEYWORD_EXPORT)
+    {
+        Token *exportToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
+        if (exportToken == NULL)
+        {
+            DEBUG_PRINT("parser_parseTypedefDeclaration: token_copy failed with errno %d\n", errno);
+            return NULL;
+        }
+
+        LinkedList *head = linkedList_Token_create(parser->astArena, tokens, exportToken);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseTypedefDeclaration: linkedList_Token_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        tokens = head;
+
+        parser->tokens = parser->tokens->next; // Move past the export token
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseTypedefDeclaration: No tokens available after export keyword.\n");
+        return NULL;
+    }
     parser->tokens = parser->tokens->next; // Move past the typedef token
 
     if (parser->tokens == NULL)
@@ -1117,12 +1828,12 @@ AstNode *parser_parseTypedefDeclaration(Parser *parser)
         return NULL;
     }
 
-    My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
+    currentTokenType = ((Token *)parser->tokens->data)->type;
     if (currentTokenType == TOKEN_KEYWORD_CONST || 
         currentTokenType == TOKEN_KEYWORD_CONST_PTR || 
         currentTokenType == TOKEN_KEYWORD_PTR )
     {
-        AstNode *typeSpecifierNode = parser_parseTypeSpecifier(parser);
+        AstNode *typeSpecifierNode = parser_parseTypeSpecifiers(parser);
         if (typeSpecifierNode == NULL)
         {
             DEBUG_PRINT("parser_parseTypedefDeclaration: Failed to parse type specifier.\n");
@@ -1230,161 +1941,193 @@ AstNode *parser_parseTypedefDeclaration(Parser *parser)
     return typedefNode;
 }
 
+// TODO
 AstNode *parser_parseStatement(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseBranchStatement(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseIfStatement(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseSwitchStatement(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseLoopStatement(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseForStatement(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseForeachStatement(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseWhileStatement(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseDoWhileStatement(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseCompoundStatement(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseLabel(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseExpressionStatement(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseVariableDeclaration(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseJumpStatement(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseExpression(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseFunctionCall(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseAssignmentExpression(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseLogicalOrExpression(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseLogicalAndExpression(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseBitwiseOrExpression(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseBitwiseXorExpression(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseBitwiseAndExpression(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseEqualityExpression(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseRelationalExpression(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseShiftExpression(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseAdditiveExpression(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseMultiplicativeExpression(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseTypeCastExpression(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseUnaryExpression(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parsePostfixExpression(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parseArrayIndexing(Parser *parser)
 {
     return NULL; // TODO: Implement 
 }
 
+// TODO
 AstNode *parser_parsePrimaryExpression(Parser *parser)
 {
     return NULL; // TODO: Implement 

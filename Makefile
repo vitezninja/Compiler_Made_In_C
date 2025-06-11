@@ -53,11 +53,11 @@ BUILD_DIR := build
 TEST_DIR := tests
 
 # Flags
-DEV_FLAGS := $(STD) -Wall -Wextra -g -Og -lm -Wpedantic -Werror -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wno-unused-parameter -fstack-protector-strong -Iinclude -DDEBUG
+DEV_FLAGS := $(STD) -Wall -Wextra -ggdb -Og -lm -Wpedantic -Werror -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wno-unused-parameter -fstack-protector-strong -Iinclude -DDEBUG
 ifneq ($(HOST_OS),windows)
 	DEV_FLAGS += -fsanitize=address,undefined
 endif
-REL_FLAGS := $(STD) -Wall -Wextra -Wno-unused-parameter -O2 -Iinclude
+REL_FLAGS := $(STD) -Wall -Wextra -Wno-unused-parameter -O3 -Iinclude
 VALGRIND_FLAGS := --leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1
 
 # Default
