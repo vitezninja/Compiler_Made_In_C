@@ -174,7 +174,7 @@ Function_parameter_list = Function_parameter { "," Function_parameter } ;
 
 Function_parameter = [ Type_specifiers ] Type identifier ;
 
-Global_variables_declaration = [ "export" ] [ Type_specifiers ] Type identifier [ "=" Expression ";" ] ;
+Global_variables_declaration = [ "export" ] [ Type_specifiers ] Type identifier [ "=" Expression ] ";" ;
 
 Struct_declaration = [ "export" ] "struct" identifier "{" Struct_Union_member_declaration "}" ;
 
@@ -182,7 +182,7 @@ Union_declaration = [ "export" ] "union" identifier "{" Struct_Union_member_decl
 
 Struct_Union_member_declaration = [ Type_specifiers ] Type identifier ";" { [ Type_specifiers ] Type identifier ";" } ;
 
-Struct_Union_declarator = [ "(" [ Type_specifiers ] Type ")" ] "{" ( Struct_Union_indirect_declarator | Struct_Union_direct_declarator ) "}" ;
+Struct_Union_declarator = "{" ( Struct_Union_indirect_declarator | Struct_Union_direct_declarator ) "}" ;
 
 Struct_Union_indirect_declarator = Expression { "," Expression } ;
 
@@ -190,7 +190,7 @@ Struct_Union_direct_declarator = "." identifier "=" Expression { "," "." identif
 
 Enum_declaration = [ "export" ] "enum" identifier "{" Enum_value_declaration "}" ;
 
-Enum_value_declaration = identifier [ "=" Expression ] "," { Enum_value_declaration } ;
+Enum_value_declaration = identifier [ "=" Expression ] "," { identifier [ "=" Expression ] "," } ;
 
 Typedef = [ "export" ] "typedef" [ Type_specifiers ] Type identifier ;
 
