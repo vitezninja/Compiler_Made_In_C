@@ -155,15 +155,21 @@ Boolean_literal        = "true" | "false" ;
 Null_literal           = "null" | "NULL" ;
 ```
 
-## Rules:
+## Program
 ```ebnf
 Program = { Import } { ( Function_declaration | Global_variables_declaration | Struct_declaration | Union_declaration | Enum_declaration | Typedef ) } end_of_file ;
+```
 
+## Importing
+```ebnf
 Import = ( "import" String_literal ) 
        | ( "import" Identifier_list "from" String_literal ) ;
 
 Identifier_list = identifier { "," identifier } ;
+```
 
+## Functions
+```ebnf
 Function_declaration = [ "export" ] "(" Return_parameter_list ")" identifier "(" [ Function_parameter_list ] ")" Statement ;
 
 Return_parameter_list = Return_parameter { "," Return_parameter } ;
@@ -173,9 +179,15 @@ Return_parameter = [ Type_specifiers ] Type ;
 Function_parameter_list = Function_parameter { "," Function_parameter } ;
 
 Function_parameter = [ Type_specifiers ] Type identifier ;
+```
 
-Global_variables_declaration = [ "export" ] [ Type_specifiers ] Type identifier [ "=" Expression ] ";" ;
+## Global variables
+```ebnf
+Global_variables_declaration = [ "export" ] [ Type_specifiers ] Type identifier { "," [ "export" ] [ Type_specifiers ] Type identifier } [ "=" Expression ] ";" ;
+```
 
+## Stucts, Unions and Enums
+```ebnf
 Struct_declaration = [ "export" ] "struct" identifier "{" Struct_Union_member_declaration "}" ;
 
 Union_declaration = [ "export" ] "union" identifier "{" Struct_Union_member_declaration "}" ;
@@ -191,18 +203,30 @@ Struct_Union_direct_declarator = "." identifier "=" Expression { "," "." identif
 Enum_declaration = [ "export" ] "enum" identifier "{" Enum_value_declaration "}" ;
 
 Enum_value_declaration = identifier [ "=" Expression ] "," { identifier [ "=" Expression ] "," } ;
+```
 
+## Own types
+```ebnf
 Typedef = [ "export" ] "typedef" [ Type_specifiers ] Type identifier ;
+```
 
+## Statements:
+```ebnf
 Statement = Branch_statement | Loop_statement | Compound_statement | Expression_statement | Jump_statement ;
+```
 
+### Branch statements:
+```ebnf
 Branch_statement = If_statement | Switch_statement ;
 
 If_statement = "if" "(" Expression ")" Statement [ "else" Statement ] ;
 
 Switch_statement = "switch" "(" Expression ")" "{" { "case" Expression ":" Statement } "default" ":" Statement "}" ;
+```
 
-Loop_statement = For_statement | Foreach_statement | While_statement | Do_while_statement ; 
+### Loop statements:
+```ebnf
+Loop_statement = For_statement | Foreach_statement | While_statement | Do_while_statement ;
 
 For_statement = "for" "(" ( Assignment | Variable_declaration ) ";" Expression ";" Expression ")" Statement ;
 
@@ -211,7 +235,10 @@ Foreach_statement = "for" [ Type_specifiers ] Type identifier ":" identifier Sta
 While_statement = "while" "(" Expression ")" Statement ;
 
 Do_while_statement = "do" Statement "while" "(" Expression ")" ";" ;
+```
 
+### Other statements:
+```ebnf
 Compound_statement = "{" { Statement | Label } "}";
 
 Label = identifier ":" ;
@@ -219,15 +246,24 @@ Label = identifier ":" ;
 Expression_statement = ( Expression ";" )
                      | ( Variable_declaration ";" ) 
                      | ";" ;
+```
 
-Variable_declaration = [ Type_specifiers ] Type identifier "=" Expression ;
+#### Variable declaration:
+```ebnf
+Variable_declaration = [ Type_specifiers ] Type identifier { "," [ Type_specifiers ] Type identifier } [ "=" Expression ] ;
+```
 
+### Control flow statements:
+```ebnf
 Jump_statement = ( "goto" identifier ";" )
                | ( "goto" identifier "when" "(" Expression ")" ";" ) 
                | ( "return" [ Expression ] ";" )
                | ( "break" ";" )
                | ( "continue" ";" ) ;
+```
 
+## Expressions
+```ebnf
 Expression = Function_call | Assignment_expression | Logical_OR_expression ;
 
 Function_call = identifier "(" [ Expression { "," Expression } ] ")" ;

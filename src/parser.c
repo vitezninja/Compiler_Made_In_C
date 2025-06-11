@@ -1897,6 +1897,124 @@ AstNode *parser_parseGlobalVariableDeclaration(Parser *parser)
         return NULL;
     }
 
+    while (((Token *)parser->tokens->data)->type == TOKEN_COMMA)
+    {
+        parser->tokens = parser->tokens->next; // Move past the comma token
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseGlobalVariableDeclaration: No tokens available after comma.\n");
+            return NULL;
+        }
+
+        if (((Token *)parser->tokens->data)->type == TOKEN_KEYWORD_EXPORT)
+        {
+            Token *exportToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
+            if (exportToken == NULL)
+            {
+                DEBUG_PRINT("parser_parseGlobalVariableDeclaration: token_copy failed with errno %d\n", errno);
+                return NULL;
+            }
+            head = linkedList_Token_create(parser->astArena, tokens, exportToken);
+            if (head == NULL)
+            {
+                DEBUG_PRINT("parser_parseGlobalVariableDeclaration: linkedList_Token_create failed with errno %d\n", errno);
+                return NULL;
+            }
+            tokens = head;
+
+            parser->tokens = parser->tokens->next; // Move past the export token
+            if (parser->tokens == NULL)
+            {
+                DEBUG_PRINT("parser_parseGlobalVariableDeclaration: No tokens available after export keyword.\n");
+                return NULL;
+            }
+        }
+
+        if (parser_isTypeSpecifier(parser))
+        {
+            AstNode *typeSpecifiersNode = parser_parseTypeSpecifiers(parser);
+            if (typeSpecifiersNode == NULL)
+            {
+                DEBUG_PRINT("parser_parseGlobalVariableDeclaration: Failed to parse type specifiers.\n");
+                return NULL;
+            }
+            head = linkedList_Ast_create(parser->astArena, children, typeSpecifiersNode);
+            if (head == NULL)
+            {
+                DEBUG_PRINT("parser_parseGlobalVariableDeclaration: linkedList_Ast_create failed with errno %d\n", errno);
+                return NULL;
+            }
+            children = head;
+
+            if (parser->tokens == NULL)
+            {
+                DEBUG_PRINT("parser_parseGlobalVariableDeclaration: No tokens available after type specifier.\n");
+                return NULL;
+            }
+        }
+
+        AstNode *additionalIdentifierNode = parser_parseType(parser);
+        if (additionalIdentifierNode == NULL)
+        {
+            DEBUG_PRINT("parser_parseGlobalVariableDeclaration: Failed to parse additional identifier.\n");
+            return NULL;
+        }
+        head = linkedList_Ast_create(parser->astArena, children, additionalIdentifierNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseGlobalVariableDeclaration: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseGlobalVariableDeclaration: No tokens available to parse global variable declaration.\n");
+            return NULL;
+        }
+
+        if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
+        {
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier after type in global variable declaration.");
+            if (error == NULL)
+            {
+                DEBUG_PRINT("parser_parseGlobalVariableDeclaration: error_create failed with errno %d\n", errno);
+                return NULL;
+            }
+            head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+            if (head == NULL)
+            {
+                DEBUG_PRINT("parser_parseGlobalVariableDeclaration: linkedList_Error_create failed with errno %d\n", errno);
+                return NULL;
+            }
+            parser->errors = head;
+
+            parser->tokens = parser->tokens->next; // Skip the unexpected token
+            return NULL;
+        }
+
+        identifierToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
+        if (identifierToken == NULL)
+        {
+            DEBUG_PRINT("parser_parseGlobalVariableDeclaration: token_copy failed with errno %d\n", errno);
+            return NULL;
+        }
+        head = linkedList_Token_create(parser->astArena, tokens, identifierToken);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseGlobalVariableDeclaration: linkedList_Token_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        tokens = head;
+
+        parser->tokens = parser->tokens->next; // Move past the identifier token
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseGlobalVariableDeclaration: No tokens available after additional identifier.\n");
+            return NULL;
+        }
+    }
+
     if (((Token *)parser->tokens->data)->type == TOKEN_EQUALS)
     {
         parser->tokens = parser->tokens->next; // Move past the equals token

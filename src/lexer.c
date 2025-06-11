@@ -70,8 +70,6 @@ bool lexer_deleteWhitespaces(Lexer *lexer);
 
 bool lexer_deleteComments(Lexer *lexer);
 
-bool lexer_deletePreprocessorDirectives(Lexer *lexer); // TEMPORARY FUNCTION UNTIL PREPROCESSOR DIRECTIVES ARE IMPLEMENTED
-
 Token *lexer_handleSimpleCase(Lexer *lexer);
 
 Token *lexer_handleNumbers(Lexer *lexer);
@@ -334,35 +332,6 @@ bool lexer_deleteComments(Lexer *lexer)
         {
             lexer_consumeChar(lexer, 1);
         }
-    }
-
-    return false;
-}
-
-bool lexer_deletePreprocessorDirectives(Lexer *lexer)
-{
-    if (lexer == NULL)
-    {
-        DEBUG_PRINT("lexer_deletePreprocessorDirectives: Lexer is NULL.\n");
-        return true;
-    }
-
-    if (lexer_currentChar(lexer) != '#')
-    {
-        return true;
-    }
-
-    // Consume '#'
-    lexer_consumeChar(lexer, 1);
-
-    while (lexer_currentChar(lexer) != '\0' && lexer_currentChar(lexer) != '\n')
-    {
-        lexer_consumeChar(lexer, 1);
-    }
-
-    if (lexer_currentChar(lexer) == '\n')
-    {
-        lexer_consumeChar(lexer, 1);
     }
 
     return false;
@@ -2557,16 +2526,13 @@ void lexer_lex(Lexer* lexer)
     {
         currentToken = NULL;
 
-        bool isDeletable = true;
-        while (isDeletable)
-        {
-            bool noWhiteSpace = lexer_deleteWhitespaces(lexer);
-            bool noComment =  lexer_deleteComments(lexer);
-            bool noPreprocessor = lexer_deletePreprocessorDirectives(lexer);
+        bool noWhiteSpace = false;
+        bool noComment = false;
+        do {
+            noWhiteSpace = lexer_deleteWhitespaces(lexer);
+            noComment =  lexer_deleteComments(lexer);
+        } while (!(noWhiteSpace && noComment));
 
-            isDeletable = !(noWhiteSpace && noComment && noPreprocessor);
-        }
-        
         if (currentToken == NULL) currentToken = lexer_handleSimpleCase(lexer);
         if (errno == ENOMEM)
         {
