@@ -78,7 +78,7 @@ VALGRIND_TEST_FILE := $(TEST_DIR)/valgrind_test.cmc
 LOG_FILE := compiler.log
 TEST_LOG_FILE := $(TEST_DIR)/test.log
 
-TARGET := $(BUILD_DIR)/cmc.$(OUTPUT_EXTENSION)
+TARGET := cmc.$(OUTPUT_EXTENSION)
 
 # === Rules ===
 
@@ -109,10 +109,12 @@ endif
 clean:
 ifeq ($(HOST_OS),windows)
 	@if exist $(BUILD_DIR) rmdir /s /q $(BUILD_DIR)
+	@if exist $(TARGET) del $(TARGET)
 	@if exist $(LOG_FILE) del $(LOG_FILE)
 	@if exist $(TEST_LOG_FILE) del $(TEST_LOG_FILE)
 else
 	@rm -rf $(BUILD_DIR)
+	@rm -f $(TARGET)
 	@rm -f $(LOG_FILE)
 	@rm -f $(TEST_LOG_FILE)
 endif
