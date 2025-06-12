@@ -13,6 +13,7 @@ switch
 case
 default
 for
+foreach
 while
 do
 return
@@ -212,7 +213,7 @@ Typedef = [ "export" ] "typedef" [ Type_specifiers ] Type identifier ;
 
 ## Statements:
 ```ebnf
-Statement = Branch_statement | Loop_statement | Compound_statement | Expression_statement | Jump_statement ;
+Statement = Branch_statement | Loop_statement | Compound_statement | Jump_statement | Expression_statement ;
 ```
 
 ### Branch statements:
@@ -221,16 +222,26 @@ Branch_statement = If_statement | Switch_statement ;
 
 If_statement = "if" "(" Expression ")" Statement [ "else" Statement ] ;
 
-Switch_statement = "switch" "(" Expression ")" "{" { "case" Expression ":" Statement } "default" ":" Statement "}" ;
+Switch_statement = "switch" "(" Expression ")" "{" Switch_Case { Case_statement } [ Switch_Default ] "}" ;
+
+Switch_Case = "case" Expression ":" Statement ;
+
+Switch_Default = "default" ":" Statement ;
 ```
 
 ### Loop statements:
 ```ebnf
 Loop_statement = For_statement | Foreach_statement | While_statement | Do_while_statement ;
 
-For_statement = "for" "(" ( Assignment | Variable_declaration ) ";" Expression ";" Expression ")" Statement ;
+For_statement = "for" "(" [ For_initializer ] ";" [ For_condition ] ";" [ For_incrementation ] ")" Statement ;
 
-Foreach_statement = "for" [ Type_specifiers ] Type identifier ":" identifier Statement ;
+For_initializer = Assignment | Variable_declaration ;
+
+For_condition = Expression ;
+
+For_incrementation = Expression ;
+
+Foreach_statement = "foreach" "(" [ Type_specifiers ] Type identifier ":" identifier ")" Statement ;
 
 While_statement = "while" "(" Expression ")" Statement ;
 
@@ -255,11 +266,15 @@ Variable_declaration = [ Type_specifiers ] Type identifier { "," [ Type_specifie
 
 ### Control flow statements:
 ```ebnf
-Jump_statement = ( "goto" identifier ";" )
-               | ( "goto" identifier "when" "(" Expression ")" ";" ) 
-               | ( "return" [ Expression ] ";" )
-               | ( "break" ";" )
-               | ( "continue" ";" ) ;
+Jump_statement = Goto_statement | Return_statement | Break_statement | Continue_statement ;
+
+Goto_statement = "goto" identifier [ "when" "(" Expression ")" ] ";" ;
+
+Return_statement = "return" [ Expression ] ";" ;
+
+Break_statement = "break" ";" ;
+
+Continue_statement = "continue" ";" ;
 ```
 
 ## Expressions

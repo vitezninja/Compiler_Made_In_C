@@ -130,6 +130,7 @@ typedef enum My_TokenType
     TOKEN_KEYWORD_DEFAULT,              /** default */
     
     TOKEN_KEYWORD_FOR,                  /** for */
+    TOKEN_KEYWORD_FOREACH,              /** foreach */
     TOKEN_KEYWORD_WHILE,                /** while */
     TOKEN_KEYWORD_DO,                   /** do */
     
