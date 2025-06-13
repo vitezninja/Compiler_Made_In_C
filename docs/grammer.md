@@ -110,6 +110,11 @@ Type_specifiers = ( const { ( const_ptr | ptr ) } )
                | ( ( const_ptr | ptr ) { ( const_ptr | ptr ) } )  ;
 ```
 
+## Full Type
+```ebnf
+Full_type = [ Type_specifiers ] Type ;
+```
+
 ## Escape characters
 ```ebnf
 Escape_characters = "\a" 
@@ -173,18 +178,16 @@ Identifier_list = identifier { "," identifier } ;
 ```ebnf
 Function_declaration = [ "export" ] "(" Return_parameter_list ")" identifier "(" [ Function_parameter_list ] ")" Statement ;
 
-Return_parameter_list = Return_parameter { "," Return_parameter } ;
-
-Return_parameter = [ Type_specifiers ] Type ;
+Return_parameter_list = Full_type { "," Full_type } ;
 
 Function_parameter_list = Function_parameter { "," Function_parameter } ;
 
-Function_parameter = [ Type_specifiers ] Type identifier ;
+Function_parameter = Full_type identifier ;
 ```
 
 ## Global variables
 ```ebnf
-Global_variables_declaration = [ "export" ] [ Type_specifiers ] Type identifier { "," [ "export" ] [ Type_specifiers ] Type identifier } [ "=" Expression ] ";" ;
+Global_variables_declaration = [ "export" ] Full_type identifier { "," [ "export" ] Full_type identifier } [ "=" Expression ] ";" ;
 ```
 
 ## Stucts, Unions and Enums
@@ -193,7 +196,7 @@ Struct_declaration = [ "export" ] "struct" identifier "{" Struct_Union_member_de
 
 Union_declaration = [ "export" ] "union" identifier "{" Struct_Union_member_declaration "}" ;
 
-Struct_Union_member_declaration = [ Type_specifiers ] Type identifier ";" { [ Type_specifiers ] Type identifier ";" } ;
+Struct_Union_member_declaration = Full_type identifier ";" { Full_type identifier ";" } ;
 
 Struct_Union_declarator = "{" ( Struct_Union_indirect_declarator | Struct_Union_direct_declarator ) "}" ;
 
@@ -208,7 +211,7 @@ Enum_value_declaration = identifier [ "=" Expression ] "," { identifier [ "=" Ex
 
 ## Own types
 ```ebnf
-Typedef = [ "export" ] "typedef" [ Type_specifiers ] Type identifier ;
+Typedef = [ "export" ] "typedef" Full_type identifier ;
 ```
 
 ## Statements:
@@ -241,7 +244,7 @@ For_condition = Expression ;
 
 For_incrementation = Expression ;
 
-Foreach_statement = "foreach" "(" [ Type_specifiers ] Type identifier ":" identifier ")" Statement ;
+Foreach_statement = "foreach" "(" Full_type identifier ":" identifier ")" Statement ;
 
 While_statement = "while" "(" Expression ")" Statement ;
 
@@ -261,7 +264,7 @@ Expression_statement = ( Expression ";" )
 
 #### Variable declaration:
 ```ebnf
-Variable_declaration = [ Type_specifiers ] Type identifier { "," [ Type_specifiers ] Type identifier } [ "=" Expression ] ;
+Variable_declaration = Full_type identifier { "," Full_type identifier } [ "=" Expression ] ;
 ```
 
 ### Control flow statements:
@@ -306,7 +309,7 @@ Additive_expression = Multiplicative_expression { Additive_operator Multiplicati
 Multiplicative_expression = Type_cast_expression { Multiplicative_operator Type_cast_expression } ;
 
 Type_cast_expression = Unary_expression
-                     | ( "(" [ Type_specifiers ] Type ")" Type_cast_expression ) ;
+                     | ( "(" Full_type ")" Type_cast_expression ) ;
 
 Unary_expression = Postfix_expression
                  | ( Prefix_operator Unary_expression ) 
