@@ -88,17 +88,15 @@ AstNode *parser_parseVariableDeclaration(Parser *parser);
 
 AstNode *parser_parseJumpStatement(Parser *parser);
 
-AstNode *parser_parseGotoStatement(Parser *parser); // TODO
+AstNode *parser_parseGotoStatement(Parser *parser);
 
-AstNode *parser_parseReturnStatement(Parser *parser); // TODO
+AstNode *parser_parseReturnStatement(Parser *parser);
 
-AstNode *parser_parseBreakStatement(Parser *parser); // TODO
+AstNode *parser_parseBreakStatement(Parser *parser);
 
-AstNode *parser_parseContinueStatement(Parser *parser); // TODO
+AstNode *parser_parseContinueStatement(Parser *parser);
 
-AstNode *parser_parseExpression(Parser *parser); // TODO
-
-AstNode *parser_parseFunctionCall(Parser *parser); // TODO
+AstNode *parser_parseExpression(Parser *parser);
 
 AstNode *parser_parseAssignmentExpression(Parser *parser); // TODO
 
@@ -122,15 +120,21 @@ AstNode *parser_parseAdditiveExpression(Parser *parser); // TODO
 
 AstNode *parser_parseMultiplicativeExpression(Parser *parser); // TODO
 
-AstNode *parser_parseTypeCastExpression(Parser *parser); // TODO
+AstNode *parser_parseTypeCastExpression(Parser *parser);
 
-AstNode *parser_parseUnaryExpression(Parser *parser); // TODO
+AstNode *parser_parseUnaryExpression(Parser *parser);
 
-AstNode *parser_parsePostfixExpression(Parser *parser); // TODO
+AstNode *parser_parsePostfixExpression(Parser *parser);
 
-AstNode *parser_parseArrayIndexing(Parser *parser); // TODO
+bool parser_isPostfixPrimeExpression(Parser *parser);
 
-AstNode *parser_parsePrimaryExpression(Parser *parser); // TODO
+AstNode *parser_parsePostfixPrimeExpression(Parser *parser);
+
+AstNode *parser_parseArrayIndexingExpression(Parser *parser);
+
+AstNode *parser_parseFunctionCallExpression(Parser *parser);
+
+AstNode *parser_parsePrimaryExpression(Parser *parser);
 
 // --------------------------------------------------------------------------------
 
@@ -6096,40 +6100,478 @@ AstNode *parser_parseJumpStatement(Parser *parser)
     return jumpStatementNode;
 }
 
-// TODO
 AstNode *parser_parseGotoStatement(Parser *parser)
 {
-    return NULL; // TODO: Implement    
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_parseGotoStatement: Parser is NULL.\n");
+        return NULL;
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseGotoStatement: No tokens available to parse goto statement.\n");
+        return NULL;
+    }
+
+    if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_GOTO)
+    {
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'goto' keyword to start goto statement.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("parser_parseGotoStatement: error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseGotoStatement: linkedList_Error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        parser->errors = head;
+
+        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        return NULL;
+    }
+
+    LinkedList *tokens = NULL;
+    LinkedList *children = NULL;
+
+    parser->tokens = parser->tokens->next; // Move past the 'goto' keyword token
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseGotoStatement: No tokens available after 'goto' keyword.\n");
+        return NULL;
+    }
+
+    if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
+    {
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier after 'goto' keyword.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("parser_parseGotoStatement: error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseGotoStatement: linkedList_Error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        parser->errors = head;
+
+        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        return NULL;
+    }
+
+    Token *identifierToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
+    if (identifierToken == NULL)
+    {
+        DEBUG_PRINT("parser_parseGotoStatement: token_copy failed with errno %d\n", errno);
+        return NULL;
+    }
+    LinkedList *head = linkedList_Token_create(parser->astArena, tokens, identifierToken);
+    if (head == NULL)
+    {
+        DEBUG_PRINT("parser_parseGotoStatement: linkedList_Token_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    tokens = head;
+
+    parser->tokens = parser->tokens->next; // Move past the identifier token
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseGotoStatement: No tokens available after identifier.\n");
+        return NULL;
+    }
+
+    if (((Token *)parser->tokens->data)->type == TOKEN_KEYWORD_WHEN)
+    {
+        parser->tokens = parser->tokens->next; // Move past the 'when' keyword token
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseGotoStatement: No tokens available after 'when' keyword.\n");
+            return NULL;
+        }
+
+        if (((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS)
+        {
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '(' after 'when' keyword in goto statement.");
+            if (error == NULL)
+            {
+                DEBUG_PRINT("parser_parseGotoStatement: error_create failed with errno %d\n", errno);
+                return NULL;
+            }
+            head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+            if (head == NULL)
+            {
+                DEBUG_PRINT("parser_parseGotoStatement: linkedList_Error_create failed with errno %d\n", errno);
+                return NULL;
+            }
+            parser->errors = head;
+
+            parser->tokens = parser->tokens->next; // Skip the unexpected token
+            return NULL;
+        }
+
+        parser->tokens = parser->tokens->next; // Move past the open parenthesis token
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseGotoStatement: No tokens available after open parenthesis.\n");
+            return NULL;
+        }
+
+        AstNode *conditionNode = parser_parseExpression(parser);
+        if (conditionNode == NULL)
+        {
+            DEBUG_PRINT("parser_parseGotoStatement: Failed to parse condition expression.\n");
+            return NULL;
+        }
+        head = linkedList_Ast_create(parser->astArena, children, conditionNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseGotoStatement: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+
+        if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS)
+        {
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ')' to close condition in goto statement.");
+            if (error == NULL)
+            {
+                DEBUG_PRINT("parser_parseGotoStatement: error_create failed with errno %d\n", errno);
+                return NULL;
+            }
+            head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+            if (head == NULL)
+            {
+                DEBUG_PRINT("parser_parseGotoStatement: linkedList_Error_create failed with errno %d\n", errno);
+                return NULL;
+            }
+            parser->errors = head;
+
+            parser->tokens = parser->tokens->next; // Skip the unexpected token
+            return NULL;
+        }
+
+        parser->tokens = parser->tokens->next; // Move past the close parenthesis token
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseGotoStatement: No tokens available after close parenthesis.\n");
+            return NULL;
+        }
+    }
+
+    if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
+    {
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ';' to end goto statement.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("parser_parseGotoStatement: error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseGotoStatement: linkedList_Error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        parser->errors = head;
+
+        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        return NULL;
+    }
+
+    parser->tokens = parser->tokens->next; // Move past the semicolon token
+
+    AstNode *gotoStatementNode = astNode_create(parser->astArena, AST_GOTO_STATEMENT, tokens, children);
+    if (gotoStatementNode == NULL)
+    {
+        DEBUG_PRINT("parser_parseGotoStatement: astNode_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    return gotoStatementNode;
 }
 
-// TODO
 AstNode *parser_parseReturnStatement(Parser *parser)
 {
-    return NULL; // TODO: Implement 
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_parseReturnStatement: Parser is NULL.\n");
+        return NULL;
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseReturnStatement: No tokens available to parse return statement.\n");
+        return NULL;
+    }
+
+    if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_RETURN)
+    {
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'return' keyword to start return statement.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("parser_parseReturnStatement: error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseReturnStatement: linkedList_Error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        parser->errors = head;
+
+        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        return NULL;
+    }
+
+    LinkedList *children = NULL;
+
+    parser->tokens = parser->tokens->next; // Move past the 'return' keyword token
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseReturnStatement: No tokens available after 'return' keyword.\n");
+        return NULL;
+    }
+
+    if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
+    {
+        AstNode *expressionNode = parser_parseExpression(parser);
+        if (expressionNode == NULL)
+        {
+            DEBUG_PRINT("parser_parseReturnStatement: Failed to parse return expression.\n");
+            return NULL;
+        }
+        LinkedList *head = linkedList_Ast_create(parser->astArena, children, expressionNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseReturnStatement: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseReturnStatement: No tokens available after return expression.\n");
+            return NULL;
+        }
+    }
+
+    if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
+    {
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ';' to end return statement.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("parser_parseReturnStatement: error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseReturnStatement: linkedList_Error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        parser->errors = head;
+
+        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        return NULL;
+    }
+
+    parser->tokens = parser->tokens->next; // Move past the semicolon token
+
+    AstNode *returnStatementNode = astNode_create(parser->astArena, AST_RETURN_STATEMENT, NULL, children);
+    if (returnStatementNode == NULL)
+    {
+        DEBUG_PRINT("parser_parseReturnStatement: astNode_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    return returnStatementNode;
 }
 
-// TODO
 AstNode *parser_parseBreakStatement(Parser *parser)
 {
-    return NULL; // TODO: Implement 
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_parseBreakStatement: Parser is NULL.\n");
+        return NULL;
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseBreakStatement: No tokens available to parse break statement.\n");
+        return NULL;
+    }
+
+    if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_BREAK)
+    {
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'break' keyword to start break statement.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("parser_parseBreakStatement: error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseBreakStatement: linkedList_Error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        parser->errors = head;
+
+        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        return NULL;
+    }
+
+    parser->tokens = parser->tokens->next; // Move past the 'break' keyword token
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseBreakStatement: No tokens available after 'break' keyword.\n");
+        return NULL;
+    }
+
+    if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
+    {
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ';' to end break statement.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("parser_parseBreakStatement: error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseBreakStatement: linkedList_Error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        parser->errors = head;
+
+        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        return NULL;
+    }
+
+    parser->tokens = parser->tokens->next; // Move past the semicolon token
+
+    AstNode *breakStatementNode = astNode_create(parser->astArena, AST_BREAK_STATEMENT, NULL, NULL);
+    if (breakStatementNode == NULL)
+    {
+        DEBUG_PRINT("parser_parseBreakStatement: astNode_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    return breakStatementNode;
 }
 
-// TODO
 AstNode *parser_parseContinueStatement(Parser *parser)
 {
-    return NULL; // TODO: Implement 
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_parseContinueStatement: Parser is NULL.\n");
+        return NULL;
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseContinueStatement: No tokens available to parse continue statement.\n");
+        return NULL;
+    }
+
+    if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_CONTINUE)
+    {
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'continue' keyword to start continue statement.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("parser_parseContinueStatement: error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseContinueStatement: linkedList_Error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        parser->errors = head;
+
+        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        return NULL;
+    }
+
+    parser->tokens = parser->tokens->next; // Move past the 'continue' keyword token
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseContinueStatement: No tokens available after 'continue' keyword.\n");
+        return NULL;
+    }
+
+    if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
+    {
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ';' to end continue statement.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("parser_parseContinueStatement: error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseContinueStatement: linkedList_Error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        parser->errors = head;
+
+        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        return NULL;
+    }
+
+    parser->tokens = parser->tokens->next; // Move past the semicolon token
+
+    AstNode *continueStatementNode = astNode_create(parser->astArena, AST_CONTINUE_STATEMENT, NULL, NULL);
+    if (continueStatementNode == NULL)
+    {
+        DEBUG_PRINT("parser_parseContinueStatement: astNode_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    return continueStatementNode;
 }
 
-// TODO
 AstNode *parser_parseExpression(Parser *parser)
 {
-    return NULL; // TODO: Implement 
-}
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_parseExpression: Parser is NULL.\n");
+        return NULL;
+    }
 
-// TODO
-AstNode *parser_parseFunctionCall(Parser *parser)
-{
-    return NULL; // TODO: Implement 
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseExpression: No tokens available to parse expression.\n");
+        return NULL;
+    }
+
+    LinkedList *children = NULL;
+
+
+    AstNode *assignmentNode = parser_parseLogicalOrExpression(parser);
+    if (assignmentNode == NULL)
+    {
+        DEBUG_PRINT("parser_parseExpression: Failed to parse logical or expression.\n");
+        return NULL;
+    }
+    LinkedList *head = linkedList_Ast_create(parser->astArena, children, assignmentNode);
+    if (head == NULL)
+    {
+        DEBUG_PRINT("parser_parseExpression: linkedList_Ast_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    
+    AstNode *expressionNode = astNode_create(parser->astArena, AST_EXPRESSION, NULL, children);
+    if (expressionNode == NULL)
+    {
+        DEBUG_PRINT("parser_parseExpression: astNode_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    return expressionNode;
 }
 
 // TODO
@@ -6198,34 +6640,873 @@ AstNode *parser_parseMultiplicativeExpression(Parser *parser)
     return NULL; // TODO: Implement 
 }
 
-// TODO
 AstNode *parser_parseTypeCastExpression(Parser *parser)
 {
-    return NULL; // TODO: Implement 
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_parseTypeCastExpression: Parser is NULL.\n");
+        return NULL;
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseTypeCastExpression: No tokens available to parse type cast expression.\n");
+        return NULL;
+    }
+
+    LinkedList *children = NULL;
+
+    if (((Token *)parser->tokens->data)->type == TOKEN_OPEN_PARENTHESIS)
+    {
+        parser->tokens = parser->tokens->next; // Move past the open parenthesis token
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseTypeCastExpression: No tokens available after open parenthesis.\n");
+            return NULL;
+        }
+
+        AstNode *fullTypeNode = parser_parseFullType(parser);
+        if (fullTypeNode == NULL)
+        {
+            DEBUG_PRINT("parser_parseTypeCastExpression: Failed to parse full type.\n");
+            return NULL;
+        }
+        LinkedList *head = linkedList_Ast_create(parser->astArena, children, fullTypeNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseTypeCastExpression: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseTypeCastExpression: No tokens available after full type.\n");
+            return NULL;
+        }
+
+        if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS)
+        {
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ')' to close type cast expression.");
+            if (error == NULL)
+            {
+                DEBUG_PRINT("parser_parseTypeCastExpression: error_create failed with errno %d\n", errno);
+                return NULL;
+            }
+            head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+            if (head == NULL)
+            {
+                DEBUG_PRINT("parser_parseTypeCastExpression: linkedList_Error_create failed with errno %d\n", errno);
+                return NULL;
+            }
+            parser->errors = head;
+
+            parser->tokens = parser->tokens->next; // Skip the unexpected token
+            return NULL;
+        }
+
+        parser->tokens = parser->tokens->next; // Move past the close parenthesis token
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseTypeCastExpression: No tokens available after close parenthesis.\n");
+            return NULL;
+        }
+
+        AstNode *typeCastExpressionNode = parser_parseTypeCastExpression(parser);
+        if (typeCastExpressionNode == NULL)
+        {
+            DEBUG_PRINT("parser_parseTypeCastExpression: Failed to parse type cast expression after type.\n");
+            return NULL;
+        }
+        head = linkedList_Ast_create(parser->astArena, children, typeCastExpressionNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseTypeCastExpression: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+    }
+    else
+    {
+        AstNode *unaryExpressionNode = parser_parseUnaryExpression(parser);
+        if (unaryExpressionNode == NULL)
+        {
+            DEBUG_PRINT("parser_parseTypeCastExpression: Failed to parse unary expression.\n");
+            return NULL;
+        }
+        LinkedList *head = linkedList_Ast_create(parser->astArena, children, unaryExpressionNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseTypeCastExpression: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+    }
+
+    AstNode *typeCastExpression = astNode_create(parser->astArena, AST_TYPE_CAST_EXPRESSION, NULL, children);
+    if (typeCastExpression == NULL)
+    {
+        DEBUG_PRINT("parser_parseTypeCastExpression: astNode_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    return typeCastExpression;
 }
 
-// TODO
 AstNode *parser_parseUnaryExpression(Parser *parser)
 {
-    return NULL; // TODO: Implement 
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_parseUnaryExpression: Parser is NULL.\n");
+        return NULL;
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseUnaryExpression: No tokens available to parse unary expression.\n");
+        return NULL;
+    }
+
+    LinkedList *children = NULL;
+
+    My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
+    if (currentTokenType == TOKEN_DOUBLE_PLUS || currentTokenType == TOKEN_DOUBLE_MINUS)
+    {
+        Token *operatorToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
+        if (operatorToken == NULL)
+        {
+            DEBUG_PRINT("parser_parseUnaryExpression: token_copy failed with errno %d\n", errno);
+            return NULL;
+        }
+        LinkedList *head = linkedList_Token_create(parser->astArena, children, operatorToken);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseUnaryExpression: linkedList_Token_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+
+        parser->tokens = parser->tokens->next; // Move past the unary operator token
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseUnaryExpression: No tokens available after unary operator.\n");
+            return NULL;
+        }
+
+        AstNode *unaryExpressionNode = parser_parseUnaryExpression(parser);
+        if (unaryExpressionNode == NULL)
+        {
+            DEBUG_PRINT("parser_parseUnaryExpression: Failed to parse unary expression after operator.\n");
+            return NULL;
+        }
+        head = linkedList_Ast_create(parser->astArena, children, unaryExpressionNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseUnaryExpression: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+    }
+    else if (   currentTokenType == TOKEN_PLUS || currentTokenType == TOKEN_MINUS || 
+                currentTokenType == TOKEN_STAR || currentTokenType == TOKEN_AMPERSAND ||
+                currentTokenType == TOKEN_TILDE || currentTokenType == TOKEN_EXCLAMATION)
+    {
+        Token *operatorToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
+        if (operatorToken == NULL)
+        {
+            DEBUG_PRINT("parser_parseUnaryExpression: token_copy failed with errno %d\n", errno);
+            return NULL;
+        }
+        LinkedList *head = linkedList_Token_create(parser->astArena, children, operatorToken);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseUnaryExpression: linkedList_Token_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+
+        parser->tokens = parser->tokens->next; // Move past the unary operator token
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseUnaryExpression: No tokens available after unary operator.\n");
+            return NULL;
+        }
+
+        AstNode *typeCastExpressionNode = parser_parseTypeCastExpression(parser);
+        if (typeCastExpressionNode == NULL)
+        {
+            DEBUG_PRINT("parser_parseUnaryExpression: Failed to parse unary expression after operator.\n");
+            return NULL;
+        }
+        head = linkedList_Ast_create(parser->astArena, children, typeCastExpressionNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseUnaryExpression: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+    }
+    else if (currentTokenType == TOKEN_KEYWORD_SIZEOF)
+    {
+        AstNode *sizeofExpressionNode = parser_parseSizeofExpression(parser);
+        if (sizeofExpressionNode == NULL)
+        {
+            DEBUG_PRINT("parser_parseUnaryExpression: Failed to parse sizeof expression.\n");
+            return NULL;
+        }
+        LinkedList *head = linkedList_Ast_create(parser->astArena, children, sizeofExpressionNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseUnaryExpression: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+    }
+    else if (currentTokenType == TOKEN_KEYWORD_TYPEOF)
+    {
+        AstNode *typeofExpressionNode = parser_parseTypeofExpression(parser);
+        if (typeofExpressionNode == NULL)
+        {
+            DEBUG_PRINT("parser_parseUnaryExpression: Failed to parse typeof expression.\n");
+            return NULL;
+        }
+        LinkedList *head = linkedList_Ast_create(parser->astArena, children, typeofExpressionNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseUnaryExpression: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+    }
+    else
+    {
+        AstNode *postfixExpressionNode = parser_parsePostfixExpression(parser);
+        if (postfixExpressionNode == NULL)
+        {
+            DEBUG_PRINT("parser_parseUnaryExpression: Failed to parse postfix expression.\n");
+            return NULL;
+        }
+        LinkedList *head = linkedList_Ast_create(parser->astArena, children, postfixExpressionNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseUnaryExpression: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+    }
+
+    AstNode *unaryExpressionNode = astNode_create(parser->astArena, AST_UNARY_EXPRESSION, NULL, children);
+    if (unaryExpressionNode == NULL)
+    {
+        DEBUG_PRINT("parser_parseUnaryExpression: astNode_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    return unaryExpressionNode;
 }
 
-// TODO
 AstNode *parser_parsePostfixExpression(Parser *parser)
 {
-    return NULL; // TODO: Implement 
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_parsePostfixExpression: Parser is NULL.\n");
+        return NULL;
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parsePostfixExpression: No tokens available to parse postfix expression.\n");
+        return NULL;
+    }
+
+    My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
+    if (currentTokenType != TOKEN_OPEN_CURLY && currentTokenType != TOKEN_IDENTIFIER && !parser_isLiteral(parser) && currentTokenType != TOKEN_OPEN_PARENTHESIS)
+    {
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier, literal, or '(' to start postfix expression.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("parser_parsePostfixExpression: error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parsePostfixExpression: linkedList_Error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        parser->errors = head;
+
+        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        return NULL;
+    }
+
+    LinkedList *children = NULL;
+
+    if (((Token *)parser->tokens->data)->type == TOKEN_OPEN_CURLY)
+    {
+        AstNode *structUnionDeclaration = parser_parseStructUnionDeclaration(parser);
+        if (structUnionDeclaration == NULL)
+        {
+            DEBUG_PRINT("parser_parsePostfixExpression: Failed to parse struct or union declaration.\n");
+            return NULL;
+        }
+        LinkedList *head = linkedList_Ast_create(parser->astArena, children, structUnionDeclaration);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parsePostfixExpression: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+    }
+    else
+    {
+        AstNode *primaryExpressionNode = parser_parsePrimaryExpression(parser);
+        if (primaryExpressionNode == NULL)
+        {
+            DEBUG_PRINT("parser_parsePostfixExpression: Failed to parse primary expression.\n");
+            return NULL;
+        }
+        LinkedList *head = linkedList_Ast_create(parser->astArena, children, primaryExpressionNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parsePostfixExpression: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parsePostfixExpression: No tokens available after primary expression.\n");
+            return NULL;
+        }
+
+        while (parser_isPostfixPrimeExpression(parser))
+        {
+            AstNode *postfixPrimeNode = parser_parsePostfixPrimeExpression(parser);
+            if (postfixPrimeNode == NULL)
+            {
+                DEBUG_PRINT("parser_parsePostfixExpression: Failed to parse postfix prime expression.\n");
+                return NULL;
+            }
+            LinkedList *head = linkedList_Ast_create(parser->astArena, children, postfixPrimeNode);
+            if (head == NULL)
+            {
+                DEBUG_PRINT("parser_parsePostfixExpression: linkedList_Ast_create failed with errno %d\n", errno);
+                return NULL;
+            }
+            children = head;
+
+            if (parser->tokens == NULL)
+            {
+                DEBUG_PRINT("parser_parsePostfixExpression: No tokens available after postfix prime expression.\n");
+                return NULL;
+            }
+        }
+    }
+
+    AstNode *postfixExpressionNode = astNode_create(parser->astArena, AST_POSTFIX_EXPRESSION, NULL, children);
+    if (postfixExpressionNode == NULL)
+    {
+        DEBUG_PRINT("parser_parsePostfixExpression: astNode_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    return postfixExpressionNode;
 }
 
-// TODO
-AstNode *parser_parseArrayIndexing(Parser *parser)
+bool parser_isPostfixPrimeExpression(Parser *parser)
 {
-    return NULL; // TODO: Implement 
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_isPostfixPrimeExpression: Parser is NULL.\n");
+        return false;
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_isPostfixPrimeExpression: No tokens available to check for postfix prime expression.\n");
+        return false;
+    }
+
+    My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
+    return (currentTokenType == TOKEN_OPEN_PARENTHESIS || currentTokenType == TOKEN_OPEN_BRACKET || currentTokenType == TOKEN_DOT ||
+            currentTokenType == TOKEN_DOUBLE_PLUS || currentTokenType == TOKEN_DOUBLE_MINUS);
 }
 
-// TODO
+AstNode *parser_parsePostfixPrimeExpression(Parser *parser)
+{
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_parsePostfixPrimeExpression: Parser is NULL.\n");
+        return NULL;
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parsePostfixPrimeExpression: No tokens available to parse postfix prime expression.\n");
+        return NULL;
+    }
+
+    My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
+    if (parser_isPostfixPrimeExpression(parser))
+    {
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '(', '[', '.', '++', or '--' to start postfix prime expression.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("parser_parsePostfixPrimeExpression: error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parsePostfixPrimeExpression: linkedList_Error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        parser->errors = head;
+
+        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        return NULL;    
+    }
+
+    LinkedList *tokens = NULL;
+    LinkedList *children = NULL;
+
+    if (currentTokenType == TOKEN_OPEN_PARENTHESIS)
+    {
+        AstNode *functionCallNode = parser_parseFunctionCallExpression(parser);
+        if (functionCallNode == NULL)
+        {
+            DEBUG_PRINT("parser_parsePostfixPrimeExpression: Failed to parse function call.\n");
+            return NULL;
+        }
+        LinkedList *head = linkedList_Ast_create(parser->astArena, children, functionCallNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parsePostfixPrimeExpression: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+    }
+    else if (currentTokenType == TOKEN_OPEN_BRACKET)
+    {
+        AstNode *arrayIndexingNode = parser_parseArrayIndexingExpression(parser);
+        if (arrayIndexingNode == NULL)
+        {
+            DEBUG_PRINT("parser_parsePostfixPrimeExpression: Failed to parse array indexing.\n");
+            return NULL;
+        }
+        LinkedList *head = linkedList_Ast_create(parser->astArena, children, arrayIndexingNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parsePostfixPrimeExpression: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+    }
+    else
+    {
+        if (currentTokenType == TOKEN_DOT)
+        {
+            parser->tokens = parser->tokens->next; // Move past the dot token
+            if (parser->tokens == NULL)
+            {
+                DEBUG_PRINT("parser_parsePostfixPrimeExpression: No tokens available after dot.\n");
+                return NULL;
+            }
+
+            if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
+            {
+                Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier after '.' in postfix prime expression.");
+                if (error == NULL)
+                {
+                    DEBUG_PRINT("parser_parsePostfixPrimeExpression: error_create failed with errno %d\n", errno);
+                    return NULL;
+                }
+                LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+                if (head == NULL)
+                {
+                    DEBUG_PRINT("parser_parsePostfixPrimeExpression: linkedList_Error_create failed with errno %d\n", errno);
+                    return NULL;
+                }
+                parser->errors = head;
+
+                parser->tokens = parser->tokens->next; // Skip the unexpected token
+                return NULL;
+            }
+
+            Token *identifierToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
+            if (identifierToken == NULL)
+            {
+                DEBUG_PRINT("parser_parsePostfixPrimeExpression: token_copy failed with errno %d\n", errno);
+                return NULL;
+            }
+            LinkedList *head = linkedList_Token_create(parser->astArena, tokens, identifierToken);
+            if (head == NULL)
+            {
+                DEBUG_PRINT("parser_parsePostfixPrimeExpression: linkedList_Token_create failed with errno %d\n", errno);
+                return NULL;
+            }
+            tokens = head;
+
+            parser->tokens = parser->tokens->next; // Move past the dot token
+        }
+        else
+        {
+            Token *operatorToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
+            if (operatorToken == NULL)
+            {
+                DEBUG_PRINT("parser_parsePostfixPrimeExpression: token_copy failed with errno %d\n", errno);
+                return NULL;
+            }
+            LinkedList *head = linkedList_Token_create(parser->astArena, tokens, operatorToken);
+            if (head == NULL)
+            {
+                DEBUG_PRINT("parser_parsePostfixPrimeExpression: linkedList_Token_create failed with errno %d\n", errno);
+                return NULL;
+            }
+            tokens = head;
+
+            parser->tokens = parser->tokens->next; // Move past the operator token
+        }
+    }
+
+    AstNode *postfixPrimeNode = astNode_create(parser->astArena, AST_POSTFIX_PRIME_EXPRESSION, tokens, children);
+    if (postfixPrimeNode == NULL)
+    {
+        DEBUG_PRINT("parser_parsePostfixPrimeExpression: astNode_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    return postfixPrimeNode;
+}
+
+AstNode *parser_parseArrayIndexingExpression(Parser *parser)
+{
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_parseArrayIndexingExpression: Parser is NULL.\n");
+        return NULL;
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseArrayIndexingExpression: No tokens available to parse array indexing expression.\n");
+        return NULL;
+    }
+
+    if (((Token *)parser->tokens->data)->type != TOKEN_OPEN_BRACKET)
+    {
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '[' to start array indexing expression.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("parser_parseArrayIndexingExpression: error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseArrayIndexingExpression: linkedList_Error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        parser->errors = head;
+
+        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        return NULL;
+    }
+
+    LinkedList *children = NULL;
+
+    parser->tokens = parser->tokens->next; // Move past the open bracket token
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseArrayIndexingExpression: No tokens available after open bracket.\n");
+        return NULL;
+    }
+
+    AstNode *indexNode = parser_parseExpression(parser);
+    if (indexNode == NULL)
+    {
+        DEBUG_PRINT("parser_parseArrayIndexingExpression: Failed to parse array index expression.\n");
+        return NULL;
+    }
+    LinkedList *head = linkedList_Ast_create(parser->astArena, children, indexNode);
+    if (head == NULL)
+    {
+        DEBUG_PRINT("parser_parseArrayIndexingExpression: linkedList_Ast_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    children = head;
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseArrayIndexingExpression: No tokens available after array index expression.\n");
+        return NULL;
+    }
+
+    if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_BRACKET)
+    {
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ']' to close array indexing expression.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("parser_parseArrayIndexingExpression: error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseArrayIndexingExpression: linkedList_Error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        parser->errors = head;
+
+        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        return NULL;
+    }
+
+    parser->tokens = parser->tokens->next; // Move past the close bracket token
+
+    AstNode *arrayIndexingNode = astNode_create(parser->astArena, AST_ARRAY_INDEXING_EXPRESSION, NULL, children);
+    if (arrayIndexingNode == NULL)
+    {
+        DEBUG_PRINT("parser_parseArrayIndexingExpression: astNode_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    return arrayIndexingNode;
+}
+
+AstNode *parser_parseFunctionCallExpression(Parser *parser)
+{
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_parseFunctionCallExpression: Parser is NULL.\n");
+        return NULL;
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseFunctionCallExpression: No tokens available to parse function call.\n");
+        return NULL;
+    }
+
+    if (((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS)
+    {
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '(' to start function call.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("parser_parseFunctionCallExpression: error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseFunctionCallExpression: linkedList_Error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        parser->errors = head;
+        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        return NULL;
+    }
+
+    LinkedList *children = NULL;
+
+    parser->tokens = parser->tokens->next; // Move past the open parenthesis token
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseFunctionCallExpression: No tokens available after open parenthesis.\n");
+        return NULL;
+    }
+
+    if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS)
+    {
+        AstNode *expressionNode = parser_parseExpression(parser);
+        if (expressionNode == NULL)
+        {
+            DEBUG_PRINT("parser_parseFunctionCallExpression: Failed to parse function call expression.\n");
+            return NULL;
+        }
+        LinkedList *head = linkedList_Ast_create(parser->astArena, children, expressionNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseFunctionCallExpression: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseFunctionCallExpression: No tokens available after function call expression.\n");
+            return NULL;
+        }
+
+        while (((Token *)parser->tokens->data)->type == TOKEN_COMMA)
+        {
+            parser->tokens = parser->tokens->next; // Move past the comma token
+            if (parser->tokens == NULL)
+            {
+                DEBUG_PRINT("parser_parseFunctionCallExpression: No tokens available after comma.\n");
+                return NULL;
+            }
+
+            expressionNode = parser_parseExpression(parser);
+            if (expressionNode == NULL)
+            {
+                DEBUG_PRINT("parser_parseFunctionCallExpression: Failed to parse function call expression.\n");
+                return NULL;
+            }
+            head = linkedList_Ast_create(parser->astArena, children, expressionNode);
+            if (head == NULL)
+            {
+                DEBUG_PRINT("parser_parseFunctionCallExpression: linkedList_Ast_create failed with errno %d\n", errno);
+                return NULL;
+            }
+            children = head;
+
+            if (parser->tokens == NULL)
+            {
+                DEBUG_PRINT("parser_parseFunctionCallExpression: No tokens available after function call expression.\n");
+                return NULL;
+            }
+        }
+    }
+
+    if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS)
+    {
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ')' to close function call.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("parser_parseFunctionCallExpression: error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseFunctionCallExpression: linkedList_Error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        parser->errors = head;
+
+        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        return NULL;
+    }
+
+    parser->tokens = parser->tokens->next; // Move past the close parenthesis token
+
+    AstNode *functionCallNode = astNode_create(parser->astArena, AST_FUNCTION_CALL_EXPRESSION, NULL, children);
+    if (functionCallNode == NULL)
+    {
+        DEBUG_PRINT("parser_parseFunctionCallExpression: astNode_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    return functionCallNode;
+}
+
 AstNode *parser_parsePrimaryExpression(Parser *parser)
 {
-    return NULL; // TODO: Implement 
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_parsePrimaryExpression: Parser is NULL.\n");
+        return NULL;
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parsePrimaryExpression: No tokens available to parse primary expression.\n");
+        return NULL;
+    }
+
+    My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
+    if (currentTokenType != TOKEN_IDENTIFIER && !parser_isLiteral(parser) && currentTokenType != TOKEN_OPEN_PARENTHESIS)
+    {
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier, literal, or '(' to start primary expression.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("parser_parsePrimaryExpression: error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parsePrimaryExpression: linkedList_Error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        parser->errors = head;
+
+        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        return NULL;
+    }
+
+    LinkedList *tokens = NULL;
+    LinkedList *children = NULL;
+
+    if (currentTokenType == TOKEN_IDENTIFIER)
+    {
+        Token *identifierToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
+        if (identifierToken == NULL)
+        {
+            DEBUG_PRINT("parser_parsePrimaryExpression: token_copy failed with errno %d\n", errno);
+            return NULL;
+        }
+        LinkedList *head = linkedList_Token_create(parser->astArena, tokens, identifierToken);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parsePrimaryExpression: linkedList_Token_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        tokens = head;
+
+        parser->tokens = parser->tokens->next; // Move past the identifier token
+    }
+    else if (parser_isLiteral(parser))
+    {
+        AstNode *literalNode = parser_parseLiteral(parser);
+        if (literalNode == NULL)
+        {
+            DEBUG_PRINT("parser_parsePrimaryExpression: Failed to parse literal.\n");
+            return NULL;
+        }
+        LinkedList *head = linkedList_Ast_create(parser->astArena, children, literalNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parsePrimaryExpression: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+    }
+    else if (currentTokenType == TOKEN_OPEN_PARENTHESIS)
+    {
+        parser->tokens = parser->tokens->next; // Move past the open parenthesis token
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parsePrimaryExpression: No tokens available after open parenthesis.\n");
+            return NULL;
+        }
+
+        AstNode *groupedExprNode = parser_parseExpression(parser);
+        if (groupedExprNode == NULL)
+        {
+            DEBUG_PRINT("parser_parsePrimaryExpression: Failed to parse grouped expression.\n");
+            return NULL;
+        }
+        LinkedList *head = linkedList_Ast_create(parser->astArena, children, groupedExprNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parsePrimaryExpression: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parsePrimaryExpression: No tokens available after grouped expression.\n");
+            return NULL;
+        }
+
+        parser->tokens = parser->tokens->next; // Move past the close parenthesis token
+    }
+
+    AstNode *primaryExpressionNode = astNode_create(parser->astArena, AST_PRIMARY_EXPRESSION, tokens, children);
+    if (primaryExpressionNode == NULL)
+    {
+        DEBUG_PRINT("parser_parsePrimaryExpression: astNode_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    return primaryExpressionNode;
 }
 
 // --------------------------------------------------------------------------------

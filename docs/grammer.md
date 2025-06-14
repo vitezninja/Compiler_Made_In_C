@@ -282,11 +282,10 @@ Continue_statement = "continue" ";" ;
 
 ## Expressions
 ```ebnf
-Expression = Function_call | Assignment_expression | Logical_OR_expression ;
+Expression = Assignment_expression ;
 
-Function_call = identifier "(" [ Expression { "," Expression } ] ")" ;
-
-Assignment_expression = Unary_expression { "," Unary_expression } Assignment_operators Expression ;
+Assignment_expression = ( Logical_OR_expression )
+                      | ( Unary_expression { "," Unary_expression } Assignment_operators Assignment_expression ) ;
 
 Logical_OR_expression = Logical_AND_expression { "||" Logical_AND_expression } ;
 
@@ -308,24 +307,33 @@ Additive_expression = Multiplicative_expression { Additive_operator Multiplicati
 
 Multiplicative_expression = Type_cast_expression { Multiplicative_operator Type_cast_expression } ;
 
-Type_cast_expression = Unary_expression
-                     | ( "(" Full_type ")" Type_cast_expression ) ;
+Type_cast_expression = ( "(" Full_type ")" Type_cast_expression )
+                     | Unary_expression ;
 
-Unary_expression = Postfix_expression
-                 | ( Prefix_operator Unary_expression ) 
+Unary_expression = ( Prefix_operator Unary_expression ) 
                  | ( Unary_operator Type_cast_expression ) 
-                 | ( ( "sizeof" | "typeof" ) "(" ( Type | Expression ) ")" ) ;
+                 | Sizeof_expression
+                 | Typeof_expression
+                 | Postfix_expression ;
 
-Postfix_expression = ( Primary_expression { Postfix_operator } ) 
-                   | Struct_Union_declarator
-                   | Array_indexing ;
+Sizeof_expression = "sizeof" "(" ( Type | Expression ) ")" ;
 
-Array_indexing = identifier "[" Expression "]" { "[" Expression "]" } ;
+Typeof_expression = "typeof" "(" ( Type | Expression ) ")" ;
+
+Postfix_expression = Struct_Union_declarator
+                   | ( Primary_expression { Postfix_prime_expression } ) ;
+
+Postfix_prime_expression = Postfix_operator
+                         | Array_indexing_expression
+                         | Function_call_expression ;
+
+Array_indexing_expression = "[" Expression "]" ;
+
+Function_call_expression = "(" [ Expression { "," Expression } ] ")" ;
 
 Primary_expression = identifier 
                    | Literal 
                    | ( "(" Expression ")" );
-
 ```
 
 ## Operator precedence
