@@ -5,3 +5,4 @@ build
 *.d
 *.exe
 *.out
+*.cmc
