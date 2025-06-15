@@ -125,6 +125,7 @@ typedef enum My_TokenType
 
     TOKEN_KEYWORD_IF,                   /** if */
     TOKEN_KEYWORD_ELSE,                 /** else */
+    TOKEN_KEYWORD_ENDIF,                /** endif */
     TOKEN_KEYWORD_SWITCH,               /** switch */
     TOKEN_KEYWORD_CASE,                 /** case */
     TOKEN_KEYWORD_DEFAULT,              /** default */

@@ -3965,6 +3965,39 @@ AstNode *parser_parseIfStatement(Parser *parser)
             return NULL;
         }
         children = head;
+
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseIfStatement: No tokens available after else body statement.\n");
+            return NULL;
+        }
+    }
+
+    if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_ENDIF)
+    {
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'endif' keyword to end if statement.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("parser_parseIfStatement: error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseIfStatement: linkedList_Error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        parser->errors = head;
+
+        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        return NULL;
+    }
+
+    parser->tokens = parser->tokens->next; // Move past the 'endif' keyword
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseIfStatement: No tokens available after 'endif' keyword.\n");
+        return NULL;
     }
 
     AstNode *ifStatementNode = astNode_create(parser->astArena, AST_IF_STATEMENT, NULL, children);

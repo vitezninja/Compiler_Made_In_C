@@ -9,6 +9,7 @@ ptr
 const_ptr
 if
 else
+endif
 switch
 case
 default
@@ -223,7 +224,7 @@ Statement = Branch_statement | Loop_statement | Compound_statement | Jump_statem
 ```ebnf
 Branch_statement = If_statement | Switch_statement ;
 
-If_statement = "if" "(" Expression ")" Statement [ "else" Statement ] ;
+If_statement = "if" "(" Expression ")" Statement [ "else" Statement ] "endif" ;
 
 Switch_statement = "switch" "(" Expression ")" "{" Switch_Case { Case_statement } [ Switch_Default ] "}" ;
 
