@@ -42,15 +42,16 @@ export
 ```
 
 ```ebnf
-Assignment_operators = "+=" 
-                     | "&=" 
+Assignment_operators = "="
+                     | "+=" 
                      | "-="
-                     | "|="
                      | "*="
-                     | "^="
                      | "/=" 
-                     | "<<="
                      | "%=" 
+                     | "&=" 
+                     | "|="
+                     | "^="
+                     | "<<="
                      | ">>=" ;
 
 Binary_operators = "&" 
@@ -285,7 +286,7 @@ Continue_statement = "continue" ";" ;
 Expression = Assignment_expression ;
 
 Assignment_expression = ( Logical_OR_expression )
-                      | ( Unary_expression { "," Unary_expression } Assignment_operators Assignment_expression ) ;
+                      | ( Unary_expression { "," Unary_expression } Assignment_operators Expression ) ;
 
 Logical_OR_expression = Logical_AND_expression { "||" Logical_AND_expression } ;
 
@@ -305,14 +306,14 @@ Shift_expression = Additive_expression { Shift_operator Additive_expression } ;
 
 Additive_expression = Multiplicative_expression { Additive_operator Multiplicative_expression } ;
 
-Multiplicative_expression = Type_cast_expression { Multiplicative_operator Type_cast_expression } ;
-
-Type_cast_expression = ( "(" Full_type ")" Type_cast_expression )
-                     | Unary_expression ;
+Multiplicative_expression = Unary_expression { Multiplicative_operator Unary_expression } ;
 
 Unary_expression = ( Prefix_operator Unary_expression ) 
                  | ( Unary_operator Type_cast_expression ) 
-                 | Postfix_expression ;
+                 | Type_cast_expression ;
+
+Type_cast_expression = ( "(" Full_type ")" Type_cast_expression )
+                     | Postfix_expression ;
 
 Postfix_expression = Struct_Union_declarator
                    | ( Primary_expression { Postfix_prime_expression } ) ;
@@ -365,10 +366,10 @@ Primary_expression = identifier
             <td>Compound literal.</td>
         </tr>
         <tr>
-            <td rowspan="8">13</td>
+            <td rowspan="6">13</td>
             <td>++, --</td>
             <td>Prefix Increment and decrement operators.</td>
-            <td rowspan="8">Right-to-left</td>
+            <td rowspan="6">Right-to-left</td>
         </tr>
         <tr>
             <td>+, -</td>
@@ -389,14 +390,6 @@ Primary_expression = identifier
         <tr>
             <td>&</td>
             <td>Address-of.</td>
-        </tr>
-        <tr>
-            <td>sizeof</td>
-            <td>Size-of.</td>
-        </tr>
-        <tr>
-            <td>typeof</td>
-            <td>Type-of.</td>
         </tr>
         <tr>
             <td>12</td>

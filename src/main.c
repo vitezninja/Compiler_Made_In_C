@@ -2,11 +2,11 @@
 #include <stdbool.h>
 
 #include "utils/logger.h"
-#include "fileSystem.h"
 #include "utils/error.h"
 #include "utils/arena.h"
 #include "utils/hashTable.h"
 #include "utils/linkedList.h"
+#include "fileSystem.h"
 #include "options.h"
 #include "lexer.h"
 #include "parser.h"
@@ -87,10 +87,6 @@ int main(int argc, char *argv[])
 
         linkedList_printRecursive(tokens, (PrintFunction)token_print);
 
-        #ifdef DEBUG
-        return 0; // Exit early in debug mode to avoid parsing
-        #endif
-
         // Alpha ast and token copys
         // Beta stores tokens and utils (gets emptied after parsing)
         AstNode *ast = parseFile(alphaArena, betaArena, tokens);
@@ -113,7 +109,6 @@ int main(int argc, char *argv[])
         arena_destroy(&alphaArena);
         arena_destroy(&betaArena);
     }
-
     
     // Exiting the program, free allocated resources
     options_free(&options);
