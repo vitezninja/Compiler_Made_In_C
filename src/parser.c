@@ -38,7 +38,7 @@ AstNode *parser_parseUnionDeclaration(Parser *parser);
 
 AstNode *parser_parseStructUnionMemberDeclaration(Parser *parser);
 
-AstNode *parser_parseStructUniondeclarator(Parser *parser);
+AstNode *parser_parseStructUnionDeclarator(Parser *parser);
 
 AstNode *parser_parseStructUnionIndirectDeclarator(Parser *parser);
 
@@ -1418,13 +1418,13 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
         return NULL;
     }
 
-    AstNode *statementNode = parser_parseStatement(parser);
-    if (statementNode == NULL)
+    AstNode *functionBodyNode = parser_parseCompoundStatement(parser);
+    if (functionBodyNode == NULL)
     {
-        DEBUG_PRINT("parser_parseFunctionDefinition: Failed to parse function statement.\n");
+        DEBUG_PRINT("parser_parseFunctionDefinition: Failed to parse function body.\n");
         return NULL;
     }
-    head = linkedList_Ast_create(parser->astArena, children, statementNode);
+    head = linkedList_Ast_create(parser->astArena, children, functionBodyNode);
     if (head == NULL)
     {
         DEBUG_PRINT("parser_parseFunctionDefinition: linkedList_Ast_create failed with errno %d\n", errno);
@@ -1929,7 +1929,7 @@ AstNode *parser_parseGlobalVariableDeclaration(Parser *parser)
             }
         }
 
-        AstNode *fullTypeNode = parser_parseFullType(parser);
+        fullTypeNode = parser_parseFullType(parser);
         if (fullTypeNode == NULL)
         {
             DEBUG_PRINT("parser_parseGlobalVariableDeclaration: Failed to parse full type after comma.\n");
@@ -2553,7 +2553,7 @@ AstNode *parser_parseStructUnionMemberDeclaration(Parser *parser)
             DEBUG_PRINT("parser_parseStructUnionMemberDeclaration: Failed to parse full type.\n");
             return NULL;
         }
-        LinkedList *head = linkedList_Ast_create(parser->astArena, children, fullTypeNode);
+        head = linkedList_Ast_create(parser->astArena, children, fullTypeNode);
         if (head == NULL)
         {
             DEBUG_PRINT("parser_parseStructUnionMemberDeclaration: linkedList_Ast_create failed with errno %d\n", errno);
@@ -2645,17 +2645,17 @@ AstNode *parser_parseStructUnionMemberDeclaration(Parser *parser)
     return structUnionMemberDeclarationNode;
 }
 
-AstNode *parser_parseStructUniondeclarator(Parser *parser)
+AstNode *parser_parseStructUnionDeclarator(Parser *parser)
 {
     if (parser == NULL)
     {
-        DEBUG_PRINT("parser_parseStructUniondeclarator: Parser is NULL.\n");
+        DEBUG_PRINT("parser_parseStructUnionDeclarator: Parser is NULL.\n");
         return NULL;
     }
 
     if (parser->tokens == NULL)
     {
-        DEBUG_PRINT("parser_parseStructUniondeclarator: No tokens available to parse struct/union declarator.\n");
+        DEBUG_PRINT("parser_parseStructUnionDeclarator: No tokens available to parse struct/union declarator.\n");
         return NULL;
     }
 
@@ -2664,13 +2664,13 @@ AstNode *parser_parseStructUniondeclarator(Parser *parser)
         Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '{' to start struct/union declarator.");
         if (error == NULL)
         {
-            DEBUG_PRINT("parser_parseStructUniondeclarator: error_create failed with errno %d\n", errno);
+            DEBUG_PRINT("parser_parseStructUnionDeclarator: error_create failed with errno %d\n", errno);
             return NULL;
         }
         LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
         if (head == NULL)
         {
-            DEBUG_PRINT("parser_parseStructUniondeclarator: linkedList_Error_create failed with errno %d\n", errno);
+            DEBUG_PRINT("parser_parseStructUnionDeclarator: linkedList_Error_create failed with errno %d\n", errno);
             return NULL;
         }
         parser->errors = head;
@@ -2684,7 +2684,7 @@ AstNode *parser_parseStructUniondeclarator(Parser *parser)
     parser->tokens = parser->tokens->next; // Move past the open curly brace token
     if (parser->tokens == NULL)
     {
-        DEBUG_PRINT("parser_parseStructUniondeclarator: No tokens available after open curly brace.\n");
+        DEBUG_PRINT("parser_parseStructUnionDeclarator: No tokens available after open curly brace.\n");
         return NULL;
     }
 
@@ -2693,13 +2693,13 @@ AstNode *parser_parseStructUniondeclarator(Parser *parser)
         AstNode *directDeclaratorNode = parser_parseStructUnionDirectDeclarator(parser);
         if (directDeclaratorNode == NULL)
         {
-            DEBUG_PRINT("parser_parseStructUniondeclarator: Failed to parse struct/union direct declarator.\n");
+            DEBUG_PRINT("parser_parseStructUnionDeclarator: Failed to parse struct/union direct declarator.\n");
             return NULL;
         }
         LinkedList *head = linkedList_Ast_create(parser->astArena, children, directDeclaratorNode);
         if (head == NULL)
         {
-            DEBUG_PRINT("parser_parseStructUniondeclarator: linkedList_Ast_create failed with errno %d\n", errno);
+            DEBUG_PRINT("parser_parseStructUnionDeclarator: linkedList_Ast_create failed with errno %d\n", errno);
             return NULL;
         }
         children = head;
@@ -2709,13 +2709,13 @@ AstNode *parser_parseStructUniondeclarator(Parser *parser)
         AstNode *indirectDeclaratorNode = parser_parseStructUnionIndirectDeclarator(parser);
         if (indirectDeclaratorNode == NULL)
         {
-            DEBUG_PRINT("parser_parseStructUniondeclarator: Failed to parse struct/union indirect declarator.\n");
+            DEBUG_PRINT("parser_parseStructUnionDeclarator: Failed to parse struct/union indirect declarator.\n");
             return NULL;
         }
         LinkedList *head = linkedList_Ast_create(parser->astArena, children, indirectDeclaratorNode);
         if (head == NULL)
         {
-            DEBUG_PRINT("parser_parseStructUniondeclarator: linkedList_Ast_create failed with errno %d\n", errno);
+            DEBUG_PRINT("parser_parseStructUnionDeclarator: linkedList_Ast_create failed with errno %d\n", errno);
             return NULL;
         }
         children = head;
@@ -2726,13 +2726,13 @@ AstNode *parser_parseStructUniondeclarator(Parser *parser)
         Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '}' to close struct/union declarator.");
         if (error == NULL)
         {
-            DEBUG_PRINT("parser_parseStructUniondeclarator: error_create failed with errno %d\n", errno);
+            DEBUG_PRINT("parser_parseStructUnionDeclarator: error_create failed with errno %d\n", errno);
             return NULL;
         }
         LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
         if (head == NULL)
         {
-            DEBUG_PRINT("parser_parseStructUniondeclarator: linkedList_Error_create failed with errno %d\n", errno);
+            DEBUG_PRINT("parser_parseStructUnionDeclarator: linkedList_Error_create failed with errno %d\n", errno);
             return NULL;
         }
         parser->errors = head;
@@ -2746,7 +2746,7 @@ AstNode *parser_parseStructUniondeclarator(Parser *parser)
     AstNode *structUniondeclarator = astNode_create(parser->astArena, AST_STRUCT_UNION_DECLARATOR, NULL, children);
     if (structUniondeclarator == NULL)
     {
-        DEBUG_PRINT("parser_parseStructUniondeclarator: astNode_create failed with errno %d\n", errno);
+        DEBUG_PRINT("parser_parseStructUnionDeclarator: astNode_create failed with errno %d\n", errno);
         return NULL;
     }
     return structUniondeclarator;
@@ -3575,7 +3575,7 @@ AstNode *parser_parseTypedefDeclaration(Parser *parser)
             return NULL;
         }
 
-        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
         if (head == NULL)
         {
             DEBUG_PRINT("parser_parseTypedefDeclaration: linkedList_Error_create failed with errno %d\n", errno);
@@ -3594,7 +3594,7 @@ AstNode *parser_parseTypedefDeclaration(Parser *parser)
         return NULL;
     }
 
-    LinkedList *head = linkedList_Token_create(parser->astArena, tokens, identifierToken);
+    head = linkedList_Token_create(parser->astArena, tokens, identifierToken);
     if (head == NULL)
     {
         DEBUG_PRINT("parser_parseTypedefDeclaration: linkedList_Token_create failed with errno %d\n", errno);
@@ -3981,7 +3981,7 @@ AstNode *parser_parseIfStatement(Parser *parser)
             DEBUG_PRINT("parser_parseIfStatement: error_create failed with errno %d\n", errno);
             return NULL;
         }
-        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
         if (head == NULL)
         {
             DEBUG_PRINT("parser_parseIfStatement: linkedList_Error_create failed with errno %d\n", errno);
@@ -5924,7 +5924,7 @@ AstNode *parser_parseVariableDeclaration(Parser *parser)
             return NULL;
         }
 
-        AstNode *fullTypeNode = parser_parseFullType(parser);
+        fullTypeNode = parser_parseFullType(parser);
         if (fullTypeNode == NULL)
         {
             DEBUG_PRINT("parser_parseVariableDeclaration: Failed to parse full type after comma.\n");
@@ -6839,7 +6839,7 @@ AstNode *parser_parseUnaryExpression(Parser *parser)
         }
         children = head;
     }
-    else if (   currentTokenType == TOKEN_PLUS || currentTokenType == TOKEN_MINUS || 
+    else if (   currentTokenType == TOKEN_MINUS || 
                 currentTokenType == TOKEN_STAR || currentTokenType == TOKEN_AMPERSAND ||
                 currentTokenType == TOKEN_TILDE || currentTokenType == TOKEN_EXCLAMATION)
     {
@@ -6871,38 +6871,6 @@ AstNode *parser_parseUnaryExpression(Parser *parser)
             return NULL;
         }
         head = linkedList_Ast_create(parser->astArena, children, typeCastExpressionNode);
-        if (head == NULL)
-        {
-            DEBUG_PRINT("parser_parseUnaryExpression: linkedList_Ast_create failed with errno %d\n", errno);
-            return NULL;
-        }
-        children = head;
-    }
-    else if (currentTokenType == TOKEN_KEYWORD_SIZEOF)
-    {
-        AstNode *sizeofExpressionNode = parser_parseSizeofExpression(parser);
-        if (sizeofExpressionNode == NULL)
-        {
-            DEBUG_PRINT("parser_parseUnaryExpression: Failed to parse sizeof expression.\n");
-            return NULL;
-        }
-        LinkedList *head = linkedList_Ast_create(parser->astArena, children, sizeofExpressionNode);
-        if (head == NULL)
-        {
-            DEBUG_PRINT("parser_parseUnaryExpression: linkedList_Ast_create failed with errno %d\n", errno);
-            return NULL;
-        }
-        children = head;
-    }
-    else if (currentTokenType == TOKEN_KEYWORD_TYPEOF)
-    {
-        AstNode *typeofExpressionNode = parser_parseTypeofExpression(parser);
-        if (typeofExpressionNode == NULL)
-        {
-            DEBUG_PRINT("parser_parseUnaryExpression: Failed to parse typeof expression.\n");
-            return NULL;
-        }
-        LinkedList *head = linkedList_Ast_create(parser->astArena, children, typeofExpressionNode);
         if (head == NULL)
         {
             DEBUG_PRINT("parser_parseUnaryExpression: linkedList_Ast_create failed with errno %d\n", errno);
@@ -6975,13 +6943,13 @@ AstNode *parser_parsePostfixExpression(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type == TOKEN_OPEN_CURLY)
     {
-        AstNode *structUnionDeclaration = parser_parseStructUnionDeclaration(parser);
-        if (structUnionDeclaration == NULL)
+        AstNode *structUnionDeclarator = parser_parseStructUnionDeclarator(parser);
+        if (structUnionDeclarator == NULL)
         {
-            DEBUG_PRINT("parser_parsePostfixExpression: Failed to parse struct or union declaration.\n");
+            DEBUG_PRINT("parser_parsePostfixExpression: Failed to parse struct or union declarator.\n");
             return NULL;
         }
-        LinkedList *head = linkedList_Ast_create(parser->astArena, children, structUnionDeclaration);
+        LinkedList *head = linkedList_Ast_create(parser->astArena, children, structUnionDeclarator);
         if (head == NULL)
         {
             DEBUG_PRINT("parser_parsePostfixExpression: linkedList_Ast_create failed with errno %d\n", errno);
@@ -7019,7 +6987,7 @@ AstNode *parser_parsePostfixExpression(Parser *parser)
                 DEBUG_PRINT("parser_parsePostfixExpression: Failed to parse postfix prime expression.\n");
                 return NULL;
             }
-            LinkedList *head = linkedList_Ast_create(parser->astArena, children, postfixPrimeNode);
+            head = linkedList_Ast_create(parser->astArena, children, postfixPrimeNode);
             if (head == NULL)
             {
                 DEBUG_PRINT("parser_parsePostfixExpression: linkedList_Ast_create failed with errno %d\n", errno);
@@ -7280,7 +7248,7 @@ AstNode *parser_parseArrayIndexingExpression(Parser *parser)
             DEBUG_PRINT("parser_parseArrayIndexingExpression: error_create failed with errno %d\n", errno);
             return NULL;
         }
-        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
         if (head == NULL)
         {
             DEBUG_PRINT("parser_parseArrayIndexingExpression: linkedList_Error_create failed with errno %d\n", errno);

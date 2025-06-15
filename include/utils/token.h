@@ -145,9 +145,6 @@ typedef enum My_TokenType
     TOKEN_KEYWORD_UNION,                /** union */
     TOKEN_KEYWORD_ENUM,                 /** enum */
 
-    TOKEN_KEYWORD_SIZEOF,               /** sizeof */
-    TOKEN_KEYWORD_TYPEOF,               /** typeof */
-
     TOKEN_KEYWORD_IMPORT,               /** import */
     TOKEN_KEYWORD_FROM,                 /** from */
     TOKEN_KEYWORD_EXPORT,               /** export */

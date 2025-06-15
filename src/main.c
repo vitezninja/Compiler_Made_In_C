@@ -87,6 +87,10 @@ int main(int argc, char *argv[])
 
         linkedList_printRecursive(tokens, (PrintFunction)token_print);
 
+        #ifdef DEBUG
+        return 0; // Exit early in debug mode to avoid parsing
+        #endif
+
         // Alpha ast and token copys
         // Beta stores tokens and utils (gets emptied after parsing)
         AstNode *ast = parseFile(alphaArena, betaArena, tokens);

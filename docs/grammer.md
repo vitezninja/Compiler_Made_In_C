@@ -77,8 +77,7 @@ Multiplicative_operator = "*"
                         | "/"
                         | "%" ;
 
-Unary_operators = "+"
-                | "-"
+Unary_operators = "-"
                 | "*"
                 | "&"
                 | "!" 
@@ -177,7 +176,7 @@ Identifier_list = identifier { "," identifier } ;
 
 ## Functions
 ```ebnf
-Function_declaration = [ "export" ] "(" Return_parameter_list ")" identifier "(" [ Function_parameter_list ] ")" Statement ;
+Function_declaration = [ "export" ] "(" Return_parameter_list ")" identifier "(" [ Function_parameter_list ] ")" Compound_statement ;
 
 Return_parameter_list = Full_type { "," Full_type } ;
 
@@ -313,13 +312,7 @@ Type_cast_expression = ( "(" Full_type ")" Type_cast_expression )
 
 Unary_expression = ( Prefix_operator Unary_expression ) 
                  | ( Unary_operator Type_cast_expression ) 
-                 | Sizeof_expression
-                 | Typeof_expression
                  | Postfix_expression ;
-
-Sizeof_expression = "sizeof" "(" ( Type | Expression ) ")" ;
-
-Typeof_expression = "typeof" "(" ( Type | Expression ) ")" ;
 
 Postfix_expression = Struct_Union_declarator
                    | ( Primary_expression { Postfix_prime_expression } ) ;
