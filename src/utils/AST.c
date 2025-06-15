@@ -78,12 +78,6 @@ AstNode *astNode_create(Arena *arena, AstType type, LinkedList *tokens, LinkedLi
         return NULL;
     }
 
-    if (type < 0 || type >= AST_JUMP_STATEMENT)
-    {
-        DEBUG_PRINT("astNode_create: type is out of range\n");
-        return NULL;
-    }
-
     AstNode *node = (AstNode *)arena_alloc(arena, sizeof(AstNode), alignof(AstNode));
     if (node == NULL)
     {
