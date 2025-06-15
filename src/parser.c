@@ -3757,7 +3757,7 @@ AstNode *parser_parseBranchStatement(Parser *parser)
         AstNode *ifStatement = parser_parseIfStatement(parser);
         if (ifStatement == NULL)
         {
-            DEBUG_PRINT("parser_parseBranchStatement: Failed to parse if condition.\n");
+            DEBUG_PRINT("parser_parseBranchStatement: Failed to parse if statement.\n");
             return NULL;
         }
         LinkedList *head = linkedList_Ast_create(parser->astArena, children, ifStatement);
@@ -5776,7 +5776,7 @@ AstNode *parser_parseExpressionStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ';' after variable declaration.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ';' after expression statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseExpressionStatement: error_create failed with errno %d\n", errno);
@@ -6379,6 +6379,36 @@ AstNode *parser_parseReturnStatement(Parser *parser)
             DEBUG_PRINT("parser_parseReturnStatement: No tokens available after return expression.\n");
             return NULL;
         }
+
+        while (((Token *)parser->tokens->data)->type == TOKEN_COMMA)
+        {
+            parser->tokens = parser->tokens->next; // Move past the comma token
+            if (parser->tokens == NULL)
+            {
+                DEBUG_PRINT("parser_parseReturnStatement: No tokens available after comma.\n");
+                return NULL;
+            }
+
+            expressionNode = parser_parseExpression(parser);
+            if (expressionNode == NULL)
+            {
+                DEBUG_PRINT("parser_parseReturnStatement: Failed to parse return expression after comma.\n");
+                return NULL;
+            }
+            head = linkedList_Ast_create(parser->astArena, children, expressionNode);
+            if (head == NULL)
+            {
+                DEBUG_PRINT("parser_parseReturnStatement: linkedList_Ast_create failed with errno %d\n", errno);
+                return NULL;
+            }
+            children = head;
+
+            if (parser->tokens == NULL)
+            {
+                DEBUG_PRINT("parser_parseReturnStatement: No tokens available after return expression.\n");
+                return NULL;
+            }
+        }
     }
 
     if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
@@ -6686,8 +6716,8 @@ AstNode *parser_parseAssignmentExpressionFromUnary(Parser *parser, AstNode *unar
         currentTokenType != TOKEN_MINUS_EQUALS && currentTokenType != TOKEN_STAR_EQUALS &&
         currentTokenType != TOKEN_SLASH_EQUALS && currentTokenType != TOKEN_PERCENT_EQUALS &&
         currentTokenType != TOKEN_AMPERSAND_EQUALS && currentTokenType != TOKEN_PIPE_EQUALS &&
-        currentTokenType != TOKEN_CARET_EQUALS && currentTokenType != TOKEN_DOUBLE_GREATER_THEN_EQUALS &&
-        currentTokenType != TOKEN_DOUBLE_LESS_THEN_EQUALS)
+        currentTokenType != TOKEN_CARET_EQUALS && currentTokenType != TOKEN_DOUBLE_GREATER_THAN_EQUALS &&
+        currentTokenType != TOKEN_DOUBLE_LESS_THAN_EQUALS)
     {
         Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected assignment operator after unary expression.");
         if (error == NULL)
@@ -6784,6 +6814,16 @@ int parser_getPrecedence(My_TokenType type)
     case TOKEN_DOUBLE_PIPE:
         return 3; // Logical OR precedence
     case TOKEN_EQUALS:
+    case TOKEN_PLUS_EQUALS:
+    case TOKEN_MINUS_EQUALS:
+    case TOKEN_STAR_EQUALS:
+    case TOKEN_SLASH_EQUALS:
+    case TOKEN_PERCENT_EQUALS:
+    case TOKEN_AMPERSAND_EQUALS:
+    case TOKEN_PIPE_EQUALS:
+    case TOKEN_CARET_EQUALS:
+    case TOKEN_DOUBLE_GREATER_THAN_EQUALS:
+    case TOKEN_DOUBLE_LESS_THAN_EQUALS:
         return 2; // Assignment precedence
     case TOKEN_COMMA:
         return 1; // Comma precedence
@@ -7334,8 +7374,7 @@ AstNode *parser_parsePostfixPrimeExpression(Parser *parser)
         return NULL;
     }
 
-    My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
-    if (parser_isPostfixPrimeExpression(parser))
+    if (!parser_isPostfixPrimeExpression(parser))
     {
         Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '(', '[', '.', '++', or '--' to start postfix prime expression.");
         if (error == NULL)
@@ -7358,6 +7397,7 @@ AstNode *parser_parsePostfixPrimeExpression(Parser *parser)
     LinkedList *tokens = NULL;
     LinkedList *children = NULL;
 
+    My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
     if (currentTokenType == TOKEN_OPEN_PARENTHESIS)
     {
         AstNode *functionCallNode = parser_parseFunctionCallExpression(parser);

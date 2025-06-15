@@ -274,7 +274,7 @@ Jump_statement = Goto_statement | Return_statement | Break_statement | Continue_
 
 Goto_statement = "goto" identifier [ "when" "(" Expression ")" ] ";" ;
 
-Return_statement = "return" [ Expression ] ";" ;
+Return_statement = "return" [ Expression { "," Expression } ] ";" ;
 
 Break_statement = "break" ";" ;
 

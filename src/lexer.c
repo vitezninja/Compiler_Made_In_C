@@ -492,7 +492,7 @@ Token *lexer_handleSimpleCase(Lexer *lexer)
             {
                 lexer_consumeChar(lexer, 1);
                 text[pos++] = lexer_currentChar(lexer);
-                type = TOKEN_DOUBLE_LESS_THEN_EQUALS;
+                type = TOKEN_DOUBLE_LESS_THAN_EQUALS;
                 break;
             }
             type = TOKEN_DOUBLE_LESS_THAN;
@@ -516,7 +516,7 @@ Token *lexer_handleSimpleCase(Lexer *lexer)
             {
                 lexer_consumeChar(lexer, 1);
                 text[pos++] = lexer_currentChar(lexer);
-                type = TOKEN_DOUBLE_GREATER_THEN_EQUALS;
+                type = TOKEN_DOUBLE_GREATER_THAN_EQUALS;
                 break;
             }
             type = TOKEN_DOUBLE_GREATER_THAN;

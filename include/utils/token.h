@@ -51,8 +51,8 @@ typedef enum My_TokenType
     TOKEN_PERCENT_EQUALS,               /** %= */
 
     // Compound Assignment Operators (Bitwise):
-    TOKEN_DOUBLE_LESS_THEN_EQUALS,      /** <<= */
-    TOKEN_DOUBLE_GREATER_THEN_EQUALS,   /** >>= */
+    TOKEN_DOUBLE_LESS_THAN_EQUALS,      /** <<= */
+    TOKEN_DOUBLE_GREATER_THAN_EQUALS,   /** >>= */
     TOKEN_AMPERSAND_EQUALS,             /** &= */
     TOKEN_CARET_EQUALS,                 /** ^= */
     TOKEN_PIPE_EQUALS,                  /** |= */

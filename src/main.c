@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
             return 1;
         }
 
-        linkedList_printRecursive(tokens, (PrintFunction)token_print);
+        //linkedList_printRecursive(tokens, (PrintFunction)token_print);
 
         // Alpha ast and token copys
         // Beta stores tokens and utils (gets emptied after parsing)
