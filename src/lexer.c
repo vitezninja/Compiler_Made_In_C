@@ -1,7 +1,27 @@
 #include "lexer.h"
 
+/**
+ * Checks if a character is a valid binary digit (0 or 1).
+ * 
+ * This function determines if the provided character is either '0' or '1'.
+ * It returns true if the character is a valid binary digit, otherwise it returns false.
+ * 
+ * @param c The character to check.
+ * 
+ * @return true if the character is a binary digit (0 or 1), false otherwise.
+ */
 bool lexer_isBinaryDigit(char c);
 
+/**
+ * Checks if a character is a valid binary digit (0 or 1).
+ *
+ * This function determines if the provided character is either '0' or '1'.
+ * It returns true if the character is a valid binary digit, otherwise it returns false.
+ *
+ * @param c The character to check.
+ * 
+ * @return true if the character is a binary digit (0 or 1), false otherwise.
+ */
 int lexer_getBinaryValue(char c);
 
 /**
@@ -56,32 +76,183 @@ bool lexer_isHexalDigit(char c);
  */
 int lexer_getHexalValue(char c);
 
+/**
+ * Converts an escaped character to its actual character value.
+ *
+ * This function takes a character that represents an escape sequence 
+ * (e.g., '\n', '\t', etc.) and returns the corresponding character value.
+ * If the escape sequence is invalid, it returns -1.
+ *
+ * @param text The character representing the escape sequence.
+ * 
+ * @return The actual character value of the escape sequence, or -1 if the escape sequence is invalid.
+ */
 char lexer_getEscapedChar(char text);
 
+/**
+ * Retrieves the current character from the lexer.
+ *
+ * This function returns the character at the current position in the lexer.
+ * If the lexer is NULL or if the current position is beyond the source buffer size,
+ * it returns '\0' to indicate the end of file.
+ *
+ * @param lexer The lexer instance.
+ * 
+ * @return The current character, or '\0' if the lexer is NULL or at end of file.
+ */
 char lexer_currentChar(const Lexer *lexer);
 
+/**
+ * Retrieves the next character from the lexer without consuming it.
+ *
+ * This function returns the character immediately following the current position in the lexer.
+ * If the lexer is NULL or if the next position is beyond the source buffer size,
+ * it returns '\0' to indicate the end of file.
+ *
+ * @param lexer The lexer instance.
+ * 
+ * @return The next character, or '\0' if the lexer is NULL or at end of file.
+ */
 char lexer_nextChar(const Lexer *lexer);
 
+/**
+ * Retrieves the character at a specified offset from the current position in the lexer.
+ *
+ * This function returns the character at the current position plus the specified offset.
+ * If the lexer is NULL or if the position with the offset is beyond the source buffer size,
+ * it returns '\0' to indicate the end of file.
+ *
+ * @param lexer The lexer instance.
+ * @param offset The offset from the current position.
+ * 
+ * @return The character at the specified offset, or '\0' if out of bounds.
+ */
 char lexer_peekChar(const Lexer *lexer, size_t offset);
 
+/**
+ * Consumes a specified number of characters from the lexer.
+ *
+ * This function advances the current position in the lexer by the specified count.
+ * It updates the line and column numbers accordingly, handling new lines correctly.
+ * If the count exceeds the remaining characters in the source buffer, it moves to the end.
+ *
+ * @param lexer The lexer instance.
+ * @param count The number of characters to consume.
+ */
 void lexer_consumeChar(Lexer *lexer, size_t count);
 
+/**
+ * Deletes whitespace characters from the lexer.
+ *
+ * This function consumes all whitespace characters (spaces, tabs, newlines) 
+ * starting from the current position in the lexer. It updates the current position 
+ * accordingly and returns true if any whitespace was deleted, false otherwise.
+ *
+ * @param lexer The lexer instance.
+ * 
+ * @return false if whitespace was deleted, true otherwise.
+ */
 bool lexer_deleteWhitespaces(Lexer *lexer);
 
+/**
+ * Deletes comments from the lexer.
+ *
+ * This function consumes single-line and multi-line comments starting from the 
+ * current position in the lexer. It updates the current position accordingly and 
+ * returns true if any comments were deleted, false otherwise.
+ *
+ * @param lexer The lexer instance.
+ * 
+ * @return false if comments were deleted, true otherwise.
+ */
 bool lexer_deleteComments(Lexer *lexer);
 
+/**
+ * Handles simple cases of tokens such as operators and delimiters.
+ *
+ * This function checks the current character in the lexer and creates a token 
+ * for simple cases like operators (e.g., +, -, *, /) and delimiters (e.g., (, ), {, }, etc.).
+ * It consumes the character and returns the created token.
+ *
+ * @param lexer The lexer instance.
+ * 
+ * @return A pointer to the created token, or NULL if no simple case was matched.
+ */
 Token *lexer_handleSimpleCase(Lexer *lexer);
 
+/**
+ * Handles numeric literals in the lexer.
+ *
+ * This function processes numeric literals, including binary, octal, hexadecimal,
+ * and decimal numbers. It consumes the characters that form the number and returns
+ * a token representing the numeric value.
+ *
+ * @param lexer The lexer instance.
+ * 
+ * @return A pointer to the created token for the numeric literal, or NULL if no number was matched.
+ */
 Token *lexer_handleNumbers(Lexer *lexer);
 
+/**
+ * Handles character literals in the lexer.
+ *
+ * This function processes character literals, including escaped characters, and
+ * returns a token representing the character value. It consumes the characters that
+ * form the character literal.
+ *
+ * @param lexer The lexer instance.
+ * 
+ * @return A pointer to the created token for the character literal, or NULL if no character was matched.
+ */
 Token *lexer_handleCharacters(Lexer *lexer);
 
+/**
+ * Handles string literals in the lexer.
+ *
+ * This function processes string literals, including escaped characters, and
+ * returns a token representing the string value. It consumes the characters that
+ * form the string literal.
+ *
+ * @param lexer The lexer instance.
+ * 
+ * @return A pointer to the created token for the string literal, or NULL if no string was matched.
+ */
 Token *lexer_handleStrings(Lexer *lexer);
 
+/**
+ * Handles boolean literals in the lexer.
+ *
+ * This function processes boolean literals (true and false) and returns a token
+ * representing the boolean value. It consumes the characters that form the boolean literal.
+ *
+ * @param lexer The lexer instance.
+ * 
+ * @return A pointer to the created token for the boolean literal, or NULL if no boolean was matched.
+ */
 Token *lexer_handleBooleans(Lexer *lexer);
 
+/**
+ * Handles null literals in the lexer.
+ *
+ * This function processes the null literal and returns a token representing the null value.
+ * It consumes the characters that form the null literal.
+ *
+ * @param lexer The lexer instance.
+ * 
+ * @return A pointer to the created token for the null literal, or NULL if no null was matched.
+ */
 Token *lexer_handleNull(Lexer *lexer);
 
+/**
+ * Handles identifiers and keywords in the lexer.
+ *
+ * This function processes identifiers and keywords, creating tokens for them.
+ * It consumes the characters that form the identifier or keyword.
+ *
+ * @param lexer The lexer instance.
+ * 
+ * @return A pointer to the created token for the identifier or keyword, or NULL if no identifier or keyword was matched.
+ */
 Token *lexer_handleIdentifiersAndKeywords(Lexer *lexer);
 
 // ---------------------------------------------------------------------------
@@ -240,6 +411,7 @@ void lexer_consumeChar(Lexer *lexer, size_t count)
         {
             lexer->line++;
             lexer->column = 1; // Reset column to 1 for the new line
+            lexer->currentLineStart = i + 1; // Update the start of the current line
         }
         else
         {
@@ -304,7 +476,25 @@ bool lexer_deleteComments(Lexer *lexer)
         //If we stopped because we found EOF
         if (lexer_currentChar(lexer) == '\0')
         {
-            error_create(lexer->utilsArena, ERROR_ERROR, commnetLenght, lexer->line, lexer->column, "The multi-line comment was not closed!");
+            SourceLocation posLoc = {
+                .fileName = lexer->fileName,
+                .lineStart = lexer->currentLineStart,
+                .line = lexer->line,
+                .column = lexer->column
+            };
+            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, commnetLenght, posLoc, "The multi-line comment was not closed!");
+            if (error == NULL)
+            {
+                DEBUG_PRINT("lexer_deleteComments: Memory allocation for Error failed with errno %d\n", errno);
+                return true;
+            }
+            LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
+            if (head == NULL)
+            {
+                DEBUG_PRINT("lexer_deleteComments: Memory allocation for LinkedList failed with errno %d\n", errno);
+                return true;
+            }
+            lexer->error = head;
             return true;
         }
 
@@ -577,33 +767,22 @@ Token *lexer_handleSimpleCase(Lexer *lexer)
     String *str = hashTable_String_tryInsert(lexer->stringInterningTable, text, pos);
     if (str == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("lexer_handleSimpleCase: hashTable_String_tryInsert failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("lexer_handleSimpleCase: hashTable_String_tryInsert failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("lexer_handleSimpleCase: hashTable_String_tryInsert failed with errno %d\n", errno);
         return NULL;
     }
 
-    Token *token = token_create(lexer->tokenArena, type, str->name, pos, lexer->line, lexer->column - pos, (TokenValue){0});
+    SourceLocation posLoc = {
+        .fileName = lexer->fileName,
+        .lineStart = lexer->currentLineStart,
+        .line = lexer->line,
+        .column = lexer->column
+    };
+    Token *token = token_create(lexer->tokenArena, type, str->name, pos, posLoc, (TokenValue){0});
     if (token == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("lexer_handleSimpleCase: token_create failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("lexer_handleSimpleCase: token_create failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("lexer_handleSimpleCase: token_create failed with errno %d\n", errno);
         return NULL;
     }
-
     return token;
 }
 
@@ -624,15 +803,7 @@ Token *lexer_handleNumbers(Lexer *lexer)
     char *text = (char *)malloc(size * sizeof(char));
     if (text == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token text failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token text failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token text failed with errno %d\n", errno);
         return NULL;
     }
     size_t pos = 0;
@@ -680,10 +851,7 @@ Token *lexer_handleNumbers(Lexer *lexer)
             lexer_consumeChar(lexer, 1);
         }
         //Normal 0
-        else if (!isalnum(lexer_currentChar(lexer)))
-        {
-            
-        }
+        else if (!isalnum(lexer_currentChar(lexer)));
         //Invalid integer
         else
         {
@@ -697,15 +865,7 @@ Token *lexer_handleNumbers(Lexer *lexer)
                     char *extendedText = realloc(text, size * sizeof(char));
                     if (extendedText == NULL)
                     {
-                        if (errno == ENOMEM)
-                        {
-                            DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
-                        }
-                        else
-                        {
-                            DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with unknown error\n");
-                        }
-
+                        DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
                         free(text);
                         return NULL;
                     }
@@ -715,50 +875,38 @@ Token *lexer_handleNumbers(Lexer *lexer)
 
             text[pos] = '\0';
             String *str = string_create(lexer->utilsArena, text, pos, 0);
-            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, lexer->line, lexer->column, (TokenValue){0});
-            if (token == NULL)
+            if (str == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with unknown error\n");
-                }
-
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with errno %d\n", errno);
                 free(text);
                 return NULL;
             }
             free(text);
 
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, pos, lexer->line, lexer->column - pos, "Invalid integer constant starting with 0");
+            SourceLocation posLoc = {
+                .fileName = lexer->fileName,
+                .lineStart = lexer->currentLineStart,
+                .line = lexer->line,
+                .column = lexer->column
+            };
+            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
+            if (token == NULL)
+            {
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
+                return NULL;
+            }
+
+            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, pos, posLoc, "Invalid integer constant starting with 0");
             if (error == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
                 return NULL;
 
             }
-
             LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
             if (head == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with unknown error\n");
-                }
-
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
                 return NULL;
             }
             lexer->error = head;
@@ -774,58 +922,35 @@ Token *lexer_handleNumbers(Lexer *lexer)
         String *str = string_create(lexer->utilsArena, text, pos, 0);
         if (str == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with unknown error\n");
-            }
+            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with errno %d\n", errno);
             free(text);
             return NULL;
         }
-        
         free(text);
-        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, lexer->line, lexer->column - pos, (TokenValue){0});
+
+        SourceLocation posLoc = {
+            .fileName = lexer->fileName,
+            .lineStart = lexer->currentLineStart,
+            .line = lexer->line,
+            .column = lexer->column
+        };
+        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
         if (token == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with unknown error\n");
-            }
+            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
             return NULL;
         }
 
-        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, pos , lexer->column, lexer->line, "Invalid integer constant starting with 0");
+        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, pos, posLoc, "Invalid integer constant starting with 0");
         if (error == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with unknown error\n");
-            }
+            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
             return NULL;
         }
-
         LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
         if (head == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with unknown error\n");
-            }
+            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
             return NULL;
         }
         lexer->error = head;
@@ -848,15 +973,7 @@ Token *lexer_handleNumbers(Lexer *lexer)
                 char *extendedText = realloc(text, size * sizeof(char));
                 if (extendedText == NULL)
                 {
-                    if (errno == ENOMEM)
-                    {
-                        DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
-                    }
-                    else
-                    {
-                        DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with unknown error\n");
-                    }
-
+                    DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
                     free(text);
                     return NULL;
                 }
@@ -879,15 +996,7 @@ Token *lexer_handleNumbers(Lexer *lexer)
                 char *extendedText = realloc(text, size * sizeof(char));
                 if (extendedText == NULL)
                 {
-                    if (errno == ENOMEM)
-                    {
-                        DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
-                    }
-                    else
-                    {
-                        DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with unknown error\n");
-                    }
-
+                    DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
                     free(text);
                     return NULL;
                 }
@@ -901,62 +1010,38 @@ Token *lexer_handleNumbers(Lexer *lexer)
             String *str = string_create(lexer->utilsArena, text, pos, 0);
             if (str == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with errno %d\n", errno);
                 free(text);
                 return NULL;
             }
-
             free(text);
-            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, lexer->line, lexer->column - pos, (TokenValue){0});
+
+            SourceLocation posLoc = {
+                .fileName = lexer->fileName,
+                .lineStart = lexer->currentLineStart,
+                .line = lexer->line,
+                .column = lexer->column
+            };
+            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
             if (token == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
                 return NULL;
             }
 
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, invalidSuffixLength, lexer->line, lexer->column - invalidSuffixLength, "Invalid suffix in binary number");
+            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, invalidSuffixLength, posLoc, "Invalid suffix in binary number");
             if (error == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
                 return NULL;
             }
-
             LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
             if (head == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
                 return NULL;
             }
             lexer->error = head;
-
             return token;
         }
     
@@ -964,33 +1049,24 @@ Token *lexer_handleNumbers(Lexer *lexer)
         String *string = hashTable_String_tryInsert(lexer->stringInterningTable, text, pos);
         if (string == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String in hash table failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String in hash table failed with unknown error\n");
-            }
+            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String in hash table failed with errno %d\n", errno);
             free(text);
             return NULL;
-        }
-    
+        }    
         free(text);
-        Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_BINARY, string->name, pos, lexer->line, lexer->column - pos, (TokenValue){.int_value = value});
+
+        SourceLocation posLoc = {
+            .fileName = lexer->fileName,
+            .lineStart = lexer->currentLineStart,
+            .line = lexer->line,
+            .column = lexer->column
+        };
+        Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_BINARY, string->name, pos, posLoc, (TokenValue){.int_value = value});
         if (token == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with unknown error\n");
-            }
+            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
             return NULL;
         }
-
         return token;
     }
 
@@ -1010,15 +1086,7 @@ Token *lexer_handleNumbers(Lexer *lexer)
                 char *extendedText = realloc(text, size * sizeof(char));
                 if (extendedText == NULL)
                 {
-                    if (errno == ENOMEM)
-                    {
-                        DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
-                    }
-                    else
-                    {
-                        DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with unknown error\n");
-                    }
-
+                    DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
                     free(text);
                     return NULL;
                 }
@@ -1042,15 +1110,7 @@ Token *lexer_handleNumbers(Lexer *lexer)
                 char *extendedText = realloc(text, size * sizeof(char));
                 if (extendedText == NULL)
                 {
-                    if (errno == ENOMEM)
-                    {
-                        DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
-                    }
-                    else
-                    {
-                        DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with unknown error\n");
-                    }
-
+                    DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
                     free(text);
                     return NULL;
                 }
@@ -1065,62 +1125,38 @@ Token *lexer_handleNumbers(Lexer *lexer)
             String *str = string_create(lexer->utilsArena, text, pos, 0);
             if (str == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with errno %d\n", errno);
                 free(text);
                 return NULL;
             }
-
             free(text);
-            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, lexer->line, lexer->column - pos, (TokenValue){0});
+
+            SourceLocation posLoc = {
+                .fileName = lexer->fileName,
+                .lineStart = lexer->currentLineStart,
+                .line = lexer->line,
+                .column = lexer->column
+            };
+            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
             if (token == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
                 return NULL;
             }
 
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, invalidSuffixLength, lexer->line, lexer->column - invalidSuffixLength, "Invalid suffix in octal number");
+            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, invalidSuffixLength, posLoc, "Invalid suffix in octal number");
             if (error == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
                 return NULL;
             }
-
             LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
             if (head == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
                 return NULL;
             }
             lexer->error = head;
-
             return token;
         }
 
@@ -1128,33 +1164,24 @@ Token *lexer_handleNumbers(Lexer *lexer)
         String *string = hashTable_String_tryInsert(lexer->stringInterningTable, text, pos);
         if (string == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String in hash table failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String in hash table failed with unknown error\n");
-            }
+            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String in hash table failed with errno %d\n", errno);
             free(text);
             return NULL;
         }
-
         free(text);
-        Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_OCTAL, string->name, pos, lexer->line, lexer->column - pos, (TokenValue){.int_value = value}); 
+
+        SourceLocation posLoc = {
+            .fileName = lexer->fileName,
+            .lineStart = lexer->currentLineStart,
+            .line = lexer->line,
+            .column = lexer->column
+        };
+        Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_OCTAL, string->name, pos, posLoc, (TokenValue){.int_value = value});
         if (token == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with unknown error\n");
-            }
+            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
             return NULL;
         }
-
         return token;
     }
 
@@ -1174,15 +1201,7 @@ Token *lexer_handleNumbers(Lexer *lexer)
                 char *extendedText = realloc(text, size * sizeof(char));
                 if (extendedText == NULL)
                 {
-                    if (errno == ENOMEM)
-                    {
-                        DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
-                    }
-                    else
-                    {
-                        DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with unknown error\n");
-                    }
-
+                    DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
                     free(text);
                     return NULL;
                 }
@@ -1205,15 +1224,7 @@ Token *lexer_handleNumbers(Lexer *lexer)
                 char *extendedText = realloc(text, size * sizeof(char));
                 if (extendedText == NULL)
                 {
-                    if (errno == ENOMEM)
-                    {
-                        DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
-                    }
-                    else
-                    {
-                        DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with unknown error\n");
-                    }
-
+                    DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
                     free(text);
                     return NULL;
                 }
@@ -1227,58 +1238,35 @@ Token *lexer_handleNumbers(Lexer *lexer)
             String *str = string_create(lexer->utilsArena, text, pos, 0);
             if (str == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with errno %d\n", errno);
                 free(text);
                 return NULL;
             }
-
             free(text);
-            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, lexer->line, lexer->column - pos, (TokenValue){0});
+
+            SourceLocation posLoc = {
+                .fileName = lexer->fileName,
+                .lineStart = lexer->currentLineStart,
+                .line = lexer->line,
+                .column = lexer->column
+            };
+            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
             if (token == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
                 return NULL;
             }
 
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, invalidSuffixLength, lexer->line, lexer->column - invalidSuffixLength, "Invalid suffix in hexadecimal number");
+            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, invalidSuffixLength, posLoc, "Invalid suffix in hexadecimal number");
             if (error == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
                 return NULL;
             }
-
             LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
             if (head == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
                 return NULL;
             }
             lexer->error = head;
@@ -1289,33 +1277,24 @@ Token *lexer_handleNumbers(Lexer *lexer)
         String *string = hashTable_String_tryInsert(lexer->stringInterningTable, text, pos);
         if (string == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String in hash table failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String in hash table failed with unknown error\n");
-            }
+            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String in hash table failed with errno %d\n", errno);
             free(text);
             return NULL;
         }
-
         free(text);
-        Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_HEXADECIMAL, string->name, pos, lexer->line, lexer->column - pos, (TokenValue){.int_value = value});
+
+        SourceLocation posLoc = {
+            .fileName = lexer->fileName,
+            .lineStart = lexer->currentLineStart,
+            .line = lexer->line,
+            .column = lexer->column
+        };
+        Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_HEXADECIMAL, string->name, pos, posLoc, (TokenValue){.int_value = value});
         if (token == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with unknown error\n");
-            }
+            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
             return NULL;
         }
-
         return token;
     }
 
@@ -1333,14 +1312,7 @@ Token *lexer_handleNumbers(Lexer *lexer)
             char *extendedText = realloc(text, size * sizeof(char));
             if (extendedText == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
                 free(text);
                 return NULL;
             }
@@ -1369,15 +1341,7 @@ Token *lexer_handleNumbers(Lexer *lexer)
                 char *extendedText = realloc(text, size * sizeof(char));
                 if (extendedText == NULL)
                 {
-                    if (errno == ENOMEM)
-                    {
-                        DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
-                    }
-                    else
-                    {
-                        DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with unknown error\n");
-                    }
-
+                    DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
                     free(text);
                     return NULL;
                 }
@@ -1400,15 +1364,7 @@ Token *lexer_handleNumbers(Lexer *lexer)
                 char *extendedText = realloc(text, size * sizeof(char));
                 if (extendedText == NULL)
                 {
-                    if (errno == ENOMEM)
-                    {
-                        DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
-                    }
-                    else
-                    {
-                        DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with unknown error\n");
-                    }
-
+                    DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
                     free(text);
                     return NULL;
                 }
@@ -1422,62 +1378,38 @@ Token *lexer_handleNumbers(Lexer *lexer)
             String *str = string_create(lexer->utilsArena, text, pos, 0);
             if (str == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with errno %d\n", errno);
                 free(text);
                 return NULL;
             }
-
             free(text);
-            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, lexer->line, lexer->column - pos, (TokenValue){0});
+
+            SourceLocation posLoc = {
+                .fileName = lexer->fileName,
+                .lineStart = lexer->currentLineStart,
+                .line = lexer->line,
+                .column = lexer->column
+            };
+            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
             if (token == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
                 return NULL;
             }
 
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, invalidSuffixLength, lexer->line, lexer->column - invalidSuffixLength, "Invalid suffix in floating-point number");
+            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, invalidSuffixLength, posLoc, "Invalid suffix in floating-point number");
             if (error == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
                 return NULL;
             }
-
             LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
             if (head == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
                 return NULL;
             }
             lexer->error = head;
-
             return token;
         }
 
@@ -1487,33 +1419,24 @@ Token *lexer_handleNumbers(Lexer *lexer)
         String *string = hashTable_String_tryInsert(lexer->stringInterningTable, text, pos);
         if (string == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String in hash table failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String in hash table failed with unknown error\n");
-            }
+            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String in hash table failed with errno %d\n", errno);
             free(text);
             return NULL;
         }
-
         free(text);
-        Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_FLOATINGPOINT, string->name, pos, lexer->line, lexer->column - pos, (TokenValue){.float_value = doubleValue});
+
+        SourceLocation posLoc = {
+            .fileName = lexer->fileName,
+            .lineStart = lexer->currentLineStart,
+            .line = lexer->line,
+            .column = lexer->column
+        };
+        Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_FLOATINGPOINT, string->name, pos, posLoc, (TokenValue){.float_value = doubleValue});
         if (token == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with unknown error\n");
-            }
+            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
             return NULL;
         }
-
         return token;
     }
 
@@ -1532,15 +1455,7 @@ Token *lexer_handleNumbers(Lexer *lexer)
             char *extendedText = realloc(text, size * sizeof(char));
             if (extendedText == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with unknown error\n");
-                }
-
+                DEBUG_PRINT("lexer_handleNumbers: Memory reallocation for Token text failed with errno %d\n", errno);
                 free(text);
                 return NULL;
             }
@@ -1554,62 +1469,38 @@ Token *lexer_handleNumbers(Lexer *lexer)
         String *str = string_create(lexer->utilsArena, text, pos, 0);
         if (str == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with unknown error\n");
-            }
+            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String failed with errno %d\n", errno);
             free(text);
             return NULL;
         }
-
         free(text);
-        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, lexer->line, lexer->column - pos, (TokenValue){0});
+
+        SourceLocation posLoc = {
+            .fileName = lexer->fileName,
+            .lineStart = lexer->currentLineStart,
+            .line = lexer->line,
+            .column = lexer->column
+        };
+        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
         if (token == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with unknown error\n");
-            }
+            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
             return NULL;
         }
 
-        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, invalidSuffixLength, lexer->line, lexer->column - invalidSuffixLength, "Invalid suffix in integer number");
+        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, invalidSuffixLength, posLoc, "Invalid suffix in integer number");
         if (error == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with unknown error\n");
-            }
+            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
             return NULL;
         }
-
         LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
         if (head == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with unknown error\n");
-            }
+            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
             return NULL;
         }
         lexer->error = head;
-
         return token;
     }
 
@@ -1618,33 +1509,24 @@ Token *lexer_handleNumbers(Lexer *lexer)
     String *str = hashTable_String_tryInsert(lexer->stringInterningTable, text, pos);
     if (str == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String in hash table failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String in hash table failed with unknown error\n");
-        }
+        DEBUG_PRINT("lexer_handleNumbers: Memory allocation for String in hash table failed with errno %d\n", errno);
         free(text);
         return NULL;
     }
-
     free(text);
-    Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_INTEGER, str->name, pos, lexer->line, lexer->column - pos, (TokenValue){.int_value = value});
+
+    SourceLocation posLoc = {
+        .fileName = lexer->fileName,
+        .lineStart = lexer->currentLineStart,
+        .line = lexer->line,
+        .column = lexer->column
+    };
+    Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_INTEGER, str->name, pos, posLoc, (TokenValue){.int_value = value});
     if (token == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with unknown error\n");
-        }
+        DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
         return NULL;
     }
-
     return token;
 }
 
@@ -1684,64 +1566,36 @@ Token *lexer_handleCharacters(Lexer *lexer)
         String *str = string_create(lexer->utilsArena, text, pos, 0);
         if (str == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for String failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for String failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for String failed with errno %d\n", errno);
             return NULL;
         }
 
-        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, lexer->line, lexer->column - pos, (TokenValue){0});
+        SourceLocation posLoc = {
+            .fileName = lexer->fileName,
+            .lineStart = lexer->currentLineStart,
+            .line = lexer->line,
+            .column = lexer->column
+        };
+        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
         if (token == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Token failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Token failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Token failed with errno %d\n", errno);
             return NULL;
         }
 
-        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, 1, lexer->line, lexer->column - 1, "The character wasn't closed!");
+        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, 1, posLoc, "The character wasn't closed!");
         if (error == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error failed with errno %d\n", errno);
             return NULL;
         }
-
         LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
         if (head == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error linked list failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error linked list failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error linked list failed with errno %d\n", errno);
             return NULL;
         }
         lexer->error = head;
-
         return token;
     }
 
@@ -1760,64 +1614,36 @@ Token *lexer_handleCharacters(Lexer *lexer)
         String *str = string_create(lexer->utilsArena, text, pos, 0);
         if (str == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for String failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for String failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for String failed with errno %d\n", errno);
             return NULL;
         }
 
-        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, lexer->line, lexer->column - pos, (TokenValue){0});
+        SourceLocation posLoc = {
+            .fileName = lexer->fileName,
+            .lineStart = lexer->currentLineStart,
+            .line = lexer->line,
+            .column = lexer->column
+        };
+        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
         if (token == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Token failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Token failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Token failed with errno %d\n", errno);
             return NULL;
         }
 
-        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, pos, lexer->line, lexer->column - pos, "Empty character constant is not allowed!");
+        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, pos, posLoc, "Empty character constant is not allowed!");
         if (error == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error failed with errno %d\n", errno);
             return NULL;
         }
-
         LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
         if (head == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error linked list failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error linked list failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error linked list failed with errno %d\n", errno);
             return NULL;
         }
         lexer->error = head;
-
         return token;
     }
 
@@ -1830,64 +1656,36 @@ Token *lexer_handleCharacters(Lexer *lexer)
         String *str = string_create(lexer->utilsArena, text, pos, 0);
         if (str == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for String failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for String failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for String failed with errno %d\n", errno);
             return NULL;
         }
 
-        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, lexer->line, lexer->column - pos, (TokenValue){0});
+        SourceLocation posLoc = {
+            .fileName = lexer->fileName,
+            .lineStart = lexer->currentLineStart,
+            .line = lexer->line,
+            .column = lexer->column
+        };
+        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
         if (token == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Token failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Token failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Token failed with errno %d\n", errno);
             return NULL;
         }
 
-        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, 2, lexer->line, lexer->column - 5, "Multi-character character constant is not allowed!");
+        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, 2, posLoc, "Multi-character character constant is not allowed!");
         if (error == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error failed with errno %d\n", errno);
             return NULL;
         }
-
         LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
         if (head == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error linked list failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error linked list failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error linked list failed with errno %d\n", errno);
             return NULL;
         }
         lexer->error = head;
-
         return token;
     }
 
@@ -1911,63 +1709,36 @@ Token *lexer_handleCharacters(Lexer *lexer)
             String *str = string_create(lexer->utilsArena, text, pos, 0);
             if (str == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleCharacters: Memory allocation for String failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleCharacters: Memory allocation for String failed with unknown error\n");
-                }
-
+                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for String failed with errno %d\n", errno);
                 return NULL;
             }
-            
-            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, lexer->line, lexer->column - pos, (TokenValue){0});
+
+            SourceLocation posLoc = {
+                .fileName = lexer->fileName,
+                .lineStart = lexer->currentLineStart,
+                .line = lexer->line,
+                .column = lexer->column
+            };
+            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
             if (token == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Token failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Token failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Token failed with errno %d\n", errno);
                 return NULL;
             }
 
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, 2, lexer->line, lexer->column - pos + 1, "Invalid escape sequence in character constant!");
+            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, 2, posLoc, "Invalid escape sequence in character constant!");
             if (error == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error failed with unknown error\n");
-                }
-
+                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error failed with errno %d\n", errno);
                 return NULL;
             }
-
             LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
             if (head == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error linked list failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error linked list failed with unknown error\n");
-                }
-
+                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error linked list failed with errno %d\n", errno);
                 return NULL;
             }
             lexer->error = head;
-
             return token;
         }
     }
@@ -1975,31 +1746,22 @@ Token *lexer_handleCharacters(Lexer *lexer)
     String *str = hashTable_String_tryInsert(lexer->stringInterningTable, text, pos);
     if (str == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for String in hash table failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for String in hash table failed with unknown error\n");
-        }
+        DEBUG_PRINT("lexer_handleCharacters: Memory allocation for String in hash table failed with errno %d\n", errno);
         return NULL;
     }
 
-    Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_CHARACTER, str->name, pos, lexer->line, lexer->column - pos, (TokenValue){.char_value = retChar});
+    SourceLocation posLoc = {
+        .fileName = lexer->fileName,
+        .lineStart = lexer->currentLineStart,
+        .line = lexer->line,
+        .column = lexer->column
+    };
+    Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_CHARACTER, str->name, pos, posLoc, (TokenValue){.char_value = retChar});
     if (token == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Token failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Token failed with unknown error\n");
-        }
+        DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Token failed with errno %d\n", errno);
         return NULL;
     }
-
     return token;
 }
 
@@ -2064,66 +1826,38 @@ Token *lexer_handleStrings(Lexer *lexer)
         String *str = string_create(lexer->utilsArena, text, pos, 0);
         if (str == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleStrings: Memory allocation for String failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleStrings: Memory allocation for String failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("lexer_handleStrings: Memory allocation for String failed with errno %d\n", errno);
             free(text);
             return NULL;
         }
-
         free(text);
-        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, lexer->line, lexer->column - pos, (TokenValue){0});
+
+        SourceLocation posLoc = {
+            .fileName = lexer->fileName,
+            .lineStart = lexer->currentLineStart,
+            .line = lexer->line,
+            .column = lexer->column
+        };
+        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
         if (token == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleStrings: Memory allocation for Token failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleStrings: Memory allocation for Token failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("lexer_handleStrings: Memory allocation for Token failed with errno %d\n", errno);
             return NULL;
         }
 
-        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, 1, lexer->line, lexer->column - 1, "The string wasn't closed!");
+        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, 1, posLoc, "The string wasn't closed!");
         if (error == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleStrings: Memory allocation for Error failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleStrings: Memory allocation for Error failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("lexer_handleStrings: Memory allocation for Error failed with errno %d\n", errno);
             return NULL;
         }
-
         LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
         if (head == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_handleStrings: Memory allocation for Error linked list failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_handleStrings: Memory allocation for Error linked list failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("lexer_handleStrings: Memory allocation for Error linked list failed with errno %d\n", errno);
             return NULL;
         }
         lexer->error = head;
-
         return token;
     }
 
@@ -2136,34 +1870,25 @@ Token *lexer_handleStrings(Lexer *lexer)
     String *str = hashTable_String_tryInsert(lexer->stringInterningTable, text, pos);
     if (str == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("lexer_handleStrings: Memory allocation for String in hash table failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("lexer_handleStrings: Memory allocation for String in hash table failed with unknown error\n");
-        }
+        DEBUG_PRINT("lexer_handleStrings: Memory allocation for String in hash table failed with errno %d\n", errno);
         free(text);
         return NULL;
     }
-
     free(text);
+
+    SourceLocation posLoc = {
+        .fileName = lexer->fileName,
+        .lineStart = lexer->currentLineStart,
+        .line = lexer->line,
+        .column = lexer->column
+    };
     // TODO: Remove the starting and ending " for the value
-    Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_STRING, str->name, pos, lexer->line, lexer->column - pos, (TokenValue){.string_value = str->name});
+    Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_STRING, str->name, pos, posLoc, (TokenValue){.string_value = str->name});
     if (token == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("lexer_handleStrings: Memory allocation for Token failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("lexer_handleStrings: Memory allocation for Token failed with unknown error\n");
-        }
+        DEBUG_PRINT("lexer_handleStrings: Memory allocation for Token failed with errno %d\n", errno);
         return NULL;
     }
-
     return token;
 }
 
@@ -2184,15 +1909,7 @@ Token *lexer_handleBooleans(Lexer *lexer)
     char *text = (char *)malloc(size * sizeof(char));
     if (text == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("lexer_handleBooleans: Memory allocation for Token text failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("lexer_handleBooleans: Memory allocation for Token text failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("lexer_handleBooleans: Memory allocation for Token text failed with errno %d\n", errno);
         return NULL;
     }
 
@@ -2209,15 +1926,7 @@ Token *lexer_handleBooleans(Lexer *lexer)
             char *extendedText = realloc(text, size * sizeof(char));
             if (extendedText == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_handleBooleans: Memory reallocation for Token text failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_handleBooleans: Memory reallocation for Token text failed with unknown error\n");
-                }
-
+                DEBUG_PRINT("lexer_handleBooleans: Memory reallocation for Token text failed with errno %d\n", errno);
                 free(text);
                 return NULL;
             }
@@ -2249,34 +1958,24 @@ Token *lexer_handleBooleans(Lexer *lexer)
     String *str = hashTable_String_tryInsert(lexer->stringInterningTable, text, pos);
     if (str == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("lexer_handleBooleans: Memory allocation for String in hash table failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("lexer_handleBooleans: Memory allocation for String in hash table failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("lexer_handleBooleans: Memory allocation for String in hash table failed with errno %d\n", errno);
         free(text);
         return NULL;
     }
-
     free(text);
-    Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_BOOLEAN, str->name, pos, lexer->line, lexer->column - pos, (TokenValue){.boolean_value = boolValue});
+
+    SourceLocation posLoc = {
+        .fileName = lexer->fileName,
+        .lineStart = lexer->currentLineStart,
+        .line = lexer->line,
+        .column = lexer->column
+    };
+    Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_BOOLEAN, str->name, pos, posLoc, (TokenValue){.boolean_value = boolValue});
     if (token == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("lexer_handleBooleans: Memory allocation for Token failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("lexer_handleBooleans: Memory allocation for Token failed with unknown error\n");
-        }
+        DEBUG_PRINT("lexer_handleBooleans: Memory allocation for Token failed with errno %d\n", errno);
         return NULL;
     }
-
     return token;
 }
 
@@ -2332,34 +2031,24 @@ Token *lexer_handleNull(Lexer *lexer)
     String *str = hashTable_String_tryInsert(lexer->stringInterningTable, text, pos);
     if (str == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("lexer_handleNull: Memory allocation for String in hash table failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("lexer_handleNull: Memory allocation for String in hash table failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("lexer_handleNull: Memory allocation for String in hash table failed with errno %d\n", errno);
         free(text);
         return NULL;
     }
-
     free(text);
-    Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_NULL, str->name, pos, lexer->line, lexer->column - pos, (TokenValue){0});
+
+    SourceLocation posLoc = {
+        .fileName = lexer->fileName,
+        .lineStart = lexer->currentLineStart,
+        .line = lexer->line,
+        .column = lexer->column
+    };
+    Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_NULL, str->name, pos, posLoc, (TokenValue){0});
     if (token == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("lexer_handleNull: Memory allocation for Token failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("lexer_handleNull: Memory allocation for Token failed with unknown error\n");
-        }
+        DEBUG_PRINT("lexer_handleNull: Memory allocation for Token failed with errno %d\n", errno);
         return NULL;
     }
-
     return token;
 }
 
@@ -2408,51 +2097,40 @@ Token *lexer_handleIdentifiersAndKeywords(Lexer *lexer)
     String *str = hashTable_String_tryInsert(lexer->stringInterningTable, text, pos);
     if (str == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("lexer_handleIdentifiersAndKeywords: Memory allocation for String in hash table failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("lexer_handleIdentifiersAndKeywords: Memory allocation for String in hash table failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("lexer_handleIdentifiersAndKeywords: Memory allocation for String in hash table failed with errno %d\n", errno);
         free(text);
         return NULL;
     }
-
-
     free(text);
-    My_TokenType keywordType = token_keywordTypeFromString(str->name); // TODO THIS IS BAD
+
+    SourceLocation posLoc = {
+        .fileName = lexer->fileName,
+        .lineStart = lexer->currentLineStart,
+        .line = lexer->line,
+        .column = lexer->column
+    };
+    My_TokenType keywordType = token_keywordTypeFromString(str->name);
     Token *token = NULL;
     if (keywordType != TOKEN_UNKNOWN)
     {
-        token = token_create(lexer->tokenArena, keywordType, str->name, pos, lexer->line, lexer->column - pos, (TokenValue){0});
+        token = token_create(lexer->tokenArena, keywordType, str->name, pos, posLoc, (TokenValue){0});
     }
     else
     {
-        token = token_create(lexer->tokenArena, TOKEN_IDENTIFIER, str->name, pos, lexer->line, lexer->column - pos, (TokenValue){0});
+        token = token_create(lexer->tokenArena, TOKEN_IDENTIFIER, str->name, pos, posLoc, (TokenValue){0});
     }
 
     if (token == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("lexer_handleIdentifiersAndKeywords: Memory allocation for Token failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("lexer_handleIdentifiersAndKeywords: Memory allocation for Token failed with unknown error\n");
-        }
+        DEBUG_PRINT("lexer_handleIdentifiersAndKeywords: Memory allocation for Token failed with errno %d\n", errno);
         return NULL;
     }
-
     return token;
 }
 
 // ---------------------------------------------------------------------------
 
-Lexer *lexer_create(Arena *utilsArena, Arena *tokenArena, HashTable *stringInterningTable, const char *sourceBuffer, size_t sourceBufferSize)
+Lexer *lexer_create(Arena *utilsArena, Arena *tokenArena, HashTable *stringInterningTable, const char *fileName, const char *sourceBuffer, size_t sourceBufferSize)
 {
     if (utilsArena == NULL)
     {
@@ -2472,6 +2150,12 @@ Lexer *lexer_create(Arena *utilsArena, Arena *tokenArena, HashTable *stringInter
         return NULL;
     }
 
+    if (fileName == NULL)
+    {
+        DEBUG_PRINT("lexer_create: fileName is NULL.\n");
+        return NULL;
+    }
+
     if (sourceBuffer == NULL)
     {
         DEBUG_PRINT("lexer_create: sourceBuffer is NULL.\n");
@@ -2487,15 +2171,7 @@ Lexer *lexer_create(Arena *utilsArena, Arena *tokenArena, HashTable *stringInter
     Lexer *lexer = (Lexer *)arena_alloc(utilsArena, sizeof(Lexer), alignof(Lexer));
     if (lexer == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("lexer_create: arena_alloc failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("lexer_create: arena_alloc failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("lexer_create: arena_alloc failed with errno %d\n", errno);
         return NULL;
     }
 
@@ -2504,12 +2180,13 @@ Lexer *lexer_create(Arena *utilsArena, Arena *tokenArena, HashTable *stringInter
     lexer->error = NULL; // Initialize error list as NULL
     lexer->tokens = NULL; // Initialize tokens list as NULL
     lexer->stringInterningTable = stringInterningTable;
+    lexer->fileName = fileName;
     lexer->sourceBuffer = sourceBuffer;
     lexer->sourceBufferSize = sourceBufferSize;
     lexer->currentPosition = 0;
+    lexer->currentLineStart = 0;
     lexer->line = 1; // Start at line 1
     lexer->column = 1; // Start at column 1
-
     return lexer;
 }
 
@@ -2593,82 +2270,50 @@ void lexer_lex(Lexer* lexer)
             String *str = string_create(lexer->utilsArena, unknownChar, 1, 0);
             if (str == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_lex: Memory allocation for String failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_lex: Memory allocation for String failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_lex: Memory allocation for String failed with errno %d\n", errno);
                 return;
             }
 
-            currentToken = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, 1, lexer->line, lexer->column - 1, (TokenValue){0});
+            SourceLocation posLoc = {
+                .fileName = lexer->fileName,
+                .lineStart = lexer->currentLineStart,
+                .line = lexer->line,
+                .column = lexer->column
+            };
+
+            currentToken = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, 1, posLoc, (TokenValue){0});
             if (currentToken == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_lex: Memory allocation for Token failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_lex: Memory allocation for Token failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_lex: Memory allocation for Token failed with errno %d\n", errno);
                 return;
             }
 
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, 1, lexer->line, lexer->column - 1, "Unknown character");
+            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, 1, posLoc, "Unknown character");
             if (error == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_lex: Memory allocation for Error failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_lex: Memory allocation for Error failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_lex: Memory allocation for Error failed with errno %d\n", errno);
                 return;
             }
-
             LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
             if (head == NULL)
             {
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("lexer_lex: Memory allocation for Error linked list failed with errno %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("lexer_lex: Memory allocation for Error linked list failed with unknown error\n");
-                }
+                DEBUG_PRINT("lexer_lex: Memory allocation for Error linked list failed with errno %d\n", errno);
                 return;
             }
-
             lexer->error = head;
         }
 
         LinkedList *head = linkedList_Token_create(lexer->tokenArena, lexer->tokens, currentToken);
         if (head == NULL)
         { 
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("lexer_lex: linkedList_Token_create failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("lexer_lex: linkedList_Token_create failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("lexer_lex: linkedList_Token_create failed with errno %d\n", errno);
             return;
         }
-
         lexer->tokens = head;
     } while (currentToken->type != TOKEN_EOF);
 }
 
-void lexer_print(const Lexer* lexer)
+void lexer_print(const Lexer* lexer)    
 {
     if (lexer == NULL)
     {
@@ -2681,15 +2326,6 @@ void lexer_print(const Lexer* lexer)
     arena_print(lexer->utilsArena);
     printf("    tokenArena:\n");
     arena_print(lexer->tokenArena);
-    printf("    error:\n");
-    if (lexer->error != NULL)
-    {
-        linkedList_print(lexer->error, (PrintFunction)error_print);
-    }
-    else
-    {
-        printf("NULL\n");
-    }
     printf("    tokens:\n");
     if (lexer->tokens != NULL)
     {

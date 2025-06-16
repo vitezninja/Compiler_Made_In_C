@@ -21,15 +21,7 @@ Options options_create(int argc, char** argv)
     options.files = malloc(sizeof(char *));
     if (options.files == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("options_create: Memory allocation failed for files: %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("options_create: Memory allocation for files failed!\n");
-        }
-
+        DEBUG_PRINT("options_create: Memory allocation failed for files: %d\n", errno);
         return (Options){0};
     }
     options.fileCount = 0;
@@ -38,15 +30,7 @@ Options options_create(int argc, char** argv)
     if (options.headerFiles == NULL)
     {
         free(options.files);
-
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("options_create: Memory allocation failed for header files: %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("options_create: Memory allocation for header files failed!\n");
-        }
+        DEBUG_PRINT("options_create: Memory allocation failed for header files: %d\n", errno);
         return (Options){0};
     }
     options.headerCount = 0;
@@ -60,16 +44,7 @@ Options options_create(int argc, char** argv)
             {
                 free(options.files);
                 free(options.headerFiles);
-
-                if (errno == ENOMEM)
-                {
-                    DEBUG_PRINT("options_create: Memory reallocation failed for files: %d\n", errno);
-                }
-                else
-                {
-                    DEBUG_PRINT("options_create: Memory reallocation for files failed!\n");
-                }
-
+                DEBUG_PRINT("options_create: Memory reallocation failed for files: %d\n", errno);
                 return (Options){0};
             }
 
@@ -126,26 +101,13 @@ Options options_create(int argc, char** argv)
                     {
                         free(options.files);
                         free(options.headerFiles);
-
-                        if (errno == ENOMEM)
-                        {
-                            DEBUG_PRINT("options_create: Memory reallocation failed for header files: %d\n", errno);
-                        }
-                        else
-                        {
-                            DEBUG_PRINT("options_create: Memory reallocation for header files failed!\n");
-                        }
-
+                        DEBUG_PRINT("options_create: Memory reallocation failed for header files: %d\n", errno);
                         return (Options){0};
                     }
 
                     newHeaderFiles[options.headerCount] = argv[i] + 2;
                     options.headerFiles = newHeaderFiles;
                     options.headerCount++;
-                }
-                else if (strncmp(argv[i], "-DDEBUG", 2) == 0)
-                {
-                    continue;
                 }
                 else
                 {
@@ -169,7 +131,6 @@ Options options_create(int argc, char** argv)
     {
         bitset64_set(&(options.flags), OPTION_FLAG_NONE);
     }
-
     return options;
 }
 
@@ -180,7 +141,6 @@ void options_free(Options *options)
         DEBUG_PRINT("options_free: Options structure is NULL.\n");
         return;
     }
-
     free(options->files);
     free(options->headerFiles);
 }
@@ -280,9 +240,7 @@ bool options_tryPrintHelp(const Options *options)
     printf("  -g \t\t\tInclude debugging information\n");
     printf("  -O \t\t\tEnable optimization\n");
     printf("  -I<path> \t\tAdd a directory to the header file search path\n");
-    printf("  -DDEBUG \t\tDefine the DEBUG macro\n");
     printf("  <source files> \tList of source files to compile\n");
     printf("\n");
-
     return true;
 }

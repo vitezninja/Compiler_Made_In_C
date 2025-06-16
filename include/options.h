@@ -47,7 +47,7 @@ typedef enum OptionFlags
  */
 typedef struct Options
 {
-    Bitset64 flags;         /** BitSet to hold various flags. */
+    Bitset64 flags;          /** BitSet to hold various flags. */
     char *outputFile;        /** Name or path of the output file, if specified. */
     char **files;            /** Array of strings representing source files to compile. */
     size_t fileCount;        /** Number of source files. */

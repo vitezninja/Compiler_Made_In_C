@@ -17,15 +17,7 @@ static LinkedList *linkedList_createEnd(Arena *arena, LinkedList *head, void *da
     LinkedList *node = (LinkedList *)arena_alloc(arena, sizeof(LinkedList), alignof(LinkedList));
     if (node == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("linkedList_create: arena_alloc failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("linkedList_create: arena_alloc failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("linkedList_create: arena_alloc failed with errno %d\n", errno);
         return NULL;
     }
 
@@ -64,15 +56,7 @@ static LinkedList *linkedList_createStart(Arena *arena, LinkedList *head, void *
     LinkedList *node = (LinkedList *)arena_alloc(arena, sizeof(LinkedList), alignof(LinkedList));
     if (node == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("linkedList_create: arena_alloc failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("linkedList_create: arena_alloc failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("linkedList_create: arena_alloc failed with errno %d\n", errno);
         return NULL;
     }
 
@@ -87,18 +71,9 @@ LinkedList *linkedList_Token_create(Arena *arena, LinkedList *head, Token *data)
     LinkedList *node = linkedList_createEnd(arena, head, (void *)data);
     if (node == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("linkedList_Token_create: linkedList_createStart failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("linkedList_Token_create: linkedList_createStart failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("linkedList_Token_create: linkedList_createStart failed with errno %d\n", errno);
         return NULL;
     }
-
     return node;
 }
 
@@ -107,18 +82,9 @@ LinkedList *linkedList_Error_create(Arena *arena, LinkedList *head, Error *data)
     LinkedList *node = linkedList_createEnd(arena, head, (void *)data);
     if (node == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("linkedList_Error_create: linkedList_createEnd failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("linkedList_Error_create: linkedList_createEnd failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("linkedList_Error_create: linkedList_createEnd failed with errno %d\n", errno);
         return NULL;
     }
-
     return node;
 }
 
@@ -127,18 +93,9 @@ LinkedList *linkedList_HashTable_create(Arena *arena, LinkedList *head, struct H
     LinkedList *node = linkedList_createStart(arena, head, (void *)data);
     if (node == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("linkedList_HashTable_create: linkedList_createStart failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("linkedList_HashTable_create: linkedList_createStart failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("linkedList_HashTable_create: linkedList_createStart failed with errno %d\n", errno);
         return NULL;
     }
-
     return node;
 }
 
@@ -147,18 +104,9 @@ LinkedList *linkedList_Symbol_create(Arena *arena, LinkedList *head, Symbol *dat
     LinkedList *node = linkedList_createEnd(arena, head, (void *)data);
     if (node == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("linkedList_Symbol_create: linkedList_createEnd failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("linkedList_Symbol_create: linkedList_createEnd failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("linkedList_Symbol_create: linkedList_createEnd failed with errno %d\n", errno);
         return NULL;
     }
-
     return node;
 }
 
@@ -167,18 +115,9 @@ LinkedList *linkedList_String_create(Arena *arena, LinkedList *head, String *dat
     LinkedList *node = linkedList_createEnd(arena, head, (void *)data);
     if (node == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("linkedList_String_create: linkedList_createEnd failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("linkedList_String_create: linkedList_createEnd failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("linkedList_String_create: linkedList_createEnd failed with errno %d\n", errno);
         return NULL;
     }
-
     return node;
 }
 
@@ -187,18 +126,9 @@ LinkedList *linkedList_Ast_create(Arena *arena, LinkedList *head, AstNode *data)
     LinkedList *node = linkedList_createEnd(arena, head, (void *)data);
     if (node == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("linkedList_Ast_create: linkedList_createEnd failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("linkedList_Ast_create: linkedList_createEnd failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("linkedList_Ast_create: linkedList_createEnd failed with errno %d\n", errno);
         return NULL;
     }
-
     return node;
 }
 

@@ -23,22 +23,13 @@ Symbol *symbol_create(Arena *arena, const char *name, SymbolType type, size_t ha
     Symbol *symbol = (Symbol *)arena_alloc(arena, sizeof(Symbol), alignof(Symbol));
     if (symbol == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("symbol_create: arena_alloc failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("symbol_create: arena_alloc failed with unknown error\n");
-        }
-        
+        DEBUG_PRINT("symbol_create: arena_alloc failed with errno %d\n", errno);
         return NULL;
     }
 
     symbol->name = name;
     symbol->type = type;
     symbol->hash = hash;
-
     return symbol;
 }
 

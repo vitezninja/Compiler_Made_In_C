@@ -42,15 +42,7 @@ void hashTable_resize(HashTable *hashTable)
     LinkedList **newBuckets = (LinkedList **)arena_alloc(hashTable->arena, sizeof(LinkedList *) * newBucketCount, alignof(LinkedList *));
     if (newBuckets == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("hashTable_resize: arena_alloc failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("hashTable_resize: arena_alloc failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("hashTable_resize: arena_alloc failed with errno %d\n", errno);
         return;
     }
 
@@ -93,15 +85,7 @@ HashTable *hashTable_create(Arena *arena)
     HashTable *hashTable = (HashTable *)arena_alloc(arena, sizeof(HashTable), alignof(HashTable));
     if (hashTable == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("hashTable_create: arena_alloc failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("hashTable_create: arena_alloc failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("hashTable_create: arena_alloc failed with errno %d\n", errno);
         return NULL;
     }
 
@@ -112,15 +96,7 @@ HashTable *hashTable_create(Arena *arena)
     hashTable->buckets = (LinkedList **)arena_alloc(arena, sizeof(LinkedList *) * hashTable->bucketCount, alignof(LinkedList *));
     if (hashTable->buckets == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("hashTable_create: arena_alloc for buckets failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("hashTable_create: arena_alloc for buckets failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("hashTable_create: arena_alloc for buckets failed with errno %d\n", errno);
         return NULL;
     }
 
@@ -160,30 +136,14 @@ String *hashTable_String_tryInsert(HashTable *hashTable, const char *name, size_
         string = string_create(hashTable->arena, name, length, hashValue);
         if (string == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("hashTable_tryInsert: string_create failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("hashTable_tryInsert: string_create failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("hashTable_tryInsert: string_create failed with errno %d\n", errno);
             return NULL;
         }
 
         LinkedList *head = linkedList_String_create(hashTable->arena, NULL, string);
         if (head == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("hashTable_tryInsert: linkedList_String_create failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("hashTable_tryInsert: linkedList_String_create failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("hashTable_tryInsert: linkedList_String_create failed with errno %d\n", errno);
             return NULL;
         }
 
@@ -209,33 +169,16 @@ String *hashTable_String_tryInsert(HashTable *hashTable, const char *name, size_
         string = string_create(hashTable->arena, name, length, hashValue);
         if (string == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("hashTable_tryInsert: string_create failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("hashTable_tryInsert: string_create failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("hashTable_tryInsert: string_create failed with errno %d\n", errno);
             return NULL;
         }
 
         LinkedList *head = linkedList_String_create(hashTable->arena, previous, string);
         if (head == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("hashTable_tryInsert: linkedList_String_create failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("hashTable_tryInsert: linkedList_String_create failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("hashTable_tryInsert: linkedList_String_create failed with errno %d\n", errno);
             return NULL;
         }
-
         hashTable->itemCount++;
     }
 
@@ -286,33 +229,16 @@ Symbol *hashTable_Symbol_tryInsert(HashTable *hashTable, const char* name, Symbo
         symbol = symbol_create(hashTable->arena, name, type, hashValue);
         if (symbol == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("hashTable_tryInsert: symbol_create failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("hashTable_tryInsert: symbol_create failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("hashTable_tryInsert: symbol_create failed with errno %d\n", errno);
             return NULL;
         }
 
         LinkedList *head = linkedList_Symbol_create(hashTable->arena, NULL, symbol);
         if (head == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("hashTable_tryInsert: linkedList_Symbol_create failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("hashTable_tryInsert: linkedList_Symbol_create failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("hashTable_tryInsert: linkedList_Symbol_create failed with errno %d\n", errno);
             return NULL;
         }
-
         hashTable->buckets[index] = head;
         hashTable->itemCount++;
     }
@@ -335,33 +261,16 @@ Symbol *hashTable_Symbol_tryInsert(HashTable *hashTable, const char* name, Symbo
         symbol = symbol_create(hashTable->arena, name, type, hashValue);
         if (symbol == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("hashTable_tryInsert: symbol_create failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("hashTable_tryInsert: symbol_create failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("hashTable_tryInsert: symbol_create failed with errno %d\n", errno);
             return NULL;
         }
 
         LinkedList *head = linkedList_Symbol_create(hashTable->arena, previous, symbol);
         if (head == NULL)
         {
-            if (errno == ENOMEM)
-            {
-                DEBUG_PRINT("hashTable_tryInsert: linkedList_Symbol_create failed with errno %d\n", errno);
-            }
-            else
-            {
-                DEBUG_PRINT("hashTable_tryInsert: linkedList_Symbol_create failed with unknown error\n");
-            }
-
+            DEBUG_PRINT("hashTable_tryInsert: linkedList_Symbol_create failed with errno %d\n", errno);
             return NULL;
         }
-
         hashTable->itemCount++;
     }
 

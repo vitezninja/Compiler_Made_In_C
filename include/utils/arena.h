@@ -19,16 +19,16 @@
 #include "logger.h"
 
 /**
- * @def ONE_KB
+ * @def ARENA_ONE_KB
  * @brief Macro defining 1 kilobyte in bytes.
  */
-#define ONE_KB (1024)
+#define ARENA_ONE_KB (1024)
 
 /**
- * @def ONE_MB
+ * @def ARENA_ONE_MB
  * @brief Macro defining 1 megabyte in bytes.
  */
-#define ONE_MB (1024 * ONE_KB)
+#define ARENA_ONE_MB (1024 * ARENA_ONE_KB)
 
 /**
  * @struct Arena
@@ -54,7 +54,7 @@ typedef struct Arena
  * 
  * @note The arena is initialized with a default capacity of 2 MB.
  */
-Arena *arena_create(void);
+Arena *arena_create(size_t size);
 
 /**
  * @brief Allocates a block of memory from the arena with the specified size and alignment.

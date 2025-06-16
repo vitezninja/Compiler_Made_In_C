@@ -145,7 +145,7 @@ static const char *token_keywordsAsStrings[] = {
     [TOKEN_KEYWORD_EXPORT] = "export",
 };
 
-Token *token_create(Arena *arena, My_TokenType type, const char *text, size_t length, size_t line, size_t column, TokenValue value)
+Token *token_create(Arena *arena, My_TokenType type, const char *text, size_t length, SourceLocation location, TokenValue value)
 {
     if (arena == NULL)
     {
@@ -168,25 +168,15 @@ Token *token_create(Arena *arena, My_TokenType type, const char *text, size_t le
     Token *token = (Token *)arena_alloc(arena, sizeof(Token), alignof(Token));
     if (token == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("token_create: arena_alloc failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("token_create: arena_alloc failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("token_create: arena_alloc failed with errno %d\n", errno);
         return NULL;
     }
 
     token->type = type;
     token->text = text;
     token->length = length;
-    token->line = line;
-    token->column = column;
+    token->location = location;
     token->value = value;
-
     return token;
 }
 
@@ -206,21 +196,12 @@ Token *token_copy(Arena *arena, const Token *token)
 
     TokenValue value = token->value; // Copy the value union
 
-    Token *new_token = token_create(arena, token->type, token->text, token->length, token->line, token->column, value);
+    Token *new_token = token_create(arena, token->type, token->text, token->length, token->location, value);
     if (new_token == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("token_copy: token_create failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("token_copy: token_create failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("token_copy: token_create failed with errno %d\n", errno);
         return NULL;
     }
-
     return new_token;
 }
 
@@ -236,8 +217,7 @@ void token_print(const Token *token)
     printf("    Type   : %s\n", token_typeToString(token->type));
     printf("    Text   : \"%s\"\n", token->text);
     printf("    Length : %zu\n", token->length);
-    printf("    Line   : %zu\n", token->line);
-    printf("    Column : %zu\n", token->column);
+    sourceLocation_print(&token->location);
     printf("    Value  : ");
     switch (token->type)
     {
@@ -291,7 +271,6 @@ My_TokenType token_keywordTypeFromString(const char *str)
             return (My_TokenType)i;
         }
     }
-
     return TOKEN_UNKNOWN;
 }
 
@@ -302,6 +281,5 @@ const char *token_typeToString(My_TokenType type)
         DEBUG_PRINT("token_typeToString: invalid token type %d\n", type);
         return NULL;
     }
-
     return token_typeAsStrings[type];
 }

@@ -12,12 +12,14 @@
 #include <stdio.h>
 #include <stdalign.h>
 #include <errno.h>
+#include <inttypes.h>
 
 // Forward declaration of the Error structure
 struct Error;
 
 #include "utils/logger.h"
 #include "utils/arena.h"
+#include "utils/location.h"
 
 /**
  * @enum ErrorType
@@ -43,8 +45,7 @@ typedef struct Error
 {
     ErrorType type;             /** Severity/type of the error. */
     size_t length;              /** Length of the error span in bytes. */
-    size_t line;                /** Line number in the source code where the error occurred. */
-    size_t column;              /** Column number in the source code where the error occurred. */
+    SourceLocation location;    /** Location in the source code where the error occurred. */
     const char *message;        /** Human-readable error message. */
 } Error;
 
@@ -56,12 +57,11 @@ typedef struct Error
  * @param arena Memory arena used for allocation.
  * @param type Type/severity of the error.
  * @param length Length of the error span in bytes.
- * @param line Line number in the source code where the error occurred.
- * @param column Column number in the source code where the error occurred.
+ * @param location Source location where the error occurred.
  * @param message Null-terminated string containing the error message.
  * @return Pointer to the error.
  */
-Error *error_create(Arena *arena, ErrorType type, size_t length, size_t line, size_t column, const char *message);
+Error *error_create(Arena *arena, ErrorType type, size_t length, SourceLocation location, const char *message);
 
 /**
  * @brief Prints a formatted representation of an error to standard output.
@@ -69,7 +69,8 @@ Error *error_create(Arena *arena, ErrorType type, size_t length, size_t line, si
  * Prints the details of the error, including its type, length, line, column,
  *
  * @param error Pointer to the error to be printed.
+ * @param sourceBuffer The source buffer from which the error originated.
  */
-void error_print(const Error *error);
+void error_print(const Error *error, const char *sourceBuffer);
 
 #endif // ERROR_H

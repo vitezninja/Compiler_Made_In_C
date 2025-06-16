@@ -1,127 +1,765 @@
 #include "parser.h"
 
+/**
+ * @brief Checks if the current token is a type.
+ * 
+ * This function checks if the current token in the parser's token list is a valid type keyword or identifier.
+ * It returns true if the current token is a type, otherwise false.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return true if the current token is a type, false otherwise.
+ */
 bool parser_isType(Parser *parser);
 
+/**
+ * @brief Parses a type from the current token in the parser's token list.
+ * 
+ * This function attempts to parse a type from the current token in the parser's token list.
+ * It creates a new AST node for the parsed type and returns it.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the parsed type, or NULL if parsing fails.
+ */
 AstNode *parser_parseType(Parser *parser);
 
+/**
+ * @brief Checks if the current token is a type specifier.
+ * 
+ * This function checks if the current token in the parser's token list is a valid type specifier.
+ * It returns true if the current token is a type specifier, otherwise false.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return true if the current token is a type specifier, false otherwise.
+ */
 bool parser_isTypeSpecifier(Parser *parser);
 
+/**
+ * @brief Parses type specifiers from the current token in the parser's token list.
+ * 
+ * This function attempts to parse one or more type specifiers from the current token in the parser's token list.
+ * It creates a new AST node for the parsed type specifiers and returns it.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the parsed type specifiers, or NULL if parsing fails.
+ */
 AstNode *parser_parseTypeSpecifiers(Parser *parser);
 
+/**
+ * @brief Checks if the current token is a full type.
+ * 
+ * This function checks if the current token in the parser's token list is a valid full type, which can include type specifiers or types.
+ * It returns true if the current token is a full type, otherwise false.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return true if the current token is a full type, false otherwise.
+ */
 bool parser_isFullType(Parser *parser);
 
+/**
+ * @brief Parses a full type from the current token in the parser's token list.
+ * 
+ * This function attempts to parse a full type from the current token in the parser's token list.
+ * It creates a new AST node for the parsed full type and returns it.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the parsed full type, or NULL if parsing fails.
+ */
 AstNode *parser_parseFullType(Parser *parser);
 
+/**
+ * @brief Checks if the current token is a literal.
+ * 
+ * This function checks if the current token in the parser's token list is a valid literal, such as a number, string, or character.
+ * It returns true if the current token is a literal, otherwise false.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return true if the current token is a literal, false otherwise.
+ */
 bool parser_isLiteral(Parser *parser);
 
+/**
+ * @brief Parses a literal from the current token in the parser's token list.
+ * 
+ * This function attempts to parse a literal from the current token in the parser's token list.
+ * It creates a new AST node for the parsed literal and returns it.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the parsed literal, or NULL if parsing fails.
+ */
 AstNode *parser_parseLiteral(Parser *parser);
 
+/**
+ * @brief Parses a program from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an abstract syntax tree (AST) representing the entire program.
+ * It handles various constructs such as imports, function definitions, variable declarations, and more.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the root AST node representing the parsed program, or NULL if parsing fails.
+ */
 AstNode *parser_parseProgram(Parser *parser);
 
+/**
+ * @brief Parses an import statement from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing an import statement.
+ * It handles the syntax of import statements, which typically include the keyword "import" followed by an identifier or a string literal representing the module to be imported.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the import statement, or NULL if parsing fails.
+ */
 AstNode *parser_parseImport(Parser *parser);
 
+/**
+ * @brief Parses an identifier list from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a list of identifiers.
+ * It handles the syntax of identifier lists, which typically include one or more identifiers separated by commas.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the identifier list, or NULL if parsing fails.
+ */
 AstNode *parser_parseIdentifierList(Parser *parser);
 
+/**
+ * @brief Parses a function definition from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a function definition.
+ * It handles the syntax of function definitions, which typically include the return type, function name, parameter list, and function body.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the function definition, or NULL if parsing fails.
+ */
 AstNode *parser_parseFunctionDefinition(Parser *parser);
 
+/**
+ * @brief Parses a return parameter list from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a list of return parameters.
+ * It handles the syntax of return parameter lists, which typically include one or more parameters separated by commas.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the return parameter list, or NULL if parsing fails.
+ */
 AstNode *parser_parseReturnParameterList(Parser *parser);
 
+/**
+ * @brief Parses a function parameter list from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a list of function parameters.
+ * It handles the syntax of function parameter lists, which typically include one or more parameters separated by
+ * commas and enclosed in parentheses.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the function parameter list, or NULL if parsing fails.
+ */
 AstNode *parser_parseFunctionParameterList(Parser *parser);
 
+/**
+ * @brief Parses a single function parameter from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a single function parameter.
+ * It handles the syntax of function parameters, which typically include a type and an identifier,
+ * and may also include type specifiers such as "const" or "ptr".
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the function parameter, or NULL if parsing fails.
+ */
 AstNode *parser_parseFunctionParameter(Parser *parser);
 
+/**
+ * @brief Parses a global variable declaration from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a global variable declaration.
+ * It handles the syntax of global variable declarations, which typically include a type,
+ * an identifier, and an optional initializer.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the global variable declaration, or NULL if parsing fails.
+ */
 AstNode *parser_parseGlobalVariableDeclaration(Parser *parser);
 
+/**
+ * @brief Parses a struct declaration from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a struct declaration.
+ * It handles the syntax of struct declarations, which typically include the "struct" keyword, an identifier,
+ * and a body enclosed in braces.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the struct declaration, or NULL if parsing fails.
+ */
 AstNode *parser_parseStructDeclaration(Parser *parser);
 
+/**
+ * @brief Parses a union declaration from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a union declaration.
+ * It handles the syntax of union declarations, which typically include the "union" keyword, an identifier,
+ * and a body enclosed in braces.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the union declaration, or NULL if parsing fails.
+ */
 AstNode *parser_parseUnionDeclaration(Parser *parser);
 
+/**
+ * @brief Parses a struct or union member declaration from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a member declaration
+ * within a struct or union. It handles the syntax of member declarations, which typically include a type,
+ * an identifier, and an optional initializer.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the struct or union member declaration, or NULL if parsing fails.
+ */
 AstNode *parser_parseStructUnionMemberDeclaration(Parser *parser);
 
+/**
+ * @brief Parses a struct or union declarator from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a declarator
+ * within a struct or union. It handles the syntax of declarators, which typically include an identifier,
+ * and may also include type specifiers such as "const" or "ptr".
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the struct or union declarator, or NULL if parsing fails.
+ */
 AstNode *parser_parseStructUnionDeclarator(Parser *parser);
 
+/**
+ * @brief Parses a struct or union indirect declarator from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing an indirect declarator
+ * within a struct or union. It handles the syntax of indirect declarators, which typically include an identifier,
+ * and may also include type specifiers such as "const" or "ptr".
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the struct or union indirect declarator, or NULL if parsing fails.
+ */
 AstNode *parser_parseStructUnionIndirectDeclarator(Parser *parser);
 
+/**
+ * @brief Parses a struct or union direct declarator from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a direct declarator
+ * within a struct or union. It handles the syntax of direct declarators, which typically include an identifier,
+ * and may also include type specifiers such as "const" or "ptr".
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the struct or union direct declarator, or NULL if parsing fails.
+ */
 AstNode *parser_parseStructUnionDirectDeclarator(Parser *parser);
 
+/**
+ * @brief Parses an enum declaration from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing an enum declaration.
+ * It handles the syntax of enum declarations, which typically include the "enum" keyword, an identifier,
+ * and a body enclosed in braces containing enum value declarations.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the enum declaration, or NULL if parsing fails.
+ */
 AstNode *parser_parseEnumDeclaration(Parser *parser);
 
+/**
+ * @brief Parses an enum value declaration from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing an enum value declaration.
+ * It handles the syntax of enum value declarations, which typically include an identifier and an optional initializer.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the enum value declaration, or NULL if parsing fails.
+ */
 AstNode *parser_parseEnumValueDeclaration(Parser *parser);
 
+/**
+ * @brief Parses a typedef declaration from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a typedef declaration.
+ * It handles the syntax of typedef declarations, which typically include the "typedef" keyword, a type,
+ * and an identifier for the new type alias.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the typedef declaration, or NULL if parsing fails.
+ */
 AstNode *parser_parseTypedefDeclaration(Parser *parser);
 
+/**
+ * @brief Parses a statement from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a statement.
+ * It handles various types of statements, including branch statements, loop statements, expression statements,
+ * variable declarations, and jump statements.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the parsed statement, or NULL if parsing fails.
+ */
 AstNode *parser_parseStatement(Parser *parser);
 
+/**
+ * @brief Parses a branch statement from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a branch statement.
+ * It handles the syntax of branch statements, which typically include if statements, switch statements, and labels.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the branch statement, or NULL if parsing fails.
+ */
 AstNode *parser_parseBranchStatement(Parser *parser);
 
+/**
+ * @brief Parses an if statement from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing an if statement.
+ * It handles the syntax of if statements, which typically include a condition and a body, and may also include an else clause.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the if statement, or NULL if parsing fails.
+ */
 AstNode *parser_parseIfStatement(Parser *parser);
 
+/**
+ * @brief Parses a switch statement from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a switch statement.
+ * It handles the syntax of switch statements, which typically include a condition and one or more case clauses.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the switch statement, or NULL if parsing fails.
+ */
 AstNode *parser_parseSwitchStatement(Parser *parser);
 
+/**
+ * @brief Parses a switch case from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a switch case.
+ * It handles the syntax of switch cases, which typically include a case label and a body.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the switch case, or NULL if parsing fails.
+ */
 AstNode *parser_parseSwitchCase(Parser *parser);
 
+/**
+ * @brief Parses a switch default case from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a switch default case.
+ * It handles the syntax of switch default cases, which typically include the "default" keyword and a body.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the switch default case, or NULL if parsing fails.
+ */
 AstNode *parser_parseSwitchDefault(Parser *parser);
 
+/**
+ * @brief Parses a loop statement from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a loop statement.
+ * It handles various types of loop statements, including for loops, foreach loops, while loops, and do-while loops.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the loop statement, or NULL if parsing fails.
+ */
 AstNode *parser_parseLoopStatement(Parser *parser);
 
+/**
+ * @brief Parses a for statement from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a for statement.
+ * It handles the syntax of for statements, which typically include an initializer, a condition, and an incrementation expression.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the for statement, or NULL if parsing fails.
+ */
 AstNode *parser_parseForStatement(Parser *parser);
 
+/**
+ * @brief Parses the initializer part of a for statement from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing the initializer
+ * of a for statement. It handles the syntax of for initializers, which typically include variable declarations or assignments.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the for initializer, or NULL if parsing fails.
+ */
 AstNode *parser_parseForInitializer(Parser *parser);
 
+/**
+ * @brief Parses the condition part of a for statement from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing the condition
+ * of a for statement. It handles the syntax of for conditions, which typically include a boolean expression.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the for condition, or NULL if parsing fails.
+ */
 AstNode *parser_parseForCondition(Parser *parser);
 
+/**
+ * @brief Parses the incrementation part of a for statement from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing the incrementation
+ * of a for statement. It handles the syntax of for incrementation, which typically includes an expression that modifies
+ * the loop variable.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the for incrementation, or NULL if parsing fails.
+ */
 AstNode *parser_parseForIncrementation(Parser *parser);
 
+/**
+ * @brief Parses a foreach statement from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a foreach statement.
+ * It handles the syntax of foreach statements, which typically include a collection to iterate over and a body.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the foreach statement, or NULL if parsing fails.
+ */
 AstNode *parser_parseForeachStatement(Parser *parser);
 
+/**
+ * @brief Parses a while statement from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a while statement.
+ * It handles the syntax of while statements, which typically include a condition and a body.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the while statement, or NULL if parsing fails.
+ */
 AstNode *parser_parseWhileStatement(Parser *parser);
 
+/**
+ * @brief Parses a do-while statement from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a do-while statement.
+ * It handles the syntax of do-while statements, which typically include a body and a condition that is checked after the body executes.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the do-while statement, or NULL if parsing fails.
+ */
 AstNode *parser_parseDoWhileStatement(Parser *parser);
 
+/**
+ * @brief Parses a compound statement from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a compound statement.
+ * It handles the syntax of compound statements, which typically include a block of code enclosed in braces.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the compound statement, or NULL if parsing fails.
+ */
 AstNode *parser_parseCompoundStatement(Parser *parser);
 
+/**
+ * @brief Parses a label from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a label.
+ * It handles the syntax of labels, which typically include an identifier followed by a colon.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the label, or NULL if parsing fails.
+ */
 AstNode *parser_parseLabel(Parser *parser);
 
+/**
+ * @brief Parses an expression statement from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing an expression statement.
+ * It handles the syntax of expression statements, which typically include an expression followed by a semicolon.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the expression statement, or NULL if parsing fails.
+ */
 AstNode *parser_parseExpressionStatement(Parser *parser);
 
+/**
+ * @brief Parses a variable declaration from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a variable declaration.
+ * It handles the syntax of variable declarations, which typically include a type, an identifier, and an optional initializer.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the variable declaration, or NULL if parsing fails.
+ */
 AstNode *parser_parseVariableDeclaration(Parser *parser);
 
+/**
+ * @brief Parses a jump statement from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a jump statement.
+ * It handles various types of jump statements, including goto statements, return statements, break statements, and continue statements.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the jump statement, or NULL if parsing fails.
+ */
 AstNode *parser_parseJumpStatement(Parser *parser);
 
+/**
+ * @brief Parses a goto statement from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a goto statement.
+ * It handles the syntax of goto statements, which typically include the "goto" keyword followed by an identifier.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the goto statement, or NULL if parsing fails.
+ */
 AstNode *parser_parseGotoStatement(Parser *parser);
 
+/**
+ * @brief Parses a return statement from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a return statement.
+ * It handles the syntax of return statements, which typically include the "return" keyword followed by an optional expression.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the return statement, or NULL if parsing fails.
+ */
 AstNode *parser_parseReturnStatement(Parser *parser);
 
+/**
+ * @brief Parses a break statement from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a break statement.
+ * It handles the syntax of break statements, which typically include the "break" keyword followed by a semicolon.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the break statement, or NULL if parsing fails.
+ */
 AstNode *parser_parseBreakStatement(Parser *parser);
 
+/**
+ * @brief Parses a continue statement from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a continue statement.
+ * It handles the syntax of continue statements, which typically include the "continue" keyword followed by a semicolon.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the continue statement, or NULL if parsing fails.
+ */
 AstNode *parser_parseContinueStatement(Parser *parser);
 
+/**
+ * @brief Parses an expression from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing an expression.
+ * It handles various types of expressions, including assignment expressions, binary expressions, unary expressions,
+ * type casts, and primary expressions.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the parsed expression, or NULL if parsing fails.
+ */
 AstNode *parser_parseExpression(Parser *parser);
 
+/**
+ * @brief Parses an assignment expression from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing an assignment expression.
+ * It handles the syntax of assignment expressions, which typically include a left-hand side (LHS) and a right-hand side (RHS),
+ * with an operator such as '=', '+=', '-=', etc.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the assignment expression, or NULL if parsing fails.
+ */
 AstNode *parser_parseAssignmentExpression(Parser *parser);
 
+/**
+ * @brief Parses an assignment expression starting from a unary expression node.
+ * 
+ * This function processes a unary expression node to construct an AST node representing an assignment expression.
+ * It handles the syntax of assignment expressions, which typically include a left-hand side (LHS) and a right-hand side (RHS),
+ * with an operator such as '=', '+=', '-=', etc.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * @param unaryStartNode Pointer to the unary expression node to start parsing from.
+ * 
+ * @return Pointer to the newly created AST node representing the assignment expression, or NULL if parsing fails.
+ */
 AstNode *parser_parseAssignmentExpressionFromUnary(Parser *parser, AstNode *unaryStartNode);
 
+/**
+ * @brief Gets the precedence of a given token type.
+ * 
+ * This function retrieves the precedence level of a specific token type.
+ * It is used to determine how operators should be grouped in expressions.
+ * 
+ * @param type The token type for which to get the precedence.
+ * 
+ * @return The precedence level of the token type, or -1 if the type is not recognized.
+ */
 int parser_getPrecedence(My_TokenType type);
 
+/**
+ * @brief Gets the operator type for a given token type.
+ * 
+ * This function retrieves the operator type corresponding to a specific token type.
+ * It is used to identify the kind of operation represented by the token.
+ * 
+ * @param type The token type for which to get the operator type.
+ * 
+ * @return The operator type corresponding to the token type, or AST_TYPE_UNKNOWN if the type is not recognized.
+ */
 AstType parser_getOperatorType(My_TokenType type);
 
+/**
+ * @brief Parses a binary expression from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a binary expression.
+ * It handles the syntax of binary expressions, which typically include two operands and an operator between them.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * @param parentPrecedence The precedence level of the parent expression, used for operator precedence handling.
+ * 
+ * @return Pointer to the newly created AST node representing the binary expression, or NULL if parsing fails.
+ */
 AstNode *parser_parseBinaryExpression(Parser *parser, int parentPrecedence);
 
+/**
+ * @brief Parses a unary expression from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a unary expression.
+ * It handles the syntax of unary expressions, which typically include a single operand and an operator such as '!', '-', etc.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the unary expression, or NULL if parsing fails.
+ */
 AstNode *parser_parseUnaryExpression(Parser *parser);
 
+/**
+ * @brief Parses a type cast expression from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a type cast expression.
+ * It handles the syntax of type cast expressions, which typically include a type followed by an expression to be cast.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the type cast expression, or NULL if parsing fails.
+ */
 AstNode *parser_parseTypeCastExpression(Parser *parser);
 
+/**
+ * @brief Parses a postfix expression from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a postfix expression.
+ * It handles the syntax of postfix expressions, which typically include an operand followed by operators such as '++', '--', etc.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the postfix expression, or NULL if parsing fails.
+ */
 AstNode *parser_parsePostfixExpression(Parser *parser);
 
+/**
+ * @brief Checks if the current token is a postfix prime expression.
+ * 
+ * This function checks if the current token in the parser's token list is a valid postfix prime expression,
+ * which typically includes operators such as '++', '--', or array indexing.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return true if the current token is a postfix prime expression, false otherwise.
+ */
 bool parser_isPostfixPrimeExpression(Parser *parser);
 
+/**
+ * @brief Parses a postfix prime expression from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a postfix prime expression.
+ * It handles the syntax of postfix prime expressions, which typically include operators such as '++', '--', or array indexing.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the postfix prime expression, or NULL if parsing fails.
+ */
 AstNode *parser_parsePostfixPrimeExpression(Parser *parser);
 
+/**
+ * @brief Parses an array indexing expression from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing an array indexing expression.
+ * It handles the syntax of array indexing, which typically includes an operand followed by square brackets containing an index expression.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the array indexing expression, or NULL if parsing fails.
+ */
 AstNode *parser_parseArrayIndexingExpression(Parser *parser);
 
+/**
+ * @brief Parses a function call expression from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a function call expression.
+ * It handles the syntax of function calls, which typically include an identifier followed by parentheses containing argument expressions.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the function call expression, or NULL if parsing fails.
+ */
 AstNode *parser_parseFunctionCallExpression(Parser *parser);
 
+/**
+ * @brief Parses a primary expression from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a primary expression.
+ * It handles the syntax of primary expressions, which typically include literals, identifiers, and parenthesized expressions.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the primary expression, or NULL if parsing fails.
+ */
 AstNode *parser_parsePrimaryExpression(Parser *parser);
 
 // --------------------------------------------------------------------------------
@@ -177,7 +815,7 @@ AstNode *parser_parseType(Parser *parser)
 
     if (!parser_isType(parser))
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected a type, got.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected a type, got.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseType: error_create failed with errno %d\n", errno);
@@ -255,7 +893,7 @@ AstNode *parser_parseType(Parser *parser)
 
         if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
         {
-            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier after struct/union/enum keyword.");
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier after struct/union/enum keyword.");
             if (error == NULL)
             {
                 DEBUG_PRINT("parser_parseType: error_create failed with errno %d\n", errno);
@@ -335,7 +973,7 @@ AstNode *parser_parseTypeSpecifiers(Parser *parser)
 
     if (!parser_isTypeSpecifier(parser))
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected a type specifier.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected a type specifier.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseTypeSpecifiers: error_create failed with errno %d\n", errno);
@@ -361,7 +999,7 @@ AstNode *parser_parseTypeSpecifiers(Parser *parser)
         My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
         if (!isFirst && currentTokenType == TOKEN_KEYWORD_CONST)
         {
-            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Only the first type specifier can be 'const'.");
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Only the first type specifier can be 'const'.");
             if (error == NULL)
             {
                 DEBUG_PRINT("parser_parseTypeSpecifiers: error_create failed with errno %d\n", errno);
@@ -460,7 +1098,7 @@ AstNode *parser_parseFullType(Parser *parser)
 
     if (!parser_isTypeSpecifier(parser) && !parser_isType(parser))
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected a type or type specifier.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected a type or type specifier.");
         if (error == NULL)
         {
             DEBUG_PRINT("parse_fullType: error_create failed with errno %d\n", errno);
@@ -577,7 +1215,7 @@ AstNode *parser_parseLiteral(Parser *parser)
         currentTokenType != TOKEN_LITERAL_BOOLEAN &&
         currentTokenType != TOKEN_LITERAL_NULL)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected a literal.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected a literal.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseLiteral: error_create failed with errno %d\n", errno);
@@ -774,7 +1412,7 @@ AstNode *parser_parseProgram(Parser *parser)
         }
         else
         {
-            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)currentTokenNode->data)->length, ((Token *)currentTokenNode->data)->line, ((Token *)currentTokenNode->data)->column, "Unexpected token in program.");
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)currentTokenNode->data)->length, ((Token *)currentTokenNode->data)->location, "Unexpected token in program.");
             if (error == NULL)
             {
                 DEBUG_PRINT("parser_parseProgram: error_create failed with errno %d\n", errno);
@@ -799,11 +1437,11 @@ AstNode *parser_parseProgram(Parser *parser)
         Error *error;
         if (parser->tokens == NULL)
         {
-            error = error_create(parser->utilsArena, ERROR_FATAL, 0, 0, 0, "End of file not found in the program.");
+            error = error_create(parser->utilsArena, ERROR_FATAL, 0, (SourceLocation){0}, "End of file not found in the program.");
         }
         else
         {
-            error = error_create(parser->utilsArena, ERROR_FATAL, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "End of file not found in the program.");
+            error = error_create(parser->utilsArena, ERROR_FATAL, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "End of file not found in the program.");
         }
         if (error == NULL)
         {
@@ -845,7 +1483,7 @@ AstNode *parser_parseImport(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_IMPORT)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'import' keyword.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'import' keyword.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseImport: error_create failed with errno %d\n", errno);
@@ -918,7 +1556,7 @@ AstNode *parser_parseImport(Parser *parser)
 
         if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_FROM)
         {
-            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'from' keyword after import identifiers.");
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'from' keyword after import identifiers.");
             if (error == NULL)
             {
                 DEBUG_PRINT("parser_parseImport: error_create failed with errno %d\n", errno);
@@ -945,7 +1583,7 @@ AstNode *parser_parseImport(Parser *parser)
 
         if (((Token *)parser->tokens->data)->type != TOKEN_LITERAL_STRING)
         {
-            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected string literal after 'from' keyword.");
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected string literal after 'from' keyword.");
             if (error == NULL)
             {
                 DEBUG_PRINT("parser_parseImport: error_create failed with errno %d\n", errno);
@@ -981,7 +1619,7 @@ AstNode *parser_parseImport(Parser *parser)
     }
     else
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected string literal or identifier after import keyword.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected string literal or identifier after import keyword.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseImport: error_create failed with errno %d\n", errno);
@@ -1007,7 +1645,7 @@ AstNode *parser_parseImport(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected semicolon after import statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected semicolon after import statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseImport: error_create failed with errno %d\n", errno);
@@ -1053,7 +1691,7 @@ AstNode *parser_parseIdentifierList(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier in identifier list.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier in identifier list.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseIdentifierList: error_create failed with errno %d\n", errno);
@@ -1106,7 +1744,7 @@ AstNode *parser_parseIdentifierList(Parser *parser)
 
         if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
         {
-            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier after comma in identifier list.");
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier after comma in identifier list.");
             if (error == NULL)
             {
                 DEBUG_PRINT("parser_parseIdentifierList: error_create failed with errno %d\n", errno);
@@ -1172,7 +1810,7 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
     My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
     if (currentTokenType != TOKEN_OPEN_PARENTHESIS && currentTokenType != TOKEN_KEYWORD_EXPORT)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'export' keyword or open parenthesis for function definition.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'export' keyword or open parenthesis for function definition.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseFunctionDefinition: error_create failed with errno %d\n", errno);
@@ -1219,7 +1857,7 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected open parenthesis after function name.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected open parenthesis after function name.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseFunctionDefinition: error_create failed with errno %d\n", errno);
@@ -1266,7 +1904,7 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected close parenthesis after function name.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected close parenthesis after function name.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseFunctionDefinition: error_create failed with errno %d\n", errno);
@@ -1293,7 +1931,7 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected function name after close parenthesis.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected function name after close parenthesis.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseFunctionDefinition: error_create failed with errno %d\n", errno);
@@ -1334,7 +1972,7 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected open parenthesis after function name.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected open parenthesis after function name.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseFunctionDefinition: error_create failed with errno %d\n", errno);
@@ -1381,7 +2019,7 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected close parenthesis after function parameter list.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected close parenthesis after function parameter list.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseFunctionDefinition: error_create failed with errno %d\n", errno);
@@ -1445,7 +2083,7 @@ AstNode *parser_parseReturnParameterList(Parser *parser)
 
     if (!parser_isFullType(parser))
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected a type or type specifier in return parameter list.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected a type or type specifier in return parameter list.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseReturnParameterList: error_create failed with errno %d\n", errno);
@@ -1496,7 +2134,7 @@ AstNode *parser_parseReturnParameterList(Parser *parser)
 
         if (!parser_isFullType(parser))
         {
-            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected a full type after comma in return parameter list.");
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected a full type after comma in return parameter list.");
             if (error == NULL)
             {
                 DEBUG_PRINT("parser_parseReturnParameterList: error_create failed with errno %d\n", errno);
@@ -1560,7 +2198,7 @@ AstNode *parser_parseFunctionParameterList(Parser *parser)
 
     if (!parser_isFullType(parser))
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected a full type in function parameter list.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected a full type in function parameter list.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseFunctionParameterList: error_create failed with errno %d\n", errno);
@@ -1611,7 +2249,7 @@ AstNode *parser_parseFunctionParameterList(Parser *parser)
 
         if (!parser_isFullType(parser))
         {
-            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected a full type after comma in function parameter list.");
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected a full type after comma in function parameter list.");
             if (error == NULL)
             {
                 DEBUG_PRINT("parser_parseFunctionParameterList: error_create failed with errno %d\n", errno);
@@ -1675,7 +2313,7 @@ AstNode *parser_parseFunctionParameter(Parser *parser)
 
     if (!parser_isFullType(parser))
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected a full type for function parameter.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected a full type for function parameter.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseFunctionParameter: error_create failed with errno %d\n", errno);
@@ -1718,7 +2356,7 @@ AstNode *parser_parseFunctionParameter(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier after type in function parameter.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier after type in function parameter.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseFunctionParameter: error_create failed with errno %d\n", errno);
@@ -1778,7 +2416,7 @@ AstNode *parser_parseGlobalVariableDeclaration(Parser *parser)
     My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
     if (!parser_isFullType(parser) && currentTokenType != TOKEN_KEYWORD_EXPORT)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected a full type for global variable declaration.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected a full type for global variable declaration.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseGlobalVariableDeclaration: error_create failed with errno %d\n", errno);
@@ -1845,7 +2483,7 @@ AstNode *parser_parseGlobalVariableDeclaration(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier after type in global variable declaration.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier after type in global variable declaration.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseGlobalVariableDeclaration: error_create failed with errno %d\n", errno);
@@ -1939,7 +2577,7 @@ AstNode *parser_parseGlobalVariableDeclaration(Parser *parser)
 
         if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
         {
-            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier after type in global variable declaration.");
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier after type in global variable declaration.");
             if (error == NULL)
             {
                 DEBUG_PRINT("parser_parseGlobalVariableDeclaration: error_create failed with errno %d\n", errno);
@@ -2011,7 +2649,7 @@ AstNode *parser_parseGlobalVariableDeclaration(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected semicolon after global variable identifier.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected semicolon after global variable identifier.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseGlobalVariableDeclaration: error_create failed with errno %d\n", errno);
@@ -2057,7 +2695,7 @@ AstNode *parser_parseStructDeclaration(Parser *parser)
     My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
     if (currentTokenType != TOKEN_KEYWORD_STRUCT && currentTokenType != TOKEN_KEYWORD_EXPORT)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'struct' or 'export' keyword for struct declaration.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'struct' or 'export' keyword for struct declaration.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseStructDeclaration: error_create failed with errno %d\n", errno);
@@ -2111,7 +2749,7 @@ AstNode *parser_parseStructDeclaration(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier after struct keyword.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier after struct keyword.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseStructDeclaration: error_create failed with errno %d\n", errno);
@@ -2152,7 +2790,7 @@ AstNode *parser_parseStructDeclaration(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_OPEN_CURLY)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '{' after struct identifier.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '{' after struct identifier.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseStructDeclaration: error_create failed with errno %d\n", errno);
@@ -2197,7 +2835,7 @@ AstNode *parser_parseStructDeclaration(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_CURLY)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '}' to close struct declaration.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '}' to close struct declaration.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseStructDeclaration: error_create failed with errno %d\n", errno);
@@ -2241,7 +2879,7 @@ AstNode *parser_parseUnionDeclaration(Parser *parser)
     My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
     if (currentTokenType != TOKEN_KEYWORD_UNION && currentTokenType != TOKEN_KEYWORD_EXPORT)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'union' or 'export' keyword for union declaration.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'union' or 'export' keyword for union declaration.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseUnionDeclaration: error_create failed with errno %d\n", errno);
@@ -2295,7 +2933,7 @@ AstNode *parser_parseUnionDeclaration(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier after union keyword.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier after union keyword.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseUnionDeclaration: error_create failed with errno %d\n", errno);
@@ -2336,7 +2974,7 @@ AstNode *parser_parseUnionDeclaration(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_OPEN_CURLY)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '{' after union identifier.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '{' after union identifier.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseUnionDeclaration: error_create failed with errno %d\n", errno);
@@ -2381,7 +3019,7 @@ AstNode *parser_parseUnionDeclaration(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_CURLY)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '}' to close union declaration.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '}' to close union declaration.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseUnionDeclaration: error_create failed with errno %d\n", errno);
@@ -2424,7 +3062,7 @@ AstNode *parser_parseStructUnionMemberDeclaration(Parser *parser)
 
     if (!parser_isFullType(parser))
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected a full type for struct/union member declaration.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected a full type for struct/union member declaration.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseStructUnionMemberDeclaration: error_create failed with errno %d\n", errno);
@@ -2467,7 +3105,7 @@ AstNode *parser_parseStructUnionMemberDeclaration(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier after type in struct/union member declaration.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier after type in struct/union member declaration.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseStructUnionMemberDeclaration: error_create failed with errno %d\n", errno);
@@ -2508,7 +3146,7 @@ AstNode *parser_parseStructUnionMemberDeclaration(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected semicolon after struct/union member identifier.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected semicolon after struct/union member identifier.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseStructUnionMemberDeclaration: error_create failed with errno %d\n", errno);
@@ -2557,7 +3195,7 @@ AstNode *parser_parseStructUnionMemberDeclaration(Parser *parser)
 
         if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
         {
-            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier after type in struct/union member declaration.");
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier after type in struct/union member declaration.");
             if (error == NULL)
             {
                 DEBUG_PRINT("parser_parseStructUnionMemberDeclaration: error_create failed with errno %d\n", errno);
@@ -2598,7 +3236,7 @@ AstNode *parser_parseStructUnionMemberDeclaration(Parser *parser)
 
         if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
         {
-            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected semicolon after struct/union member identifier.");
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected semicolon after struct/union member identifier.");
             if (error == NULL)
             {
                 DEBUG_PRINT("parser_parseStructUnionMemberDeclaration: error_create failed with errno %d\n", errno);
@@ -2649,7 +3287,7 @@ AstNode *parser_parseStructUnionDeclarator(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_OPEN_CURLY)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '{' to start struct/union declarator.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '{' to start struct/union declarator.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseStructUnionDeclarator: error_create failed with errno %d\n", errno);
@@ -2711,7 +3349,7 @@ AstNode *parser_parseStructUnionDeclarator(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_CURLY)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '}' to close struct/union declarator.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '}' to close struct/union declarator.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseStructUnionDeclarator: error_create failed with errno %d\n", errno);
@@ -2831,7 +3469,7 @@ AstNode *parser_parseStructUnionDirectDeclarator(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_DOT)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '.' to start struct/union direct declarator.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '.' to start struct/union direct declarator.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseStructUnionDirectDeclarator: error_create failed with errno %d\n", errno);
@@ -2861,8 +3499,7 @@ AstNode *parser_parseStructUnionDirectDeclarator(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
     {
-        Token *unexpectedToken = (Token *)parser->tokens->data;
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, unexpectedToken->length, unexpectedToken->line, unexpectedToken->column, "Expected identifier after '.' in struct/union direct declarator.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier after '.' in struct/union direct declarator.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseStructUnionDirectDeclarator: error_create failed with errno %d\n", errno);
@@ -2903,8 +3540,7 @@ AstNode *parser_parseStructUnionDirectDeclarator(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_EQUALS)
     {
-        Token *unexpectedToken = (Token *)parser->tokens->data;
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, unexpectedToken->length, unexpectedToken->line, unexpectedToken->column, "Expected '=' after identifier in struct/union direct declarator.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '=' after identifier in struct/union direct declarator.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseStructUnionDirectDeclarator: error_create failed with errno %d\n", errno);
@@ -2960,7 +3596,7 @@ AstNode *parser_parseStructUnionDirectDeclarator(Parser *parser)
 
         if (((Token *)parser->tokens->data)->type != TOKEN_DOT)
         {
-            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '.' after comma in struct/union direct declarator.");
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '.' after comma in struct/union direct declarator.");
             if (error == NULL)
             {
                 DEBUG_PRINT("parser_parseStructUnionDirectDeclarator: error_create failed with errno %d\n", errno);
@@ -2987,7 +3623,7 @@ AstNode *parser_parseStructUnionDirectDeclarator(Parser *parser)
 
         if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
         {
-            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier after '.' in struct/union direct declarator.");
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier after '.' in struct/union direct declarator.");
             if (error == NULL)
             {
                 DEBUG_PRINT("parser_parseStructUnionDirectDeclarator: error_create failed with errno %d\n", errno);
@@ -3028,7 +3664,7 @@ AstNode *parser_parseStructUnionDirectDeclarator(Parser *parser)
 
         if (((Token *)parser->tokens->data)->type != TOKEN_EQUALS)
         {
-            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '=' after identifier in struct/union direct declarator.");
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '=' after identifier in struct/union direct declarator.");
             if (error == NULL)
             {
                 DEBUG_PRINT("parser_parseStructUnionDirectDeclarator: error_create failed with errno %d\n", errno);
@@ -3100,7 +3736,7 @@ AstNode *parser_parseEnumDeclaration(Parser *parser)
     My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
     if (currentTokenType != TOKEN_KEYWORD_ENUM && currentTokenType != TOKEN_KEYWORD_EXPORT)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'enum' keyword to start enum declaration.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'enum' keyword to start enum declaration.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseEnumDeclaration: error_create failed with errno %d\n", errno);
@@ -3154,7 +3790,7 @@ AstNode *parser_parseEnumDeclaration(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier after 'enum' keyword.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier after 'enum' keyword.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseEnumDeclaration: error_create failed with errno %d\n", errno);
@@ -3195,7 +3831,7 @@ AstNode *parser_parseEnumDeclaration(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_OPEN_CURLY)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '{' to start enum body.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '{' to start enum body.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseEnumDeclaration: error_create failed with errno %d\n", errno);
@@ -3242,7 +3878,7 @@ AstNode *parser_parseEnumDeclaration(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_CURLY)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '}' to close enum body.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '}' to close enum body.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseEnumDeclaration: error_create failed with errno %d\n", errno);
@@ -3287,7 +3923,7 @@ AstNode *parser_parseEnumValueDeclaration(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier for enum value.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier for enum value.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseEnumValueDeclaration: error_create failed with errno %d\n", errno);
@@ -3361,7 +3997,7 @@ AstNode *parser_parseEnumValueDeclaration(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_COMMA)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ',' after enum value declaration.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ',' after enum value declaration.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseEnumValueDeclaration: error_create failed with errno %d\n", errno);
@@ -3441,7 +4077,7 @@ AstNode *parser_parseEnumValueDeclaration(Parser *parser)
 
         if (((Token *)parser->tokens->data)->type != TOKEN_COMMA)
         {
-            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ',' after enum value declaration.");
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ',' after enum value declaration.");
             if (error == NULL)
             {
                 DEBUG_PRINT("parser_parseEnumValueDeclaration: error_create failed with errno %d\n", errno);
@@ -3555,8 +4191,7 @@ AstNode *parser_parseTypedefDeclaration(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
     {
-        Token *unexpectedToken = (Token *)parser->tokens->data;
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, unexpectedToken->length, unexpectedToken->line, unexpectedToken->column, "Expected identifier after type in typedef declaration.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier after type in typedef declaration.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseTypedefDeclaration: error_create failed with errno %d\n", errno);
@@ -3732,7 +4367,7 @@ AstNode *parser_parseBranchStatement(Parser *parser)
     if (currentTokenType != TOKEN_KEYWORD_IF &&
         currentTokenType != TOKEN_KEYWORD_SWITCH)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'if' or 'switch' keyword to start branch statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'if' or 'switch' keyword to start branch statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseBranchStatement: error_create failed with errno %d\n", errno);
@@ -3810,7 +4445,7 @@ AstNode *parser_parseIfStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_IF)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'if' keyword to start if statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'if' keyword to start if statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseIfStatement: error_create failed with errno %d\n", errno);
@@ -3839,7 +4474,7 @@ AstNode *parser_parseIfStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '(' after 'if' keyword.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '(' after 'if' keyword.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseIfStatement: error_create failed with errno %d\n", errno);
@@ -3886,7 +4521,7 @@ AstNode *parser_parseIfStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ')' to close condition expression.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ')' to close condition expression.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseIfStatement: error_create failed with errno %d\n", errno);
@@ -3963,7 +4598,7 @@ AstNode *parser_parseIfStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_ENDIF)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'endif' keyword to end if statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'endif' keyword to end if statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseIfStatement: error_create failed with errno %d\n", errno);
@@ -4013,7 +4648,7 @@ AstNode *parser_parseSwitchStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_SWITCH)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'switch' keyword to start switch statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'switch' keyword to start switch statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseSwitchStatement: error_create failed with errno %d\n", errno);
@@ -4042,7 +4677,7 @@ AstNode *parser_parseSwitchStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '(' after 'switch' keyword.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '(' after 'switch' keyword.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseSwitchStatement: error_create failed with errno %d\n", errno);
@@ -4089,7 +4724,7 @@ AstNode *parser_parseSwitchStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ')' to close switch condition expression.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ')' to close switch condition expression.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseSwitchStatement: error_create failed with errno %d\n", errno);
@@ -4116,7 +4751,7 @@ AstNode *parser_parseSwitchStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_OPEN_CURLY)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '{' to start switch body.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '{' to start switch body.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseSwitchStatement: error_create failed with errno %d\n", errno);
@@ -4175,7 +4810,7 @@ AstNode *parser_parseSwitchStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_CURLY)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '}' to close switch body.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '}' to close switch body.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseSwitchStatement: error_create failed with errno %d\n", errno);
@@ -4220,7 +4855,7 @@ AstNode *parser_parseSwitchCase(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_CASE)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'case' keyword to start case statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'case' keyword to start case statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseSwitchCase: error_create failed with errno %d\n", errno);
@@ -4269,7 +4904,7 @@ AstNode *parser_parseSwitchCase(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_COLON)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ':' after case value expression.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ':' after case value expression.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseSwitchCase: error_create failed with errno %d\n", errno);
@@ -4333,7 +4968,7 @@ AstNode *parser_parseSwitchDefault(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_DEFAULT)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'default' keyword to start default statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'default' keyword to start default statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseSwitchDefault: error_create failed with errno %d\n", errno);
@@ -4362,7 +4997,7 @@ AstNode *parser_parseSwitchDefault(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_COLON)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ':' after 'default' keyword.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ':' after 'default' keyword.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseSwitchDefault: error_create failed with errno %d\n", errno);
@@ -4430,7 +5065,7 @@ AstNode *parser_parseLoopStatement(Parser *parser)
         currentTokenType != TOKEN_KEYWORD_WHILE &&
         currentTokenType != TOKEN_KEYWORD_DO)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'for', 'foreach', 'while', or 'do' keyword to start loop statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'for', 'foreach', 'while', or 'do' keyword to start loop statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseLoopStatement: error_create failed with errno %d\n", errno);
@@ -4540,7 +5175,7 @@ AstNode *parser_parseForStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_FOR)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'for' keyword to start for statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'for' keyword to start for statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseForStatement: error_create failed with errno %d\n", errno);
@@ -4569,7 +5204,7 @@ AstNode *parser_parseForStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '(' after 'for' keyword.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '(' after 'for' keyword.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseForStatement: error_create failed with errno %d\n", errno);
@@ -4619,7 +5254,7 @@ AstNode *parser_parseForStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ';' after first part of for statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ';' after first part of for statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseForStatement: error_create failed with errno %d\n", errno);
@@ -4666,7 +5301,7 @@ AstNode *parser_parseForStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ';' after condition expression.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ';' after condition expression.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseForStatement: error_create failed with errno %d\n", errno);
@@ -4716,7 +5351,7 @@ AstNode *parser_parseForStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ')' to close for statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ')' to close for statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseForStatement: error_create failed with errno %d\n", errno);
@@ -4922,7 +5557,7 @@ AstNode *parser_parseForeachStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_FOREACH)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'foreach' keyword to start foreach statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'foreach' keyword to start foreach statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseForeachStatement: error_create failed with errno %d\n", errno);
@@ -4952,7 +5587,7 @@ AstNode *parser_parseForeachStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '(' after 'foreach' keyword.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '(' after 'foreach' keyword.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseForeachStatement: error_create failed with errno %d\n", errno);
@@ -4999,7 +5634,7 @@ AstNode *parser_parseForeachStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected an identifier after type in foreach statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected an identifier after type in foreach statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseForeachStatement: error_create failed with errno %d\n", errno);
@@ -5040,7 +5675,7 @@ AstNode *parser_parseForeachStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_COLON)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ':' after identifier in foreach statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ':' after identifier in foreach statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseForeachStatement: error_create failed with errno %d\n", errno);
@@ -5088,7 +5723,7 @@ AstNode *parser_parseForeachStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ')' to close foreach statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ')' to close foreach statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseForeachStatement: error_create failed with errno %d\n", errno);
@@ -5152,7 +5787,7 @@ AstNode *parser_parseWhileStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_WHILE)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'while' keyword to start while statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'while' keyword to start while statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseWhileStatement: error_create failed with errno %d\n", errno);
@@ -5181,7 +5816,7 @@ AstNode *parser_parseWhileStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '(' after 'while' keyword.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '(' after 'while' keyword.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseWhileStatement: error_create failed with errno %d\n", errno);
@@ -5228,7 +5863,7 @@ AstNode *parser_parseWhileStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ')' to close while statement condition.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ')' to close while statement condition.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseWhileStatement: error_create failed with errno %d\n", errno);
@@ -5292,7 +5927,7 @@ AstNode *parser_parseDoWhileStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_DO)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'do' keyword to start do-while statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'do' keyword to start do-while statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseDoWhileStatement: error_create failed with errno %d\n", errno);
@@ -5341,7 +5976,7 @@ AstNode *parser_parseDoWhileStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_WHILE)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'while' keyword after do-while body.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'while' keyword after do-while body.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseDoWhileStatement: error_create failed with errno %d\n", errno);
@@ -5368,7 +6003,7 @@ AstNode *parser_parseDoWhileStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '(' after 'while' keyword.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '(' after 'while' keyword.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseDoWhileStatement: error_create failed with errno %d\n", errno);
@@ -5415,7 +6050,7 @@ AstNode *parser_parseDoWhileStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ')' to close do-while statement condition.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ')' to close do-while statement condition.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseDoWhileStatement: error_create failed with errno %d\n", errno);
@@ -5442,7 +6077,7 @@ AstNode *parser_parseDoWhileStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ';' after do-while condition.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ';' after do-while condition.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseDoWhileStatement: error_create failed with errno %d\n", errno);
@@ -5487,7 +6122,7 @@ AstNode *parser_parseCompoundStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_OPEN_CURLY)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '{' to start compound statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '{' to start compound statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseCompoundStatement: error_create failed with errno %d\n", errno);
@@ -5570,7 +6205,7 @@ AstNode *parser_parseCompoundStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_CURLY)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '}' to close compound statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '}' to close compound statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseCompoundStatement: error_create failed with errno %d\n", errno);
@@ -5590,7 +6225,7 @@ AstNode *parser_parseCompoundStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_CURLY)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '}' to close compound statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '}' to close compound statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseCompoundStatement: error_create failed with errno %d\n", errno);
@@ -5635,7 +6270,7 @@ AstNode *parser_parseLabel(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier to start label.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier to start label.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseLabel: error_create failed with errno %d\n", errno);
@@ -5678,7 +6313,7 @@ AstNode *parser_parseLabel(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_COLON)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ':' after label identifier.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ':' after label identifier.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseLabel: error_create failed with errno %d\n", errno);
@@ -5776,7 +6411,7 @@ AstNode *parser_parseExpressionStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ';' after expression statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ';' after expression statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseExpressionStatement: error_create failed with errno %d\n", errno);
@@ -5821,7 +6456,7 @@ AstNode *parser_parseVariableDeclaration(Parser *parser)
 
     if (!parser_isFullType(parser))
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected full type to start variable declaration.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected full type to start variable declaration.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseVariableDeclaration: error_create failed with errno %d\n", errno);
@@ -5864,7 +6499,7 @@ AstNode *parser_parseVariableDeclaration(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier after type in variable declaration.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier after type in variable declaration.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseVariableDeclaration: error_create failed with errno %d\n", errno);
@@ -5934,7 +6569,7 @@ AstNode *parser_parseVariableDeclaration(Parser *parser)
 
         if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
         {
-            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier after comma in variable declaration.");
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier after comma in variable declaration.");
             if (error == NULL)
             {
                 DEBUG_PRINT("parser_parseVariableDeclaration: error_create failed with errno %d\n", errno);
@@ -6027,7 +6662,7 @@ AstNode *parser_parseJumpStatement(Parser *parser)
         currentTokenType != TOKEN_KEYWORD_BREAK &&
         currentTokenType != TOKEN_KEYWORD_CONTINUE)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'goto', 'return', 'break', or 'continue' keyword to start jump statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'goto', 'return', 'break', or 'continue' keyword to start jump statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseJumpStatement: error_create failed with errno %d\n", errno);
@@ -6137,7 +6772,7 @@ AstNode *parser_parseGotoStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_GOTO)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'goto' keyword to start goto statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'goto' keyword to start goto statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseGotoStatement: error_create failed with errno %d\n", errno);
@@ -6167,7 +6802,7 @@ AstNode *parser_parseGotoStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier after 'goto' keyword.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier after 'goto' keyword.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseGotoStatement: error_create failed with errno %d\n", errno);
@@ -6217,7 +6852,7 @@ AstNode *parser_parseGotoStatement(Parser *parser)
 
         if (((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS)
         {
-            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '(' after 'when' keyword in goto statement.");
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '(' after 'when' keyword in goto statement.");
             if (error == NULL)
             {
                 DEBUG_PRINT("parser_parseGotoStatement: error_create failed with errno %d\n", errno);
@@ -6258,7 +6893,7 @@ AstNode *parser_parseGotoStatement(Parser *parser)
 
         if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS)
         {
-            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ')' to close condition in goto statement.");
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ')' to close condition in goto statement.");
             if (error == NULL)
             {
                 DEBUG_PRINT("parser_parseGotoStatement: error_create failed with errno %d\n", errno);
@@ -6286,7 +6921,7 @@ AstNode *parser_parseGotoStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ';' to end goto statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ';' to end goto statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseGotoStatement: error_create failed with errno %d\n", errno);
@@ -6331,7 +6966,7 @@ AstNode *parser_parseReturnStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_RETURN)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'return' keyword to start return statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'return' keyword to start return statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseReturnStatement: error_create failed with errno %d\n", errno);
@@ -6413,7 +7048,7 @@ AstNode *parser_parseReturnStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ';' to end return statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ';' to end return statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseReturnStatement: error_create failed with errno %d\n", errno);
@@ -6458,7 +7093,7 @@ AstNode *parser_parseBreakStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_BREAK)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'break' keyword to start break statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'break' keyword to start break statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseBreakStatement: error_create failed with errno %d\n", errno);
@@ -6485,7 +7120,7 @@ AstNode *parser_parseBreakStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ';' to end break statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ';' to end break statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseBreakStatement: error_create failed with errno %d\n", errno);
@@ -6530,7 +7165,7 @@ AstNode *parser_parseContinueStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_CONTINUE)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected 'continue' keyword to start continue statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected 'continue' keyword to start continue statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseContinueStatement: error_create failed with errno %d\n", errno);
@@ -6557,7 +7192,7 @@ AstNode *parser_parseContinueStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ';' to end continue statement.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ';' to end continue statement.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseContinueStatement: error_create failed with errno %d\n", errno);
@@ -6719,7 +7354,7 @@ AstNode *parser_parseAssignmentExpressionFromUnary(Parser *parser, AstNode *unar
         currentTokenType != TOKEN_CARET_EQUALS && currentTokenType != TOKEN_DOUBLE_GREATER_THAN_EQUALS &&
         currentTokenType != TOKEN_DOUBLE_LESS_THAN_EQUALS)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected assignment operator after unary expression.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected assignment operator after unary expression.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseAssignmentExpressionFromUnary: error_create failed with errno %d\n", errno);
@@ -6907,7 +7542,7 @@ AstNode *parser_parseBinaryExpression(Parser *parser, int parentPrecedence)
         {
             if (parentPrecedence != 0)
             {
-                Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Assignment expressions are not allowed in this context.");
+                Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Assignment expressions are not allowed in this context.");
                 if (error == NULL)
                 {
                     DEBUG_PRINT("parser_parseBinaryExpression: error_create failed with errno %d\n", errno);
@@ -7168,7 +7803,7 @@ AstNode *parser_parseTypeCastExpression(Parser *parser)
 
         if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS)
         {
-            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ')' to close type cast expression.");
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ')' to close type cast expression.");
             if (error == NULL)
             {
                 DEBUG_PRINT("parser_parseTypeCastExpression: error_create failed with errno %d\n", errno);
@@ -7250,7 +7885,7 @@ AstNode *parser_parsePostfixExpression(Parser *parser)
     My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
     if (currentTokenType != TOKEN_OPEN_CURLY && currentTokenType != TOKEN_IDENTIFIER && !parser_isLiteral(parser) && currentTokenType != TOKEN_OPEN_PARENTHESIS)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier, literal, or '(' to start postfix expression.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier, literal, or '(' to start postfix expression.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parsePostfixExpression: error_create failed with errno %d\n", errno);
@@ -7376,7 +8011,7 @@ AstNode *parser_parsePostfixPrimeExpression(Parser *parser)
 
     if (!parser_isPostfixPrimeExpression(parser))
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '(', '[', '.', '++', or '--' to start postfix prime expression.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '(', '[', '.', '++', or '--' to start postfix prime expression.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parsePostfixPrimeExpression: error_create failed with errno %d\n", errno);
@@ -7443,7 +8078,7 @@ AstNode *parser_parsePostfixPrimeExpression(Parser *parser)
 
             if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
             {
-                Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier after '.' in postfix prime expression.");
+                Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier after '.' in postfix prime expression.");
                 if (error == NULL)
                 {
                     DEBUG_PRINT("parser_parsePostfixPrimeExpression: error_create failed with errno %d\n", errno);
@@ -7522,7 +8157,7 @@ AstNode *parser_parseArrayIndexingExpression(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_OPEN_BRACKET)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '[' to start array indexing expression.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '[' to start array indexing expression.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseArrayIndexingExpression: error_create failed with errno %d\n", errno);
@@ -7571,7 +8206,7 @@ AstNode *parser_parseArrayIndexingExpression(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_BRACKET)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ']' to close array indexing expression.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ']' to close array indexing expression.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseArrayIndexingExpression: error_create failed with errno %d\n", errno);
@@ -7616,7 +8251,7 @@ AstNode *parser_parseFunctionCallExpression(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected '(' to start function call.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected '(' to start function call.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseFunctionCallExpression: error_create failed with errno %d\n", errno);
@@ -7697,7 +8332,7 @@ AstNode *parser_parseFunctionCallExpression(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected ')' to close function call.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected ')' to close function call.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parseFunctionCallExpression: error_create failed with errno %d\n", errno);
@@ -7743,7 +8378,7 @@ AstNode *parser_parsePrimaryExpression(Parser *parser)
     My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
     if (currentTokenType != TOKEN_IDENTIFIER && !parser_isLiteral(parser) && currentTokenType != TOKEN_OPEN_PARENTHESIS)
     {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->line, ((Token *)parser->tokens->data)->column, "Expected identifier, literal, or '(' to start primary expression.");
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->length, ((Token *)parser->tokens->data)->location, "Expected identifier, literal, or '(' to start primary expression.");
         if (error == NULL)
         {
             DEBUG_PRINT("parser_parsePrimaryExpression: error_create failed with errno %d\n", errno);
@@ -7921,15 +8556,6 @@ void parser_print(const Parser *parser)
     arena_print(parser->utilsArena);
     printf("    astArena:\n");
     arena_print(parser->astArena);
-    printf("    errors: ");
-    if (parser->errors == NULL)
-    {
-        printf("NULL\n");
-    }
-    else
-    {
-        linkedList_print(parser->errors, (PrintFunction)error_print);
-    }
     printf("    tokens: ");
     if (parser->tokens == NULL)
     {

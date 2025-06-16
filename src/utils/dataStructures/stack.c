@@ -36,7 +36,6 @@ bool stack_isEmpty(Stack *stack)
         fprintf(stderr, "stack_isEmpty: stack is NULL\n");
         return false;
     }
-
     return stack->top == 0;
 }
 

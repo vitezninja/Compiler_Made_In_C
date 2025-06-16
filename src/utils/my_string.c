@@ -17,30 +17,14 @@ String *string_create(Arena *arena, const char *name, size_t length, size_t hash
     String *string = (String *)arena_alloc(arena, sizeof(String), alignof(String));
     if (string == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("string_create: arena_alloc failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("string_create: arena_alloc failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("string_create: arena_alloc failed with errno %d\n", errno);
         return NULL;
     }
 
     string->name = (char *)arena_alloc(arena, length + 1, alignof(char));
     if (string->name == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("string_create: arena_alloc failed for name with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("string_create: arena_alloc failed for name with unknown error\n");
-        }
-
+        DEBUG_PRINT("string_create: arena_alloc failed for name with errno %d\n", errno);
         return NULL;
     }
 
@@ -48,7 +32,6 @@ String *string_create(Arena *arena, const char *name, size_t length, size_t hash
     string->name[length] = '\0'; // Ensure null-termination
     string->length = length;
     string->hash = hash;
-
     return string;
 }
 

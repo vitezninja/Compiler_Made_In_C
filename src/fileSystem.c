@@ -21,7 +21,7 @@ File fileSystem_readFile(const char* fileName)
         }
         else
         {
-            DEBUG_PRINT("fileSystem_readFile: Could not open file '%s': %s\n", fileName, strerror(errno));
+            DEBUG_PRINT("fileSystem_readFile: Could not open file '%s': %d\n", fileName, errno);
         }
 
         return (File){0};
@@ -60,16 +60,7 @@ File fileSystem_readFile(const char* fileName)
     if (buffer == NULL)
     {
         fclose(file);
-
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("fileSystem_readFile: Memory allocation failed for file '%s': %d\n", fileName, errno);
-        }
-        else
-        {
-            DEBUG_PRINT("fileSystem_readFile: Memory allocation failed for file '%s'\n", fileName);
-        }
-
+        DEBUG_PRINT("fileSystem_readFile: Memory allocation failed for file '%s': %d\n", fileName, errno);
         return (File){0};
     }
     size_t bytesRead = fread(buffer, 1, fileSize, file);
@@ -83,14 +74,12 @@ File fileSystem_readFile(const char* fileName)
         }
         else
         {
-            DEBUG_PRINT("fileSystem_readFile: fread failed for file '%s': %s\n", fileName, strerror(errno));
+            DEBUG_PRINT("fileSystem_readFile: fread failed for file '%s': %d\n", fileName, errno);
         }
-
         return (File){0};
     }
 
     buffer[bytesRead] = '\0';
-
     return (File){ .name = fileName, .sourceBuffer = buffer, .sourceBufferSize = bytesRead };
 }
 
@@ -101,7 +90,6 @@ void fileSystem_free(File* file)
         DEBUG_PRINT("fileSystem_free: file is NULL\n");
         return;
     }
-
     free((char *)file->name);
 }
 

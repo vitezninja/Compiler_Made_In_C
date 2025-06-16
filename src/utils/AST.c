@@ -81,15 +81,7 @@ AstNode *astNode_create(Arena *arena, AstType type, LinkedList *tokens, LinkedLi
     AstNode *node = (AstNode *)arena_alloc(arena, sizeof(AstNode), alignof(AstNode));
     if (node == NULL)
     {
-        if (errno == ENOMEM)
-        {
-            DEBUG_PRINT("astNode_create: arena_alloc failed with errno %d\n", errno);
-        }
-        else
-        {
-            DEBUG_PRINT("astNode_create: arena_alloc failed with unknown error\n");
-        }
-
+        DEBUG_PRINT("astNode_create: arena_alloc failed with errno %d\n", errno);
         return NULL;
     }
 
@@ -181,6 +173,5 @@ const char *astNode_getAstType(AstType type)
         DEBUG_PRINT("astNode_getAstType: type is within range\n");
         return "UNKNOWN";
     }
-
     return astNode_typeAsStrings[type];
 }

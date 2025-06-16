@@ -1,3 +1,11 @@
+/**
+ * @file fileSystem.h
+ * @brief Header file for file system operations.
+ * 
+ * This file defines the File structure and functions for reading files from the file system.
+ * It includes functions for reading a file into memory, freeing the file resources,
+ */
+
 #ifndef FILE_SYSTEM_H
 #define FILE_SYSTEM_H
 

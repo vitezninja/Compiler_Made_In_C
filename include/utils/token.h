@@ -24,6 +24,7 @@ struct Token;
 
 #include "utils/logger.h"
 #include "utils/arena.h"
+#include "utils/location.h"
 
 /**
  * @enum My_TokenType
@@ -191,12 +192,11 @@ typedef union TokenValue
  */
 typedef struct Token
 {
-    My_TokenType type;     /** Type of the token */
-    const char *text;   /** Pointer to the raw text of the token */
-    size_t length;      /** Length of the token in bytes */
-    size_t line;        /** Line number in the source code */
-    size_t column;      /** Column number in the source code */
-    TokenValue value;   /** Union value for literals */
+    My_TokenType type;          /** Type of the token */
+    const char *text;           /** Pointer to the raw text of the token */
+    size_t length;              /** Length of the token in bytes */
+    SourceLocation location;    /** Location in the source code */
+    TokenValue value;           /** Union value for literals */
 } Token;
 
 /**
@@ -209,12 +209,11 @@ typedef struct Token
  * @param type    Type of the token (from My_TokenType enum).
  * @param text    Pointer to the beginning of the token in the source buffer.
  * @param length  Length of the token in bytes.
- * @param line    Line number where the token begins.
- * @param column  Column number where the token begins.
+ * @param location Source location of the token in the source code.
  * @param value   Value union (used only if the token is a literal).
  * @return        Pointer to the newly created Token, or NULL on failure. Set `errno` to indicate the error.
  */
-Token *token_create(Arena *arena, My_TokenType type, const char *text, size_t length, size_t line, size_t column, TokenValue value);
+Token *token_create(Arena *arena, My_TokenType type, const char *text, size_t length, SourceLocation location, TokenValue value);
 
 /**
  * @brief Creates a deep copy of a Token into the provided arena.

@@ -1,3 +1,11 @@
+/**
+ * @file main.c
+ * @brief Main entry point for the compiler.
+ * 
+ * This file contains the main function that initializes the compiler,
+ * processes command line arguments, reads source files, and performs lexing and parsing.
+ */
+
 #include <stdio.h>
 #include <stdbool.h>
 
@@ -11,11 +19,52 @@
 #include "lexer.h"
 #include "parser.h"
 
+/**
+ * @brief Creates the necessary arenas and string interning table for the compiler.
+ * 
+ * This function initializes three arenas: one for alpha (utility storage), one for beta (token storage),
+ * and one for string interning. It also creates a hash table for string interning.
+ * 
+ * @param alphaArena Pointer to the pointer for the alpha arena.
+ * @param betaArena Pointer to the pointer for the beta arena.
+ * @param stringInterningArena Pointer to the pointer for the string interning arena.
+ * @param stringInterningTable Pointer to the pointer for the string interning hash table.
+ * 
+ * @return true if the arenas and string interning table were created successfully, false otherwise.
+ */
 bool createArenasAndStringTable(Arena **alphaArena, Arena **betaArena, Arena **stringInterningArena, HashTable **stringInterningTable);
 
+/**
+ * @brief Lexes a source file and returns a linked list of tokens.
+ * 
+ * This function initializes a lexer with the provided arenas and string interning table,
+ * lexes the source file, and returns a linked list of tokens. If any errors occur during lexing,
+ * it prints the errors and returns NULL.
+ * 
+ * @param alphaArena Pointer to the alpha arena for utility storage.
+ * @param betaArena Pointer to the beta arena for token storage.
+ * @param stringInterningTable Pointer to the hash table for string interning.
+ * @param file The source file to be lexed, containing the source buffer and its size.
+ * 
+ * @return A linked list of tokens generated during lexing, or NULL if an error occurred.
+ */
 LinkedList *lexFile(Arena *alphaArena, Arena *betaArena, HashTable *stringInterningTable, File file);
 
-AstNode *parseFile(Arena *alphaArena, Arena *betaArena, LinkedList *tokens);
+/**
+ * @brief Parses a linked list of tokens and returns the abstract syntax tree (AST).
+ * 
+ * This function initializes a parser with the provided arenas and tokens,
+ * parses the tokens, and returns the resulting AST. If any errors occur during parsing,
+ * it prints the errors and returns NULL.
+ *
+ * @param alphaArena Pointer to the alpha arena for utility storage.
+ * @param betaArena Pointer to the beta arena for token storage.
+ * @param tokens The linked list of tokens to be parsed.
+ * @param file The source file being parsed.
+ *
+ * @return The abstract syntax tree (AST) generated from the tokens, or NULL if an error occurred.
+ */
+AstNode *parseFile(Arena *alphaArena, Arena *betaArena, LinkedList *tokens, File file);
 
 int main(int argc, char *argv[])
 {
@@ -31,7 +80,7 @@ int main(int argc, char *argv[])
     Options options = options_create(argc, argv);
     if (options.files == NULL)
     {
-        fprintf(stderr, "Error: Failed to parse command line arguments.\n");
+        fprintf(stderr, "[Error] : Failed to parse command line arguments.\n");
         logger_close();
         return 1;
     }
@@ -49,7 +98,7 @@ int main(int argc, char *argv[])
         File file = fileSystem_readFile(options.files[i]);
         if (file.sourceBuffer == NULL)
         {
-            fprintf(stderr, "Error: Failed to read file '%s'.\n", options.files[i]);
+            fprintf(stderr, "[Error] : Failed to read file '%s'.\n", options.files[i]);
             options_free(&options);
             logger_close();
             return 1;
@@ -62,7 +111,7 @@ int main(int argc, char *argv[])
         bool success = createArenasAndStringTable(&alphaArena, &betaArena, &stringInterningArena, &stringInterningTable);
         if (!success)
         {
-            fprintf(stderr, "Error: Failed to create arenas and string interning table for file: %s.\n", options.files[i]);
+            fprintf(stderr, "[Error] : Failed to create arenas and string interning table for file: %s.\n", options.files[i]);
             options_free(&options);
             fileSystem_free(&file);
             logger_close();
@@ -75,7 +124,6 @@ int main(int argc, char *argv[])
         LinkedList *tokens = lexFile(alphaArena, betaArena, stringInterningTable, file);
         if (tokens == NULL)
         {
-            fprintf(stderr, "Error: Failed to lex file '%s'.\n", options.files[i]);
             options_free(&options);
             fileSystem_free(&file);
             arena_destroy(&stringInterningArena);
@@ -85,14 +133,20 @@ int main(int argc, char *argv[])
             return 1;
         }
 
-        //linkedList_printRecursive(tokens, (PrintFunction)token_print);
+        #ifdef OLEX
+        linkedList_printRecursive(tokens, (PrintFunction)token_print);
+        fileSystem_free(&file);
+        arena_destroy(&stringInterningArena);
+        arena_destroy(&alphaArena);
+        arena_destroy(&betaArena);
+        break; // Exit after lexing if OLEX is defined
+        #endif
 
         // Alpha ast and token copys
         // Beta stores tokens and utils (gets emptied after parsing)
-        AstNode *ast = parseFile(alphaArena, betaArena, tokens);
+        AstNode *ast = parseFile(alphaArena, betaArena, tokens, file);
         if (ast == NULL)
         {
-            fprintf(stderr, "Error: Failed to parse file '%s'.\n", options.files[i]);
             options_free(&options);
             fileSystem_free(&file);
             arena_destroy(&stringInterningArena);
@@ -102,7 +156,14 @@ int main(int argc, char *argv[])
             return 1;
         }
 
+        #ifdef OPARSE
         astNode_printTree(ast, "", true);
+        fileSystem_free(&file);
+        arena_destroy(&stringInterningArena);
+        arena_destroy(&alphaArena);
+        arena_destroy(&betaArena);
+        break; // Exit after parsing if OPARSE is defined
+        #endif
 
         fileSystem_free(&file);
         arena_destroy(&stringInterningArena);
@@ -118,27 +179,27 @@ int main(int argc, char *argv[])
 
 bool createArenasAndStringTable(Arena **alphaArena, Arena **betaArena, Arena **stringInterningArena, HashTable **stringInterningTable)
 {
-     Arena *createdAlphaArena = arena_create();
+    Arena *createdAlphaArena = arena_create(ARENA_ONE_MB * 2);
     if (createdAlphaArena == NULL)
     {
-        fprintf(stderr, "Error: Failed to create alpha arena.\n");
+        DEBUG_PRINT("createArenasAndStringTable: Failed to create alpha arena.\n");
         return false;
     }
     *alphaArena = createdAlphaArena;
 
-    Arena *createdBetaArena = arena_create();
+    Arena *createdBetaArena = arena_create(ARENA_ONE_MB * 2);
     if (createdBetaArena == NULL)
     {
-        fprintf(stderr, "Error: Failed to create beta arena.\n");
+        DEBUG_PRINT("createArenasAndStringTable: Failed to create beta arena.\n");
         arena_destroy(&createdAlphaArena);
         return false;
     }
     *betaArena = createdBetaArena;
 
-    Arena *createdStringInterningArena = arena_create();
+    Arena *createdStringInterningArena = arena_create(ARENA_ONE_MB);
     if (createdStringInterningArena == NULL)
     {
-        fprintf(stderr, "Error: Failed to create string interning arena.\n");
+        DEBUG_PRINT("createArenasAndStringTable: Failed to create string interning arena.\n");
         arena_destroy(&createdAlphaArena);
         arena_destroy(&createdBetaArena);
         return false;
@@ -148,7 +209,7 @@ bool createArenasAndStringTable(Arena **alphaArena, Arena **betaArena, Arena **s
     HashTable *createdStringInterningTable = hashTable_create(createdStringInterningArena);
     if (createdStringInterningTable == NULL)
     {
-        fprintf(stderr, "Error: Failed to create string interning table.\n");
+        DEBUG_PRINT("createArenasAndStringTable: Failed to create string interning table.\n");
         arena_destroy(&createdAlphaArena);
         arena_destroy(&createdBetaArena);
         arena_destroy(&createdStringInterningArena);
@@ -163,50 +224,44 @@ LinkedList *lexFile(Arena *alphaArena, Arena *betaArena, HashTable *stringIntern
 {
     if (alphaArena == NULL)
     {
-        fprintf(stderr, "Error: Alpha arena is NULL.\n");
+        DEBUG_PRINT("lexFile: Alpha arena is NULL.\n");
         return NULL;
     }
 
     if (betaArena == NULL)
     {
-        fprintf(stderr, "Error: Beta arena is NULL.\n");
+        DEBUG_PRINT("lexFile: Beta arena is NULL.\n");
         return NULL;
     }
 
     if (stringInterningTable == NULL)
     {
-        fprintf(stderr, "Error: String interning table is NULL.\n");
+        DEBUG_PRINT("lexFile: String interning table is NULL.\n");
         return NULL;
     }
 
     if (file.sourceBuffer == NULL || file.sourceBufferSize == 0)
     {
-        fprintf(stderr, "Error: Source buffer is NULL or empty for file: %s.\n", file.name);
+        DEBUG_PRINT("lexFile: Source buffer is NULL or empty.\n");
         return NULL;
     }
 
-    Lexer *lexer = lexer_create(alphaArena, betaArena, stringInterningTable, file.sourceBuffer, file.sourceBufferSize);
+    Lexer *lexer = lexer_create(alphaArena, betaArena, stringInterningTable, file.name, file.sourceBuffer, file.sourceBufferSize);
     if (lexer == NULL)
     {
-        fprintf(stderr, "Error: Failed to create lexer for file: %s.\n", file.name);
+        DEBUG_PRINT("lexFile: Failed to create lexer for file: %s.\n", file.name);
         return NULL;
     }
 
     lexer_lex(lexer);
-    if (errno != 0)
+    if (errno != 0 || lexer->error != NULL)
     {
-        fprintf(stderr, "Error: Lexer encountered an error while processing file '%s': %s.\n", file.name, strerror(errno));
-        if (lexer->error != NULL)
+        LinkedList *error = lexer->error;
+        while (error != NULL)
         {
-            linkedList_print(lexer->error, (PrintFunction)error_print); // TODO print errors in a better way
+            error_print((Error *)error->data, file.sourceBuffer);
+            error = error->next;
         }
-        return NULL;
-    }
-
-    if (lexer->error != NULL)
-    {
-        fprintf(stderr, "Error: Lexer encountered errors while processing file '%s'.\n", file.name);
-        linkedList_print(lexer->error, (PrintFunction)error_print); // TODO print errors in a better way
         return NULL;
     }
 
@@ -215,48 +270,42 @@ LinkedList *lexFile(Arena *alphaArena, Arena *betaArena, HashTable *stringIntern
     return tokens;
 }
 
-AstNode *parseFile(Arena *alphaArena, Arena *betaArena, LinkedList *tokens)
+AstNode *parseFile(Arena *alphaArena, Arena *betaArena, LinkedList *tokens, File file)
 {
     if (alphaArena == NULL)
     {
-        fprintf(stderr, "Error: Alpha arena is NULL.\n");
+        DEBUG_PRINT("parseFile: Alpha arena is NULL.\n");
         return NULL;
     }
 
     if (betaArena == NULL)
     {
-        fprintf(stderr, "Error: Beta arena is NULL.\n");
+        DEBUG_PRINT("parseFile: Beta arena is NULL.\n");
         return NULL;
     }
 
     if (tokens == NULL)
     {
-        fprintf(stderr, "Error: Tokens list is NULL.\n");
+        DEBUG_PRINT("parseFile: Tokens list is NULL.\n");
         return NULL;
     }
 
     Parser *parser = parser_create(betaArena, alphaArena, tokens);
     if (parser == NULL)
     {
-        fprintf(stderr, "Error: Failed to create parser.\n");
+        DEBUG_PRINT("parseFile: Failed to create parser.\n");
         return NULL;
     }
 
     parser_parse(parser);
-    if (errno != 0)
+    if (errno != 0 || parser->ast == NULL)
     {
-        fprintf(stderr, "Error: Parser encountered an error: %s.\n", strerror(errno));
-        if (parser->errors != NULL)
+        LinkedList *error = parser->errors;
+        while (error != NULL)
         {
-            linkedList_print(parser->errors, (PrintFunction)error_print); // TODO print errors in a better way
+            error_print((Error *)error->data, file.sourceBuffer);
+            error = error->next;
         }
-        return NULL;
-    }
-
-    if (parser->errors != NULL)
-    {
-        fprintf(stderr, "Error: Parser encountered errors.\n");
-        linkedList_print(parser->errors, (PrintFunction)error_print); // TODO print errors in a better way
         return NULL;
     }
 

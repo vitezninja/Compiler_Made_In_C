@@ -1,27 +1,27 @@
 #include "utils/arena.h"
 
-Arena *arena_create(void)
+Arena *arena_create(size_t size)
 {
     errno = 0;
     Arena *arena = malloc(sizeof(Arena));
     if (!arena) 
     {
         DEBUG_PRINT("arena_create: failed to allocate Arena struct\n");
-        fprintf(stderr, "Memory allocation failed with error: %s\n", strerror(errno));
+        fprintf(stderr, "[Fatal Error] : Memory allocation failed with error: %s\n", strerror(errno));
         return NULL;
     }
 
     errno = 0;
-    arena->memory = malloc(2 * ONE_MB);
+    arena->memory = malloc(size);
     if (!arena->memory)
     {
         DEBUG_PRINT("arena_create: failed to allocate memory block\n");
-        fprintf(stderr, "Memory allocation failed with error: %s\n", strerror(errno));
+        fprintf(stderr, "[Fatal Error] : Memory allocation failed with error: %s\n", strerror(errno));
         free(arena);
         return NULL;
     }
 
-    arena->capacity = 2 * ONE_MB;
+    arena->capacity = size;
     arena->offset = 0;
     return arena;
 }
@@ -40,12 +40,6 @@ void *arena_alloc(Arena *arena, size_t size, size_t alignment)
         return NULL;
     }
 
-    if (size >= ONE_MB)
-    {
-        DEBUG_PRINT("arena_alloc: size must be less than 1 MB\n");
-        return NULL;
-    }
-
     if (alignment == 0 || (alignment & (alignment - 1)) != 0)
     {
         DEBUG_PRINT("arena_alloc: alignment must be a power of two\n");
@@ -56,11 +50,10 @@ void *arena_alloc(Arena *arena, size_t size, size_t alignment)
     uintptr_t aligned_ptr = (current_ptr + (alignment - 1)) & ~(alignment - 1);
     size_t padding = aligned_ptr - current_ptr;
 
-
     if (arena->offset + padding + size > arena->capacity)
     {
         DEBUG_PRINT("arena_alloc: not enough memory in arena\n");
-        fprintf(stderr, "Memory allocation failed with error: %s\n", strerror(ENOMEM));
+        fprintf(stderr, "[Fatal Error] : Memory allocation failed with error: %s\n", strerror(ENOMEM));
         errno = ENOMEM;
         return NULL;
     }
@@ -77,7 +70,6 @@ void arena_reset(Arena *arena)
         DEBUG_PRINT("arena_reset: arena is NULL\n");
         return;
     }
-
     arena->offset = 0;
 }
 
