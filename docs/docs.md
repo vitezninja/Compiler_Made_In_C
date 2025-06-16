@@ -1,4 +1,4 @@
-I want to make a simple compiler in C (gcc-11 and gnu99) that compiles a language similar to C.
+I want to make a simple compiler in C (gcc-11 and gnu99) that compiles a language similar to C and GO.
 This project will not make its own assembly I will use NASM.
 I want this program to work on Windows, Linux, Unix and MacOS.
 I will use git as source controll and I will also use make for building the program on the priviously listed OS-s.
@@ -9,58 +9,39 @@ The project structure will be:
 ```
 compiler
 - .github/workflow/c-cpp.yml
+- build/ (same structure as in src)
+- docs/
+-- docs.md (this file)
+-- grammer.md
+- include/ (contains all the .h files only separating utils/ into its own directory)
 - src/
--- main.c
--- options.c
--- lexer.c
--- parser.c
--- validator.c
--- codeGenerator.c
--- fileSystem.c
 -- utils/
 --- dataStructures/
+---- bitset.c
+---- dynamicArray.c
 ---- hashTable.c
 ---- linkedList.c
----- bitset.c
 ---- stack.c
----- dynamicArray.c
---- logger.c
 --- arena.c
 --- ast.c
 --- error.c
---- string.c
---- token.c
+--- location.c
+--- logger.c
+--- my_string.c
 --- symbol.c
+--- token.c
+-- codeGenerator.c
+-- fileSystem.c
+-- lexer.c
+-- main.c
+-- options.c
+-- parser.c
+-- validator.c
 - test/
--- suits/
---- tes_options.c
---- test_lexer.c
---- test_parser.c
---- test_validator.c
---- test_codeGenerator.c
---- test_fileSystem.c
---- utils/
----- dataStructures/
------ test_hashTable.c
------ test_linkedList.c
------ test_bitset.c
------ test_stack.c
------ test_dynamicArray.c
----- test_arena.c
----- test_ast.c
----- test_error.c
----- test_string.c
----- test_token.c
----- test_symbol.c
--- tester.c
--- test_script.sh
--- test_script.bat
-- build/ (same structure as in src)
-- include/ (contains all the .h files only separating utils/ into its own directory)
-- Makefile
 - .gitignore
+- LICENSE
+- Makefile
 - README.md
-- LICENSE (MIT License)
 ```
 
 Done:
@@ -68,34 +49,33 @@ Done:
    Makefile
    .gitignore
    LICENSE
-   logger.c/h + documentation
+   bitset.c/h + documentation
+   hashTable.c/h + documentation
+   linkedList.c/h + documentation
    arena.c/h + documentation
    ast.c/h + documentation
-   bitset.c/h + documentation
    error.c/h + documentation
-   linkedList.c/h + documentation
+   location.c/h + documentation
+   logger.c/h + documentation
    my_string.c/h + documentation
-   symbols.c/h + documentation
+   symbol.c/h + documentation
    token.c/h + documentation
+   fileSystem.c/h + documentation
+   lexer.c/h + documentation
    options.c/h + documentation
-   hashTable.c/h + documentation
+   parser.c/h + documentation
 
 Making this now:
-   fileSystem.c/h + documentation
 
 Todo:
    Fix includes
    Make test files
-   Decide how to handel NULL (is it a keyword or identifier or literal)
+   Double check documentations
 
    stack.c/h + documentation
    dynamicArray.c/h + documentation
-   lexer.c/h documentation
-   parser.c/h + documentation
    validator.c/h + documentation
    codeGenerator.c/h + documentation
-
-Testing will be done with runing the test_script. This will compile the files needed for testing then run them then clean up there files.
 
 ## Memory managment:
 For now I have only made plans until the parsing is finished.
@@ -148,13 +128,17 @@ Beta is empty
 x. Any errors that occure during this process will be stored in Beta.
 x. Clear Beta.
 
-(Maybe make IR)
-
 Memory summery:
 Alpha has content
 Beta is empty
 
-### Step 5 (code generation): This is not made yet
+### Step 5 (IR): This is not made yet
+1. ?
+
+### Step 6 (optimization): This is not made yet
+1. ?
+
+### Step 7 (code generation): This is not made yet
 1. Create the code generator into Beta.
 2. Create fileSystem into Beta.
 3. Generate NASM code from the AST.
