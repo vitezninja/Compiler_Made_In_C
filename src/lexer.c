@@ -397,9 +397,9 @@ void lexer_consumeChar(Lexer *lexer, size_t count)
     if (lexer->currentPosition + count >= lexer->sourceBufferSize)
     {
         lexer->currentPosition = lexer->sourceBufferSize; // Move to end of file
+        lexer->column += (lexer->sourceBufferSize - lexer->currentPosition + 1);
         return;
     }
-
 
     size_t startingPos = lexer->currentPosition;
     size_t endPos = lexer->currentPosition + count;
@@ -2262,10 +2262,12 @@ void lexer_lex(Lexer* lexer)
         //Unknown
         if(currentToken == NULL)
         {
+            printf("before pos: %zu", lexer->column);
             char unknownChar[2] = {0};
             unknownChar[0] = lexer_currentChar(lexer);
             lexer_consumeChar(lexer, 1);
             unknownChar[1] = '\0';
+            printf("after pos: %zu\n", lexer->column);
 
             String *str = string_create(lexer->utilsArena, unknownChar, 1, 0);
             if (str == NULL)
@@ -2278,9 +2280,8 @@ void lexer_lex(Lexer* lexer)
                 .fileName = lexer->fileName,
                 .lineStart = lexer->currentLineStart,
                 .line = lexer->line,
-                .column = lexer->column
+                .column = lexer->column - 1
             };
-
             currentToken = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, 1, posLoc, (TokenValue){0});
             if (currentToken == NULL)
             {

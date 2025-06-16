@@ -312,4 +312,4 @@ AstNode *parseFile(Arena *alphaArena, Arena *betaArena, LinkedList *tokens, File
     AstNode *ast = parser->ast;
     arena_reset(betaArena);
     return ast;
-}
+}  
