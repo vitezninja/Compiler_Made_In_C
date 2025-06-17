@@ -13,5 +13,6 @@ void sourceLocation_print(const SourceLocation *location)
     printf("    Line        : %" PRIu32 "\n", location->line);
     printf("    Column      : %" PRIu32 "\n", location->column);
     printf("    Line Start  : %" PRIu32 "\n", location->lineStart);
+    printf("    Length      : %zu\n", location->length);
     printf("}\n");
 }

@@ -1,6 +1,6 @@
 #include "utils/error.h"
 
-Error *error_create(Arena *arena, ErrorType type, size_t length, SourceLocation location, const char *message)
+Error *error_create(Arena *arena, ErrorType type, SourceLocation location, const char *message)
 {
     if (arena == NULL)
     {
@@ -22,7 +22,6 @@ Error *error_create(Arena *arena, ErrorType type, size_t length, SourceLocation 
     }
 
     error->type = type;
-    error->length = length;
     error->location = location;
     error->message = message;
     return error;
@@ -61,7 +60,7 @@ void error_print(const Error *error, const char *sourceBuffer)
         fprintf(stderr, " ");
     }
     fprintf(stderr, "^");
-    for (size_t i = 0; i < error->length - 1; i++)
+    for (size_t i = 0; i < error->location.length - 1; i++)
     {
         fprintf(stderr, "~");
     }

@@ -44,7 +44,6 @@ typedef enum ErrorType
 typedef struct Error
 {
     ErrorType type;             /** Severity/type of the error. */
-    size_t length;              /** Length of the error span in bytes. */
     SourceLocation location;    /** Location in the source code where the error occurred. */
     const char *message;        /** Human-readable error message. */
 } Error;
@@ -56,12 +55,11 @@ typedef struct Error
  *
  * @param arena Memory arena used for allocation.
  * @param type Type/severity of the error.
- * @param length Length of the error span in bytes.
  * @param location Source location where the error occurred.
  * @param message Null-terminated string containing the error message.
  * @return Pointer to the error.
  */
-Error *error_create(Arena *arena, ErrorType type, size_t length, SourceLocation location, const char *message);
+Error *error_create(Arena *arena, ErrorType type, SourceLocation location, const char *message);
 
 /**
  * @brief Prints a formatted representation of an error to standard output.

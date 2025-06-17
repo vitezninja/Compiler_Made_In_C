@@ -480,9 +480,10 @@ bool lexer_deleteComments(Lexer *lexer)
                 .fileName = lexer->fileName,
                 .lineStart = lexer->currentLineStart,
                 .line = lexer->line,
-                .column = lexer->column
+                .column = lexer->column,
+                .length = commnetLenght,
             };
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, commnetLenght, posLoc, "The multi-line comment was not closed!");
+            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "The multi-line comment was not closed!");
             if (error == NULL)
             {
                 DEBUG_PRINT("lexer_deleteComments: Memory allocation for Error failed with errno %d\n", errno);
@@ -775,9 +776,10 @@ Token *lexer_handleSimpleCase(Lexer *lexer)
         .fileName = lexer->fileName,
         .lineStart = lexer->currentLineStart,
         .line = lexer->line,
-        .column = lexer->column
+        .column = lexer->column,
+        .length = pos
     };
-    Token *token = token_create(lexer->tokenArena, type, str->name, pos, posLoc, (TokenValue){0});
+    Token *token = token_create(lexer->tokenArena, type, str->name, posLoc, (TokenValue){0});
     if (token == NULL)
     {
         DEBUG_PRINT("lexer_handleSimpleCase: token_create failed with errno %d\n", errno);
@@ -887,16 +889,17 @@ Token *lexer_handleNumbers(Lexer *lexer)
                 .fileName = lexer->fileName,
                 .lineStart = lexer->currentLineStart,
                 .line = lexer->line,
-                .column = lexer->column
+                .column = lexer->column,
+                .length = pos
             };
-            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
+            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, posLoc, (TokenValue){0});
             if (token == NULL)
             {
                 DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
                 return NULL;
             }
 
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, pos, posLoc, "Invalid integer constant starting with 0");
+            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "Invalid integer constant starting with 0");
             if (error == NULL)
             {
                 DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
@@ -932,16 +935,17 @@ Token *lexer_handleNumbers(Lexer *lexer)
             .fileName = lexer->fileName,
             .lineStart = lexer->currentLineStart,
             .line = lexer->line,
-            .column = lexer->column
+            .column = lexer->column,
+            .length = pos
         };
-        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
+        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, posLoc, (TokenValue){0});
         if (token == NULL)
         {
             DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
             return NULL;
         }
 
-        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, pos, posLoc, "Invalid integer constant starting with 0");
+        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "Invalid integer constant starting with 0");
         if (error == NULL)
         {
             DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
@@ -1020,16 +1024,18 @@ Token *lexer_handleNumbers(Lexer *lexer)
                 .fileName = lexer->fileName,
                 .lineStart = lexer->currentLineStart,
                 .line = lexer->line,
-                .column = lexer->column
+                .column = lexer->column,
+                .length = pos
             };
-            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
+            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, posLoc, (TokenValue){0});
             if (token == NULL)
             {
                 DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
                 return NULL;
             }
 
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, invalidSuffixLength, posLoc, "Invalid suffix in binary number");
+            posLoc.length = invalidSuffixLength;
+            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "Invalid suffix in binary number");
             if (error == NULL)
             {
                 DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
@@ -1059,9 +1065,10 @@ Token *lexer_handleNumbers(Lexer *lexer)
             .fileName = lexer->fileName,
             .lineStart = lexer->currentLineStart,
             .line = lexer->line,
-            .column = lexer->column
+            .column = lexer->column,
+            .length = pos
         };
-        Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_BINARY, string->name, pos, posLoc, (TokenValue){.int_value = value});
+        Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_BINARY, string->name, posLoc, (TokenValue){.int_value = value});
         if (token == NULL)
         {
             DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
@@ -1135,16 +1142,18 @@ Token *lexer_handleNumbers(Lexer *lexer)
                 .fileName = lexer->fileName,
                 .lineStart = lexer->currentLineStart,
                 .line = lexer->line,
-                .column = lexer->column
+                .column = lexer->column,
+                .length = pos
             };
-            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
+            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, posLoc, (TokenValue){0});
             if (token == NULL)
             {
                 DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
                 return NULL;
             }
 
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, invalidSuffixLength, posLoc, "Invalid suffix in octal number");
+            posLoc.length = invalidSuffixLength;
+            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "Invalid suffix in octal number");
             if (error == NULL)
             {
                 DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
@@ -1174,9 +1183,10 @@ Token *lexer_handleNumbers(Lexer *lexer)
             .fileName = lexer->fileName,
             .lineStart = lexer->currentLineStart,
             .line = lexer->line,
-            .column = lexer->column
+            .column = lexer->column,
+            .length = pos
         };
-        Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_OCTAL, string->name, pos, posLoc, (TokenValue){.int_value = value});
+        Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_OCTAL, string->name, posLoc, (TokenValue){.int_value = value});
         if (token == NULL)
         {
             DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
@@ -1248,16 +1258,18 @@ Token *lexer_handleNumbers(Lexer *lexer)
                 .fileName = lexer->fileName,
                 .lineStart = lexer->currentLineStart,
                 .line = lexer->line,
-                .column = lexer->column
+                .column = lexer->column,
+                .length = pos
             };
-            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
+            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, posLoc, (TokenValue){0});
             if (token == NULL)
             {
                 DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
                 return NULL;
             }
 
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, invalidSuffixLength, posLoc, "Invalid suffix in hexadecimal number");
+            posLoc.length = invalidSuffixLength;
+            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "Invalid suffix in hexadecimal number");
             if (error == NULL)
             {
                 DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
@@ -1287,9 +1299,10 @@ Token *lexer_handleNumbers(Lexer *lexer)
             .fileName = lexer->fileName,
             .lineStart = lexer->currentLineStart,
             .line = lexer->line,
-            .column = lexer->column
+            .column = lexer->column,
+            .length = pos
         };
-        Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_HEXADECIMAL, string->name, pos, posLoc, (TokenValue){.int_value = value});
+        Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_HEXADECIMAL, string->name, posLoc, (TokenValue){.int_value = value});
         if (token == NULL)
         {
             DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
@@ -1388,16 +1401,18 @@ Token *lexer_handleNumbers(Lexer *lexer)
                 .fileName = lexer->fileName,
                 .lineStart = lexer->currentLineStart,
                 .line = lexer->line,
-                .column = lexer->column
+                .column = lexer->column,
+                .length = pos
             };
-            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
+            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, posLoc, (TokenValue){0});
             if (token == NULL)
             {
                 DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
                 return NULL;
             }
 
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, invalidSuffixLength, posLoc, "Invalid suffix in floating-point number");
+            posLoc.length = invalidSuffixLength;
+            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "Invalid suffix in floating-point number");
             if (error == NULL)
             {
                 DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
@@ -1429,9 +1444,10 @@ Token *lexer_handleNumbers(Lexer *lexer)
             .fileName = lexer->fileName,
             .lineStart = lexer->currentLineStart,
             .line = lexer->line,
-            .column = lexer->column
+            .column = lexer->column,
+            .length = pos
         };
-        Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_FLOATINGPOINT, string->name, pos, posLoc, (TokenValue){.float_value = doubleValue});
+        Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_FLOATINGPOINT, string->name, posLoc, (TokenValue){.float_value = doubleValue});
         if (token == NULL)
         {
             DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
@@ -1479,16 +1495,18 @@ Token *lexer_handleNumbers(Lexer *lexer)
             .fileName = lexer->fileName,
             .lineStart = lexer->currentLineStart,
             .line = lexer->line,
-            .column = lexer->column
+            .column = lexer->column,
+            .length = pos
         };
-        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
+        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, posLoc, (TokenValue){0});
         if (token == NULL)
         {
             DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
             return NULL;
         }
 
-        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, invalidSuffixLength, posLoc, "Invalid suffix in integer number");
+        posLoc.length = invalidSuffixLength;
+        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "Invalid suffix in integer number");
         if (error == NULL)
         {
             DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
@@ -1519,9 +1537,10 @@ Token *lexer_handleNumbers(Lexer *lexer)
         .fileName = lexer->fileName,
         .lineStart = lexer->currentLineStart,
         .line = lexer->line,
-        .column = lexer->column
+        .column = lexer->column,
+        .length = pos
     };
-    Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_INTEGER, str->name, pos, posLoc, (TokenValue){.int_value = value});
+    Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_INTEGER, str->name, posLoc, (TokenValue){.int_value = value});
     if (token == NULL)
     {
         DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Token failed with errno %d\n", errno);
@@ -1574,16 +1593,17 @@ Token *lexer_handleCharacters(Lexer *lexer)
             .fileName = lexer->fileName,
             .lineStart = lexer->currentLineStart,
             .line = lexer->line,
-            .column = lexer->column
+            .column = lexer->column,
+            .length = pos
         };
-        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
+        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, posLoc, (TokenValue){0});
         if (token == NULL)
         {
             DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Token failed with errno %d\n", errno);
             return NULL;
         }
 
-        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, 1, posLoc, "The character wasn't closed!");
+        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "The character wasn't closed!");
         if (error == NULL)
         {
             DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error failed with errno %d\n", errno);
@@ -1622,16 +1642,17 @@ Token *lexer_handleCharacters(Lexer *lexer)
             .fileName = lexer->fileName,
             .lineStart = lexer->currentLineStart,
             .line = lexer->line,
-            .column = lexer->column
+            .column = lexer->column,
+            .length = pos
         };
-        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
+        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, posLoc, (TokenValue){0});
         if (token == NULL)
         {
             DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Token failed with errno %d\n", errno);
             return NULL;
         }
 
-        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, pos, posLoc, "Empty character constant is not allowed!");
+        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "Empty character constant is not allowed!");
         if (error == NULL)
         {
             DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error failed with errno %d\n", errno);
@@ -1664,16 +1685,17 @@ Token *lexer_handleCharacters(Lexer *lexer)
             .fileName = lexer->fileName,
             .lineStart = lexer->currentLineStart,
             .line = lexer->line,
-            .column = lexer->column
+            .column = lexer->column,
+            .length = pos
         };
-        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
+        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, posLoc, (TokenValue){0});
         if (token == NULL)
         {
             DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Token failed with errno %d\n", errno);
             return NULL;
         }
 
-        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, 2, posLoc, "Multi-character character constant is not allowed!");
+        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "Multi-character character constant is not allowed!");
         if (error == NULL)
         {
             DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error failed with errno %d\n", errno);
@@ -1717,16 +1739,17 @@ Token *lexer_handleCharacters(Lexer *lexer)
                 .fileName = lexer->fileName,
                 .lineStart = lexer->currentLineStart,
                 .line = lexer->line,
-                .column = lexer->column
+                .column = lexer->column,
+                .length = pos
             };
-            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
+            Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, posLoc, (TokenValue){0});
             if (token == NULL)
             {
                 DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Token failed with errno %d\n", errno);
                 return NULL;
             }
 
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, 2, posLoc, "Invalid escape sequence in character constant!");
+            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "Invalid escape sequence in character constant!");
             if (error == NULL)
             {
                 DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error failed with errno %d\n", errno);
@@ -1754,9 +1777,10 @@ Token *lexer_handleCharacters(Lexer *lexer)
         .fileName = lexer->fileName,
         .lineStart = lexer->currentLineStart,
         .line = lexer->line,
-        .column = lexer->column
+        .column = lexer->column,
+        .length = pos
     };
-    Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_CHARACTER, str->name, pos, posLoc, (TokenValue){.char_value = retChar});
+    Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_CHARACTER, str->name, posLoc, (TokenValue){.char_value = retChar});
     if (token == NULL)
     {
         DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Token failed with errno %d\n", errno);
@@ -1836,16 +1860,17 @@ Token *lexer_handleStrings(Lexer *lexer)
             .fileName = lexer->fileName,
             .lineStart = lexer->currentLineStart,
             .line = lexer->line,
-            .column = lexer->column
+            .column = lexer->column,
+            .length = pos
         };
-        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, pos, posLoc, (TokenValue){0});
+        Token *token = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, posLoc, (TokenValue){0});
         if (token == NULL)
         {
             DEBUG_PRINT("lexer_handleStrings: Memory allocation for Token failed with errno %d\n", errno);
             return NULL;
         }
 
-        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, 1, posLoc, "The string wasn't closed!");
+        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "The string wasn't closed!");
         if (error == NULL)
         {
             DEBUG_PRINT("lexer_handleStrings: Memory allocation for Error failed with errno %d\n", errno);
@@ -1880,10 +1905,11 @@ Token *lexer_handleStrings(Lexer *lexer)
         .fileName = lexer->fileName,
         .lineStart = lexer->currentLineStart,
         .line = lexer->line,
-        .column = lexer->column
+        .column = lexer->column,
+        .length = pos
     };
     // TODO: Remove the starting and ending " for the value
-    Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_STRING, str->name, pos, posLoc, (TokenValue){.string_value = str->name});
+    Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_STRING, str->name, posLoc, (TokenValue){.string_value = str->name});
     if (token == NULL)
     {
         DEBUG_PRINT("lexer_handleStrings: Memory allocation for Token failed with errno %d\n", errno);
@@ -1968,9 +1994,10 @@ Token *lexer_handleBooleans(Lexer *lexer)
         .fileName = lexer->fileName,
         .lineStart = lexer->currentLineStart,
         .line = lexer->line,
-        .column = lexer->column
+        .column = lexer->column,
+        .length = pos
     };
-    Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_BOOLEAN, str->name, pos, posLoc, (TokenValue){.boolean_value = boolValue});
+    Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_BOOLEAN, str->name, posLoc, (TokenValue){.boolean_value = boolValue});
     if (token == NULL)
     {
         DEBUG_PRINT("lexer_handleBooleans: Memory allocation for Token failed with errno %d\n", errno);
@@ -2041,9 +2068,10 @@ Token *lexer_handleNull(Lexer *lexer)
         .fileName = lexer->fileName,
         .lineStart = lexer->currentLineStart,
         .line = lexer->line,
-        .column = lexer->column
+        .column = lexer->column,
+        .length = pos
     };
-    Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_NULL, str->name, pos, posLoc, (TokenValue){0});
+    Token *token = token_create(lexer->tokenArena, TOKEN_LITERAL_NULL, str->name, posLoc, (TokenValue){0});
     if (token == NULL)
     {
         DEBUG_PRINT("lexer_handleNull: Memory allocation for Token failed with errno %d\n", errno);
@@ -2107,17 +2135,19 @@ Token *lexer_handleIdentifiersAndKeywords(Lexer *lexer)
         .fileName = lexer->fileName,
         .lineStart = lexer->currentLineStart,
         .line = lexer->line,
-        .column = lexer->column
+        .column = lexer->column,
+        .length = pos
+
     };
     My_TokenType keywordType = token_keywordTypeFromString(str->name);
     Token *token = NULL;
     if (keywordType != TOKEN_UNKNOWN)
     {
-        token = token_create(lexer->tokenArena, keywordType, str->name, pos, posLoc, (TokenValue){0});
+        token = token_create(lexer->tokenArena, keywordType, str->name, posLoc, (TokenValue){0});
     }
     else
     {
-        token = token_create(lexer->tokenArena, TOKEN_IDENTIFIER, str->name, pos, posLoc, (TokenValue){0});
+        token = token_create(lexer->tokenArena, TOKEN_IDENTIFIER, str->name, posLoc, (TokenValue){0});
     }
 
     if (token == NULL)
@@ -2280,16 +2310,17 @@ void lexer_lex(Lexer* lexer)
                 .fileName = lexer->fileName,
                 .lineStart = lexer->currentLineStart,
                 .line = lexer->line,
-                .column = lexer->column - 1
+                .column = lexer->column - 1,
+                .length = 1
             };
-            currentToken = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, 1, posLoc, (TokenValue){0});
+            currentToken = token_create(lexer->tokenArena, TOKEN_UNKNOWN, str->name, posLoc, (TokenValue){0});
             if (currentToken == NULL)
             {
                 DEBUG_PRINT("lexer_lex: Memory allocation for Token failed with errno %d\n", errno);
                 return;
             }
 
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, 1, posLoc, "Unknown character");
+            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "Unknown character");
             if (error == NULL)
             {
                 DEBUG_PRINT("lexer_lex: Memory allocation for Error failed with errno %d\n", errno);

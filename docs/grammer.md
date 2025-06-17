@@ -1,6 +1,9 @@
-# Language syntax:
+# Language syntax:  
+This Languages grammer takes after C and GoLang.
 
-## Keywords:
+## Keywords:  
+This languages has the basic C keywords with some removed.
+There are some new keywords as well like ptr and const_ptr but more about this in the type specifier section.  
 ```
 {types}
 typedef
@@ -32,7 +35,8 @@ from
 export
 ```
 
-## Operators:
+## Operators:  
+Basic operators and there respectiv type.  
 ```
 +   &    &&   +=   &=    =   ==   (   )
 -   |    ||   -=   |=    <   <=   [   ]
@@ -93,7 +97,17 @@ Postfix_operators = "++"
 
 ```
 
-## Types:
+## Identifiers:  
+Identifers can are made up of ASCII alpha numeric characters and underscores. The onlz exception is that the first letter can't be a digit.  
+```ebnf
+identifier = /* All ASCII characters between a-z and A-Z and digits 0-9 and _ */ 
+```
+
+## Types:  
+The type system takes after GoLang where integer and floating-point numbers have there own sizes in the type for better clarity.
+Still keeping the C char type but also having string instead of using char*.
+Also having boolean values, void, struct, union and enums.
+
 ```ebnf
 Type = "int64"   | "int32"   | "int16"  | "int8"
      | "uint64"  | "uint32"  | "uint16" | "uint8"
@@ -105,18 +119,62 @@ Type = "int64"   | "int32"   | "int16"  | "int8"
      | ( ( "struct" | "union" | "enum" ) identifier ) ;
 ```
 
-## Type specifiers:
+## Type specifiers:  
+This langues has const_ptr and ptr to make type declarations clearer.
+Only the first type specifier can be const, this means the value is constant.
+The rest of the specifiers can be const_ptr and ptr. Ptr indicating a pointer start which is the same as.  
+```c
+int *index;
+```  
+Instead in cmc its writen like this:
+```cmc
+ptr int32 index;
+```  
+While const_ptr means the same as a const * int c. Like this:  
+```c
+int const *index;
+```
+In cmc:
+```cmc
+const_ptr int index;
+```  
+This keyword is added to clear up confusion when having pultiple pointers with some being constant and some being mutable.
+
+Examples:  
+```cmc
+const const_ptr ptr ptr int index;
+```  
+Is the same as in C:  
+```c
+const int * * *const index;
+```  
+This pointer chain would be the result:  
+- const pointer -> pointer -> pointer -> const int  
+Another example:
+```cmc
+ptr const_ptr const_ptr ptr ptr const_ptr int index;
+```  
+Is the same as in C:  
+```c
+int *const * * *const *const * index;
+```  
+This pointer chain would be the result:  
+- pointer -> const pointer -> const pointer -> pointer -> pointer -> const pointer -> int  
+
+This makes the language easier to read.
+
 ```ebnf
 Type_specifiers = ( const { ( const_ptr | ptr ) } )
                | ( ( const_ptr | ptr ) { ( const_ptr | ptr ) } )  ;
 ```
 
-## Full Type
+## Full Type:  
 ```ebnf
 Full_type = [ Type_specifiers ] Type ;
 ```
 
-## Escape characters
+## Escape characters:  
+Only a handfull of escape characters are supported in this language.  
 ```ebnf
 Escape_characters = "\a" 
                  | "\b"
@@ -130,8 +188,19 @@ Escape_characters = "\a"
                  | "\"" ;
 ```
 
-## Literals:
-```ebnf
+## Literals:  
+In this language the literal formats that are supported are:  
+- Integer numbers (these can't start with 0 and have digits from 0-9) Example: 438564  
+- Binary numbers (these start with 0b or 0B then has to have 1 then only 1 or 0) Example: 0b1011  
+- Octal numbers (these start with 0o or 0O then can't start with 0 and have digits from 0-7) Example: 0o7645  
+- Hexadecimal numbers (these start with 0x or 0X and then can't start with 0 and have digits from 0-9 and alos letters from a-f or A-F) Example: 0xf54df  
+- Floating-point numbers (these numbers start with an integer part then a . and then another ineger part and have digits from 0-9) Example: 12.456  
+- Characters (a single ASCII character or escape character with ' at the start and end) Example: 'a'  
+- Strings (multiple characters in a row starting with " and ending with ") Example: "Hello World!"
+- Booleans (has true or false value) Example: true
+- Null (can be uppercase or lowercase null) Example: NULL
+
+```ebnfw
 Literal = Integer_literal | Binary_literal | Octal_literal | Hexadecimal_literal
         | Floating-point_literal
         | Character_literal
@@ -149,7 +218,7 @@ Binary_digits          = "0" | Binary_digits_no_zero ;
 Octal_digits           = "0" | Octal_digits_no_zero ;
 Hexadecimal_digits     = "0" | Hexadecimal_digits_no_zero ;
 
-Characters = /* All ASCII characters from 65 to 90 and 97 to 122 */
+Characters = /* All ASCII characters */
 
 Integer_literal        = "0" | ( Decimal_digits_no_zero { Decimal_digits } ) ;
 Binary_literal         = "0" ( "b" | "B" ) Binary_digits_no_zero { Binary_digits } ;
@@ -162,12 +231,22 @@ Boolean_literal        = "true" | "false" ;
 Null_literal           = "null" | "NULL" ;
 ```
 
-## Program
+## Program:  
+A program starts of with 0 or more imports then is followed by 0 or more of one of either a function declaration, global variable declaration, struct declration, union declaration, enum declaration or typdef.  
 ```ebnf
 Program = { Import } { ( Function_declaration | Global_variables_declaration | Struct_declaration | Union_declaration | Enum_declaration | Typedef ) } end_of_file ;
 ```
 
-## Importing
+## Importing:  
+There are 2 kinds of imports. The first version imports all exported symbols from a file with this syntax:  
+```cmc
+import "io";
+```  
+The other version specifies which symbols to import from the given file with this syntax:
+```cmc
+import print from "io";
+```
+
 ```ebnf
 Import = ( "import" String_literal ) 
        | ( "import" Identifier_list "from" String_literal ) ;
@@ -175,7 +254,14 @@ Import = ( "import" String_literal )
 Identifier_list = identifier { "," identifier } ;
 ```
 
-## Functions
+## Functions:  
+Functions can heve multiple return values just like in GoLang but the syntax looks more like the C function declaration.
+You first write out the return value(s) then the name of the function then the parameters and then end with a compund statement.
+The syntax is like this:  
+```cmc
+(void) main() {}
+```
+
 ```ebnf
 Function_declaration = [ "export" ] "(" Return_parameter_list ")" identifier "(" [ Function_parameter_list ] ")" Compound_statement ;
 

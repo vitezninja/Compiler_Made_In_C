@@ -27,7 +27,8 @@ typedef struct SourceLocation
     const char *fileName;     /** Name of the source file */
     uint32_t line;            /** Line number in the source file */
     uint32_t column;          /** Column number in the source file */
-    uint32_t lineStart;       /** Start line number for multi-line tokens */
+    uint32_t lineStart;       /** Start line number in the source file */
+    size_t length;            /** Length of characters in the source file */
 } SourceLocation;
 
 /**

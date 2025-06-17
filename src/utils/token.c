@@ -145,7 +145,7 @@ static const char *token_keywordsAsStrings[] = {
     [TOKEN_KEYWORD_EXPORT] = "export",
 };
 
-Token *token_create(Arena *arena, My_TokenType type, const char *text, size_t length, SourceLocation location, TokenValue value)
+Token *token_create(Arena *arena, My_TokenType type, const char *text, SourceLocation location, TokenValue value)
 {
     if (arena == NULL)
     {
@@ -174,7 +174,6 @@ Token *token_create(Arena *arena, My_TokenType type, const char *text, size_t le
 
     token->type = type;
     token->text = text;
-    token->length = length;
     token->location = location;
     token->value = value;
     return token;
@@ -196,7 +195,7 @@ Token *token_copy(Arena *arena, const Token *token)
 
     TokenValue value = token->value; // Copy the value union
 
-    Token *new_token = token_create(arena, token->type, token->text, token->length, token->location, value);
+    Token *new_token = token_create(arena, token->type, token->text, token->location, value);
     if (new_token == NULL)
     {
         DEBUG_PRINT("token_copy: token_create failed with errno %d\n", errno);
@@ -216,7 +215,6 @@ void token_print(const Token *token)
     printf("Token {\n");
     printf("    Type   : %s\n", token_typeToString(token->type));
     printf("    Text   : \"%s\"\n", token->text);
-    printf("    Length : %zu\n", token->length);
     sourceLocation_print(&token->location);
     printf("    Value  : ");
     switch (token->type)
