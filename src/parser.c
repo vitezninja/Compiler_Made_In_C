@@ -797,6 +797,7 @@ bool parser_isType(Parser *parser)
     default:
         return false; 
     }
+    UNREACHABLE();
 }
 
 AstNode *parser_parseType(Parser *parser)
@@ -955,6 +956,7 @@ bool parser_isTypeSpecifier(Parser *parser)
     default:
         return false;
     }
+    UNREACHABLE();
 }
 
 AstNode *parser_parseTypeSpecifiers(Parser *parser)
@@ -1188,6 +1190,7 @@ bool parser_isLiteral(Parser *parser)
     default:
         return false; 
     }
+    UNREACHABLE();
 }
 
 AstNode *parser_parseLiteral(Parser *parser)
@@ -7465,6 +7468,7 @@ int parser_getPrecedence(My_TokenType type)
     default:
         return 0; // Default precedence for other operators
     }
+    UNREACHABLE();
 }
 
 AstType parser_getOperatorType(My_TokenType type)

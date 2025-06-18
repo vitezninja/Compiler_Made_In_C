@@ -80,10 +80,8 @@ void logger_debug(const char *fmt, ...);
     struct tm *tm_info = localtime(&t);                                     \
     char timestamp[26];                                                     \
     strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", tm_info);   \
-                                                                            \
     fprintf(stderr, "[DEBUG %s] %s:%d: ", timestamp, __FILE__, __LINE__);   \
     fprintf(stderr, __VA_ARGS__);                                           \
-                                                                            \
     logger_debug("[%s] %s:%d: ", timestamp, __FILE__, __LINE__);            \
     logger_debug(__VA_ARGS__);                                              \
 } while (0)
@@ -103,5 +101,25 @@ void logger_debug(const char *fmt, ...);
  */
 #define DEBUG_PRINT(...) ((void)0)
 #endif
+
+#define UNREACHABLE() do {                                                      \
+    fprintf(stderr, "Unreachable code reached at %s:%d\n", __FILE__, __LINE__); \
+    logger_debug("Unreachable code reached at %s:%d\n", __FILE__, __LINE__);    \
+    exit(EXIT_FAILURE);                                                         \
+} while (0)
+
+#define UNIMPLEMENTED() do {                                                    \
+    fprintf(stderr, "Unimplemented feature at %s:%d\n", __FILE__, __LINE__);    \
+    logger_debug("Unimplemented feature at %s:%d\n", __FILE__, __LINE__);       \
+    exit(EXIT_FAILURE);                                                         \
+} while (0)
+
+#define ASSERT(condition) do {                                                              \
+    if (!(condition)) {                                                                     \
+        fprintf(stderr, "Assertion failed: %s at %s:%d\n", #condition, __FILE__, __LINE__); \
+        logger_debug("Assertion failed: %s at %s:%d\n", #condition, __FILE__, __LINE__);    \
+        exit(EXIT_FAILURE);                                                                 \
+    }                                                                                       \
+} while (0)
 
 #endif // LOGGER_H

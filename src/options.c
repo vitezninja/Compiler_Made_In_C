@@ -154,64 +154,64 @@ void options_print(const Options *options)
     }
 
     printf("Options {\n");
-    printf("    Flags:\n");
+    printf("\tFlags:\n");
     if (bitset64_test(&(options->flags), OPTION_FLAG_NONE))
     {
-        printf("        - None\n");
+        printf("\t\t- None\n");
     }
     if (bitset64_test(&(options->flags), OPTION_FLAG_HELP))
     {
-        printf("        - Help\n");
+        printf("\t\t- Help\n");
     }
     if (bitset64_test(&(options->flags), OPTION_FLAG_NO_LINK))
     {
-        printf("        - No Link\n");
+        printf("\t\t- No Link\n");
     }
     if (bitset64_test(&(options->flags), OPTION_FLAG_IS_OUTPUT_FILE))
     {
-        printf("        - Is Output File\n");
+        printf("\t\t- Is Output File\n");
     }
     if (bitset64_test(&(options->flags), OPTION_FLAG_WARN_ALL))
     {
-        printf("        - Warn All\n");
+        printf("\t\t- Warn All\n");
     }
     if (bitset64_test(&(options->flags), OPTION_FLAG_WARN_ERRORS))
     {
-        printf("        - Warn Errors\n");
+        printf("\t\t- Warn Errors\n");
     }
     if (bitset64_test(&(options->flags), OPTION_FLAG_DEBUG_INFO))
     {
-        printf("        - Debug Info\n");
+        printf("\t\t- Debug Info\n");
     }
     if (bitset64_test(&(options->flags), OPTION_FLAG_OPTIMIZATION))
     {
-        printf("        - Optimization\n");
+        printf("\t\t- Optimization\n");
     }
-    printf("    Output File: %s\n", options->outputFile ? options->outputFile : "None");
-    printf("    File Count: %zu\n", options->fileCount);
-    printf("    Files:\n");
+    printf("\tOutput File: %s\n", options->outputFile ? options->outputFile : "None");
+    printf("\tFile Count: %zu\n", options->fileCount);
+    printf("\tFiles:\n");
     if (options->fileCount == 0)
     {
-        printf("        - None\n");
+        printf("\t\t- None\n");
     }
     else
     {
         for (size_t i = 0; i < options->fileCount; i++)
         {
-            printf("        - %s\n", options->files[i]);
+            printf("\t\t- %s\n", options->files[i]);
         }
     }
-    printf("    Header Count: %zu\n", options->headerCount);
-    printf("    Header Files:\n");
+    printf("\tHeader Count: %zu\n", options->headerCount);
+    printf("\tHeader Files:\n");
     if (options->headerCount == 0)
     {
-        printf("        - None\n");
+        printf("\t\t- None\n");
     }
     else
     {
         for (size_t i = 0; i < options->headerCount; i++)
         {
-            printf("        - %s\n", options->headerFiles[i]);
+            printf("\t\t- %s\n", options->headerFiles[i]);
         }
     }
     printf("}\n");

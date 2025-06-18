@@ -300,11 +300,11 @@ int lexer_getHexalValue(char c)
     {
         return c - '0';
     }
-    if (c >= 'A' && c <= 'F')
+    else if (c >= 'A' && c <= 'F')
     {
         return c - 'A' + 10;
     }
-    if (c >= 'a' && c <= 'f')
+    else if (c >= 'a' && c <= 'f')
     {
         return c - 'a' + 10;
     }
@@ -336,6 +336,7 @@ char lexer_getEscapedChar(char text)
         default:
             return -1; // Invalid escape sequence
     }
+    UNREACHABLE();
 }
 
 char lexer_currentChar(const Lexer *lexer)

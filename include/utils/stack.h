@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#include "utils/logger.h"
+
 // Forward declaration of the Stack structure
 struct Stack;
 
