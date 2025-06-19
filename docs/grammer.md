@@ -312,9 +312,9 @@ Branch_statement = If_statement | Switch_statement ;
 
 If_statement = "if" "(" Expression ")" Statement [ "else" Statement ] "endif" ;
 
-Switch_statement = "switch" "(" Expression ")" "{" Switch_Case { Case_statement } [ Switch_Default ] "}" ;
+Switch_statement = "switch" "(" Expression ")" "{" Switch_Case { Switch_Case } [ Switch_Default ] "}" ;
 
-Switch_Case = "case" Expression ":" Statement ;
+Switch_Case = "case" Expression ":" [ Statement ] ;
 
 Switch_Default = "default" ":" Statement ;
 ```

@@ -32,6 +32,7 @@ typedef struct Parser
     LinkedList *errors;    /** Linked list of errors encountered during parsing */
     LinkedList *tokens;    /** Linked list of tokens to be parsed */
     AstNode *ast;          /** Pointer to the root of the abstract syntax tree (AST) being constructed */
+    bool panic;            /** Flag indicating whether the parser is in a panic state due to an error */
 } Parser;
 
 /**

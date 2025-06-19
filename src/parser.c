@@ -1,6 +1,18 @@
 #include "parser.h"
 
 /**
+ * @brief Tries to recover from a parsing panic state.
+ * 
+ * This function attempts to recover the parser from a panic state by skipping tokens until it finds a valid point to continue parsing.
+ * It is typically used when the parser encounters an error that prevents it from continuing normally.
+ * 
+ * @param parser Pointer to the Parser instance that is in a panic state.
+ * 
+ * @note This happens in statement parsing and program parsing.
+ */
+void parser_recoverPanic(Parser *parser);
+
+/**
  * @brief Checks if the current token is a type.
  * 
  * This function checks if the current token in the parser's token list is a valid type keyword or identifier.
@@ -764,6 +776,61 @@ AstNode *parser_parsePrimaryExpression(Parser *parser);
 
 // --------------------------------------------------------------------------------
 
+void parser_recoverPanic(Parser *parser)
+{
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_recoverPanic: Parser is NULL.\n");
+        return;
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_recoverPanic: No tokens available to recover from panic.\n");
+        return;
+    }
+
+    while (true)
+    {
+        My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
+        switch (currentTokenType)
+        {
+        case TOKEN_SEMICOLON:
+        case TOKEN_CLOSE_BRACKET:
+            parser->tokens = parser->tokens->next;
+            parser->panic = false;
+            return; // Exit recovery loop
+        case TOKEN_KEYWORD_IF:
+        case TOKEN_KEYWORD_ELSE:
+        case TOKEN_KEYWORD_ENDIF:
+        case TOKEN_KEYWORD_SWITCH:
+        case TOKEN_KEYWORD_FOR:
+        case TOKEN_KEYWORD_FOREACH:
+        case TOKEN_KEYWORD_WHILE:
+        case TOKEN_KEYWORD_DO:
+        case TOKEN_KEYWORD_TYPEDEF:
+        case TOKEN_KEYWORD_STRUCT:
+        case TOKEN_KEYWORD_UNION:
+        case TOKEN_KEYWORD_ENUM:
+        case TOKEN_KEYWORD_IMPORT:
+        case TOKEN_KEYWORD_EXPORT:
+            parser->panic = false;
+            return; // Exit recovery loop
+        default:
+            break;
+        }
+
+        parser->tokens = parser->tokens->next;
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_recoverPanic: No more tokens available for recovery.\n");
+            return;
+        }
+    }
+
+    UNREACHABLE();
+}
+
 bool parser_isType(Parser *parser)
 {
     if (parser->tokens == NULL)
@@ -830,7 +897,7 @@ AstNode *parser_parseType(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic state to true
         return NULL;
     }
 
@@ -869,7 +936,7 @@ AstNode *parser_parseType(Parser *parser)
 
         parser->tokens = parser->tokens->next; // Move past the type token
     }
-    else // stuct or union or enum case
+    else // struct or union or enum case
     {
         Token *structUnionEnumToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
         if (structUnionEnumToken == NULL)
@@ -908,7 +975,7 @@ AstNode *parser_parseType(Parser *parser)
             }
             parser->errors = head;
 
-            parser->tokens = parser->tokens->next; // Skip the unexpected token
+            parser->panic = true; // Set panic state
             return NULL;
         }
 
@@ -989,7 +1056,7 @@ AstNode *parser_parseTypeSpecifiers(Parser *parser)
         }
         parser->errors = head;
         
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic state
         return NULL;
     }
 
@@ -1015,19 +1082,8 @@ AstNode *parser_parseTypeSpecifiers(Parser *parser)
             }
             parser->errors = head;
 
-            Token *constToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
-            if (constToken == NULL)
-            {
-                DEBUG_PRINT("parser_parseTypeSpecifiers: token_copy failed with errno %d\n", errno);
-                return NULL;
-            }
-            head = linkedList_Token_create(parser->astArena, tokens, constToken);
-            if (head == NULL)
-            {
-                DEBUG_PRINT("parser_parseTypeSpecifiers: linkedList_Token_create failed with errno %d\n", errno);
-                return NULL;
-            }
-            tokens = head;
+            parser->panic = true; // Set panic state
+            return NULL;
         }
 
         isFirst = false;
@@ -1114,7 +1170,7 @@ AstNode *parser_parseFullType(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic state
         return NULL;
     }
 
@@ -1125,6 +1181,11 @@ AstNode *parser_parseFullType(Parser *parser)
         AstNode *typeSpecifiersNode = parser_parseTypeSpecifiers(parser);
         if (typeSpecifiersNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parse_fullType: Panic state is true, skipping full type parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parse_fullType: Failed to parse type specifiers.\n");
             return NULL;
         }
@@ -1146,6 +1207,11 @@ AstNode *parser_parseFullType(Parser *parser)
     AstNode *typeNode = parser_parseType(parser);
     if (typeNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parse_fullType: Panic state is true, skipping full type parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parse_fullType: Failed to parse type.\n");
         return NULL;
     }
@@ -1232,7 +1298,7 @@ AstNode *parser_parseLiteral(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true;
         return NULL;
     }
 
@@ -1279,11 +1345,12 @@ AstNode *parser_parseProgram(Parser *parser)
 
     LinkedList *children = NULL;
 
-    while (parser->tokens != NULL && ((Token *)parser->tokens->data)->type == TOKEN_KEYWORD_IMPORT)
+    while (((Token *)parser->tokens->data)->type == TOKEN_KEYWORD_IMPORT)
     {
         AstNode *import = parser_parseImport(parser); // Sets parser->tokens to the next token after the import statement
         if (import == NULL)
         {
+            if (parser->panic) goto parser_programImportPanic_Label;
             DEBUG_PRINT("parser_parseProgram: Failed to parse import.\n");
             return NULL;
         }
@@ -1294,15 +1361,17 @@ AstNode *parser_parseProgram(Parser *parser)
             return NULL;
         }
         children = head;
+
+        parser_programImportPanic_Label:
+        if(parser->panic) parser_recoverPanic(parser);
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseProgram: No tokens available to parse the program.\n");
+            return NULL;
+        }
     }
 
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseProgram: No tokens available to parse the program.\n");
-        return NULL;
-    }
-
-    while (parser->tokens != NULL && ((Token *)parser->tokens->data)->type != TOKEN_EOF)
+    while (((Token *)parser->tokens->data)->type != TOKEN_EOF)
     {
         LinkedList *currentTokenNode = parser->tokens;
         if (((Token *)currentTokenNode->data)->type == TOKEN_KEYWORD_EXPORT)
@@ -1322,6 +1391,7 @@ AstNode *parser_parseProgram(Parser *parser)
             AstNode *function = parser_parseFunctionDefinition(parser);
             if (function == NULL)
             {
+                if (parser->panic) goto parser_programBodyPanic_Label;
                 DEBUG_PRINT("parser_parseProgram: Failed to parse function.\n");
                 return NULL;
             }
@@ -1338,6 +1408,7 @@ AstNode *parser_parseProgram(Parser *parser)
             AstNode *structDeclaration = parser_parseStructDeclaration(parser);
             if (structDeclaration == NULL)
             {
+                if (parser->panic) goto parser_programBodyPanic_Label;
                 DEBUG_PRINT("parser_parseProgram: Failed to parse struct declaration.\n");
                 return NULL;
             }
@@ -1354,6 +1425,7 @@ AstNode *parser_parseProgram(Parser *parser)
             AstNode *unionDeclaration = parser_parseUnionDeclaration(parser);
             if (unionDeclaration == NULL)
             {
+                if (parser->panic) goto parser_programBodyPanic_Label;
                 DEBUG_PRINT("parser_parseProgram: Failed to parse union declaration.\n");
                 return NULL;
             }
@@ -1370,6 +1442,7 @@ AstNode *parser_parseProgram(Parser *parser)
             AstNode *enumDeclaration = parser_parseEnumDeclaration(parser);
             if (enumDeclaration == NULL)
             {
+                if (parser->panic) goto parser_programBodyPanic_Label;
                 DEBUG_PRINT("parser_parseProgram: Failed to parse enum declaration.\n");
                 return NULL;
             }
@@ -1386,6 +1459,7 @@ AstNode *parser_parseProgram(Parser *parser)
             AstNode *typedefDeclaration = parser_parseTypedefDeclaration(parser);
             if (typedefDeclaration == NULL)
             {
+                if (parser->panic) goto parser_programBodyPanic_Label;
                 DEBUG_PRINT("parser_parseProgram: Failed to parse typedef declaration.\n");
                 return NULL;
             }
@@ -1402,6 +1476,7 @@ AstNode *parser_parseProgram(Parser *parser)
             AstNode *globalDeclaration = parser_parseGlobalVariableDeclaration(parser);
             if (globalDeclaration == NULL)
             {
+                if (parser->panic) goto parser_programBodyPanic_Label;
                 DEBUG_PRINT("parser_parseProgram: Failed to parse global declaration.\n");
                 return NULL;
             }
@@ -1428,11 +1503,17 @@ AstNode *parser_parseProgram(Parser *parser)
                 return NULL;
             }
             parser->errors = head;
-
-            parser->tokens = parser->tokens->next; // Skip the unexpected token
+            parser->panic = true; // Set panic state to true
         }
 
-        currentTokenNode = parser->tokens;
+        parser_programBodyPanic_Label:
+        if(parser->panic) parser_recoverPanic(parser);
+        else currentTokenNode = parser->tokens;
+        if (currentTokenNode == NULL)
+        {
+            DEBUG_PRINT("parser_parseProgram: No tokens available after processing current token.\n");
+            return NULL;
+        }
     }
 
     if (parser->tokens == NULL || ((Token *)parser->tokens->data)->type != TOKEN_EOF)
@@ -1500,7 +1581,7 @@ AstNode *parser_parseImport(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Move to the next token
+        parser->panic = true; // Set panic state to true
         return NULL;
     }
 
@@ -1540,6 +1621,11 @@ AstNode *parser_parseImport(Parser *parser)
         AstNode *identifierListNode = parser_parseIdentifierList(parser);
         if (identifierListNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseImport: Panic state is true, skipping import parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseImport: Failed to parse identifier list.\n");
             return NULL;
         }
@@ -1573,7 +1659,7 @@ AstNode *parser_parseImport(Parser *parser)
             }
             parser->errors = head;
 
-            parser->tokens = parser->tokens->next; // Skip the unexpected token
+            parser->panic = true; // Set panic state to true
             return NULL;
         }
 
@@ -1600,7 +1686,7 @@ AstNode *parser_parseImport(Parser *parser)
             }
             parser->errors = head;
 
-            parser->tokens = parser->tokens->next; // Skip the unexpected token
+            parser->panic = true; // Set panic state to true
             return NULL;
         }
 
@@ -1636,7 +1722,7 @@ AstNode *parser_parseImport(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic state to true
         return NULL;
     }
 
@@ -1662,7 +1748,7 @@ AstNode *parser_parseImport(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic state to true
         return NULL;
     }
 
@@ -1708,7 +1794,7 @@ AstNode *parser_parseIdentifierList(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;
     }
 
@@ -1761,7 +1847,7 @@ AstNode *parser_parseIdentifierList(Parser *parser)
             }
             parser->errors = head;
 
-            parser->tokens = parser->tokens->next; // Skip the unexpected token
+            parser->panic = true; // Set panic mode to skip further parsing
             return NULL;
         }
 
@@ -1827,7 +1913,7 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;
     }
 
@@ -1874,7 +1960,7 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;
     }
 
@@ -1888,6 +1974,11 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
     AstNode *functionReturnParameterListNode = parser_parseReturnParameterList(parser);
     if (functionReturnParameterListNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseFunctionDefinition: Panic state is true, skipping function definition parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseFunctionDefinition: Failed to parse return parameter list.\n");
         return NULL;
     }
@@ -1921,7 +2012,7 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;
     }
 
@@ -1948,7 +2039,7 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;
     }
 
@@ -1989,7 +2080,7 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;
     }
 
@@ -2003,6 +2094,11 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
     AstNode *functionParameterListNode = parser_parseFunctionParameterList(parser);
     if (functionParameterListNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseFunctionDefinition: Panic state is true, skipping function definition parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseFunctionDefinition: Failed to parse function parameter list.\n");
         return NULL;
     }
@@ -2036,7 +2132,7 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;
     }
 
@@ -2050,6 +2146,11 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
     AstNode *functionBodyNode = parser_parseCompoundStatement(parser);
     if (functionBodyNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseFunctionDefinition: Panic state is true, skipping function definition parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseFunctionDefinition: Failed to parse function body.\n");
         return NULL;
     }
@@ -2100,7 +2201,7 @@ AstNode *parser_parseReturnParameterList(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic state to true
         return NULL;
     }
 
@@ -2109,6 +2210,11 @@ AstNode *parser_parseReturnParameterList(Parser *parser)
     AstNode *fullTypeNode = parser_parseFullType(parser);
     if (fullTypeNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseReturnParameterList: Panic state is true, skipping return parameter list parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseReturnParameterList: Failed to parse return parameter.\n");
         return NULL;
     }
@@ -2151,13 +2257,18 @@ AstNode *parser_parseReturnParameterList(Parser *parser)
             }
             parser->errors = head;
 
-            parser->tokens = parser->tokens->next; // Skip the unexpected token
+            parser->panic = true; // Set panic state to true
             return NULL;
         }
 
         fullTypeNode = parser_parseFullType(parser);
         if (fullTypeNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseReturnParameterList: Panic state is true, skipping return parameter list parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseReturnParameterList: Failed to parse return parameter.\n");
             return NULL;
         }
@@ -2215,7 +2326,7 @@ AstNode *parser_parseFunctionParameterList(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic state to true
         return NULL;
     }
 
@@ -2224,6 +2335,11 @@ AstNode *parser_parseFunctionParameterList(Parser *parser)
     AstNode *functionParameterNode = parser_parseFunctionParameter(parser);
     if (functionParameterNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseFunctionParameterList: Panic state is true, skipping function parameter list parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseFunctionParameterList: Failed to parse first function parameter.\n");
         return NULL;
     }
@@ -2266,13 +2382,18 @@ AstNode *parser_parseFunctionParameterList(Parser *parser)
             }
             parser->errors = head;
 
-            parser->tokens = parser->tokens->next; // Skip the unexpected token
+            parser->panic = true; // Set panic state to true
             return NULL;
         }
 
         functionParameterNode = parser_parseFunctionParameter(parser);
         if (functionParameterNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseFunctionParameterList: Panic state is true, skipping function parameter list parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseFunctionParameterList: Failed to parse function parameter.\n");
             return NULL;
         }
@@ -2330,7 +2451,7 @@ AstNode *parser_parseFunctionParameter(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true;
         return NULL;
     }
 
@@ -2340,6 +2461,11 @@ AstNode *parser_parseFunctionParameter(Parser *parser)
     AstNode *fullTypeNode = parser_parseFullType(parser);
     if (fullTypeNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseFunctionParameter: Panic state is true, skipping function parameter parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseFunctionParameter: Failed to parse full type.\n");
         return NULL;
     }
@@ -2373,7 +2499,7 @@ AstNode *parser_parseFunctionParameter(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true;
         return NULL;
     }
 
@@ -2383,7 +2509,6 @@ AstNode *parser_parseFunctionParameter(Parser *parser)
         DEBUG_PRINT("parser_parseFunctionParameter: token_copy failed with errno %d\n", errno);
         return NULL;
     }
-
     head = linkedList_Token_create(parser->astArena, tokens, identifierToken);
     if (head == NULL)
     {
@@ -2433,7 +2558,7 @@ AstNode *parser_parseGlobalVariableDeclaration(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true;
         return NULL;
     }
     
@@ -2467,6 +2592,11 @@ AstNode *parser_parseGlobalVariableDeclaration(Parser *parser)
     AstNode *fullTypeNode = parser_parseFullType(parser);
     if (fullTypeNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseGlobalVariableDeclaration: Panic state is true, skipping global variable declaration parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseGlobalVariableDeclaration: Failed to parse full type.\n");
         return NULL;
     }
@@ -2500,7 +2630,7 @@ AstNode *parser_parseGlobalVariableDeclaration(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true;
         return NULL;
     }
 
@@ -2561,6 +2691,11 @@ AstNode *parser_parseGlobalVariableDeclaration(Parser *parser)
         fullTypeNode = parser_parseFullType(parser);
         if (fullTypeNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseGlobalVariableDeclaration: Panic state is true, skipping global variable declaration parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseGlobalVariableDeclaration: Failed to parse full type after comma.\n");
             return NULL;
         }
@@ -2594,7 +2729,7 @@ AstNode *parser_parseGlobalVariableDeclaration(Parser *parser)
             }
             parser->errors = head;
 
-            parser->tokens = parser->tokens->next; // Skip the unexpected token
+            parser->panic = true;
             return NULL;
         }
 
@@ -2632,6 +2767,11 @@ AstNode *parser_parseGlobalVariableDeclaration(Parser *parser)
         AstNode *expressionNode = parser_parseExpression(parser);
         if (expressionNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseGlobalVariableDeclaration: Panic state is true, skipping global variable declaration parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseGlobalVariableDeclaration: Failed to parse expression after equals sign.\n");
             return NULL;
         }
@@ -2666,7 +2806,7 @@ AstNode *parser_parseGlobalVariableDeclaration(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;
     }
 
@@ -2712,7 +2852,7 @@ AstNode *parser_parseStructDeclaration(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;
     }
 
@@ -2766,7 +2906,7 @@ AstNode *parser_parseStructDeclaration(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;
     }
 
@@ -2806,6 +2946,8 @@ AstNode *parser_parseStructDeclaration(Parser *parser)
             return NULL;
         }
         parser->errors = head;
+
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -2819,6 +2961,11 @@ AstNode *parser_parseStructDeclaration(Parser *parser)
     AstNode *members = parser_parseStructUnionMemberDeclaration(parser);
     if (members == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseStructDeclaration: Panic state is true, skipping struct declaration parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseStructDeclaration: Failed to parse struct members declaration.\n");
         return NULL;
     }
@@ -2851,6 +2998,8 @@ AstNode *parser_parseStructDeclaration(Parser *parser)
             return NULL;
         }
         parser->errors = head;
+
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -2896,7 +3045,7 @@ AstNode *parser_parseUnionDeclaration(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -2950,7 +3099,7 @@ AstNode *parser_parseUnionDeclaration(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -2989,7 +3138,7 @@ AstNode *parser_parseUnionDeclaration(Parser *parser)
             DEBUG_PRINT("parser_parseUnionDeclaration: linkedList_Error_create failed with errno %d\n", errno);
             return NULL;
         }
-        parser->errors = head;
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -3003,6 +3152,11 @@ AstNode *parser_parseUnionDeclaration(Parser *parser)
     AstNode *members = parser_parseStructUnionMemberDeclaration(parser);
     if (members == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseUnionDeclaration: Panic state is true, skipping union declaration.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseUnionDeclaration: Failed to parse union member declaration.\n");
         return NULL;
     }
@@ -3035,6 +3189,8 @@ AstNode *parser_parseUnionDeclaration(Parser *parser)
             return NULL;
         }
         parser->errors = head;
+
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -3486,7 +3642,7 @@ AstNode *parser_parseStructUnionDirectDeclarator(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -3516,7 +3672,7 @@ AstNode *parser_parseStructUnionDirectDeclarator(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -3557,7 +3713,7 @@ AstNode *parser_parseStructUnionDirectDeclarator(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -3571,6 +3727,11 @@ AstNode *parser_parseStructUnionDirectDeclarator(Parser *parser)
     AstNode *expressionNode = parser_parseExpression(parser);
     if (expressionNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseStructUnionDirectDeclarator: Panic state is true, skipping struct union direct declarator parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseStructUnionDirectDeclarator: Failed to parse expression after '='.\n");
         return NULL;
     }
@@ -3613,7 +3774,7 @@ AstNode *parser_parseStructUnionDirectDeclarator(Parser *parser)
             }
             parser->errors = head;
 
-            parser->tokens = parser->tokens->next; // Skip the unexpected token
+            parser->panic = true; // Set panic mode to true
             return NULL;
         }
 
@@ -3640,7 +3801,7 @@ AstNode *parser_parseStructUnionDirectDeclarator(Parser *parser)
             }
             parser->errors = head;
 
-            parser->tokens = parser->tokens->next; // Skip the unexpected token
+            parser->panic = true; // Set panic mode to true
             return NULL;
         }
 
@@ -3681,7 +3842,7 @@ AstNode *parser_parseStructUnionDirectDeclarator(Parser *parser)
             }
             parser->errors = head;
 
-            parser->tokens = parser->tokens->next; // Skip the unexpected token
+            parser->panic = true; // Set panic mode to true
             return NULL;
         }
 
@@ -3695,6 +3856,11 @@ AstNode *parser_parseStructUnionDirectDeclarator(Parser *parser)
         expressionNode = parser_parseExpression(parser);
         if (expressionNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseStructUnionDirectDeclarator: Panic state is true, skipping struct union direct declarator parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseStructUnionDirectDeclarator: Failed to parse expression after '='.\n");
             return NULL;
         }
@@ -3753,7 +3919,7 @@ AstNode *parser_parseEnumDeclaration(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;
     }
 
@@ -3807,7 +3973,7 @@ AstNode *parser_parseEnumDeclaration(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;
     }
 
@@ -3848,7 +4014,7 @@ AstNode *parser_parseEnumDeclaration(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;
     }
 
@@ -3862,6 +4028,11 @@ AstNode *parser_parseEnumDeclaration(Parser *parser)
     AstNode *enumValueDeclarationNode = parser_parseEnumValueDeclaration(parser);
     if (enumValueDeclarationNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseEnumDeclaration: Panic state is true, skipping enum declaration parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseEnumDeclaration: Failed to parse enum value declaration.\n");
         return NULL;
     }
@@ -3895,7 +4066,7 @@ AstNode *parser_parseEnumDeclaration(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;
     }
 
@@ -3940,7 +4111,7 @@ AstNode *parser_parseEnumValueDeclaration(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;
     }
 
@@ -3980,6 +4151,11 @@ AstNode *parser_parseEnumValueDeclaration(Parser *parser)
         AstNode *expressionNode = parser_parseExpression(parser);
         if (expressionNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseEnumValueDeclaration: Panic state is true, skipping enum value declaration parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseEnumValueDeclaration: Failed to parse expression after '='.\n");
             return NULL;
         }
@@ -4014,7 +4190,7 @@ AstNode *parser_parseEnumValueDeclaration(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;
     }
 
@@ -4060,6 +4236,11 @@ AstNode *parser_parseEnumValueDeclaration(Parser *parser)
             AstNode *expressionNode = parser_parseExpression(parser);
             if (expressionNode == NULL)
             {
+                if (parser->panic)
+                {
+                    DEBUG_PRINT("parser_parseEnumValueDeclaration: Panic state is true, skipping enum value declaration parsing.\n");
+                    return NULL;
+                }
                 DEBUG_PRINT("parser_parseEnumValueDeclaration: Failed to parse expression after '='.\n");
                 return NULL;
             }
@@ -4094,7 +4275,7 @@ AstNode *parser_parseEnumValueDeclaration(Parser *parser)
             }
             parser->errors = head;
 
-            parser->tokens = parser->tokens->next; // Skip the unexpected token
+            parser->panic = true; // Set panic mode to true
             return NULL;
         }
 
@@ -4130,10 +4311,24 @@ AstNode *parser_parseTypedefDeclaration(Parser *parser)
     }
 
     My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
-    if (currentTokenType == TOKEN_KEYWORD_TYPEDEF && currentTokenType != TOKEN_KEYWORD_EXPORT)
+    if (currentTokenType != TOKEN_KEYWORD_TYPEDEF && currentTokenType != TOKEN_KEYWORD_EXPORT)
     {
-        DEBUG_PRINT("parser_parseTypedefDeclaration: Expected TOKEN_KEYWORD_TYPEDEF, got %s.\n", token_typeToString(((Token *)parser->tokens->data)->type));
-        return NULL;
+        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->location, "Expected 'typedef' keyword to start typedef declaration.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("parser_parseTypedefDeclaration: error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseTypedefDeclaration: linkedList_Error_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        parser->errors = head;
+
+        parser->panic = true; // Set panic mode to true
+        return NULL; // Return early to avoid further parsing errors
     }
 
     LinkedList *tokens = NULL;
@@ -4147,7 +4342,6 @@ AstNode *parser_parseTypedefDeclaration(Parser *parser)
             DEBUG_PRINT("parser_parseTypedefDeclaration: token_copy failed with errno %d\n", errno);
             return NULL;
         }
-
         LinkedList *head = linkedList_Token_create(parser->astArena, tokens, exportToken);
         if (head == NULL)
         {
@@ -4164,8 +4358,8 @@ AstNode *parser_parseTypedefDeclaration(Parser *parser)
         DEBUG_PRINT("parser_parseTypedefDeclaration: No tokens available after export keyword.\n");
         return NULL;
     }
-    parser->tokens = parser->tokens->next; // Move past the typedef token
 
+    parser->tokens = parser->tokens->next; // Move past the typedef token
     if (parser->tokens == NULL)
     {
         DEBUG_PRINT("parser_parseTypedefDeclaration: No tokens available after typedef keyword.\n");
@@ -4175,6 +4369,11 @@ AstNode *parser_parseTypedefDeclaration(Parser *parser)
     AstNode *fullTypeNode = parser_parseFullType(parser);
     if (fullTypeNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseTypedefDeclaration: Panic state is true, skipping typedef parsing.\n");
+            return NULL; // Return early if panic mode is enabled
+        }
         DEBUG_PRINT("parser_parseTypedefDeclaration: Failed to parse full type.\n");
         return NULL;
     }
@@ -4200,7 +4399,6 @@ AstNode *parser_parseTypedefDeclaration(Parser *parser)
             DEBUG_PRINT("parser_parseTypedefDeclaration: error_create failed with errno %d\n", errno);
             return NULL;
         }
-
         head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
         if (head == NULL)
         {
@@ -4209,7 +4407,7 @@ AstNode *parser_parseTypedefDeclaration(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -4227,14 +4425,12 @@ AstNode *parser_parseTypedefDeclaration(Parser *parser)
         return NULL;
     }
     tokens = head;
-
     AstNode *typedefNode = astNode_create(parser->astArena, AST_TYPEDEF, tokens, children);
     if (typedefNode == NULL)
     {
         DEBUG_PRINT("parser_parseTypedefDeclaration: astNode_create failed with errno %d\n", errno);
         return NULL;
     }
-
     return typedefNode;
 }
 
@@ -4261,6 +4457,7 @@ AstNode *parser_parseStatement(Parser *parser)
         AstNode *branchStatementNode = parser_parseBranchStatement(parser);
         if (branchStatementNode == NULL)
         {
+            if (parser->panic) goto parser_statementPanic_Label;
             DEBUG_PRINT("parser_parseStatement: Failed to parse branch statement.\n");
             return NULL;
         }
@@ -4280,6 +4477,7 @@ AstNode *parser_parseStatement(Parser *parser)
         AstNode *loopStatementNode = parser_parseLoopStatement(parser);
         if (loopStatementNode == NULL)
         {
+            if (parser->panic) goto parser_statementPanic_Label;
             DEBUG_PRINT("parser_parseStatement: Failed to parse loop statement.\n");
             return NULL;
         }
@@ -4296,6 +4494,7 @@ AstNode *parser_parseStatement(Parser *parser)
         AstNode *compoundStatementNode = parser_parseCompoundStatement(parser);
         if (compoundStatementNode == NULL)
         {
+            if (parser->panic) goto parser_statementPanic_Label;
             DEBUG_PRINT("parser_parseStatement: Failed to parse compound statement.\n");
             return NULL;
         }
@@ -4315,6 +4514,7 @@ AstNode *parser_parseStatement(Parser *parser)
         AstNode *jumpStatementNode = parser_parseJumpStatement(parser);
         if (jumpStatementNode == NULL)
         {
+            if (parser->panic) goto parser_statementPanic_Label;
             DEBUG_PRINT("parser_parseStatement: Failed to parse jump statement.\n");
             return NULL;
         }
@@ -4331,6 +4531,7 @@ AstNode *parser_parseStatement(Parser *parser)
         AstNode *expressionStatementNode = parser_parseExpressionStatement(parser);
         if (expressionStatementNode == NULL)
         {
+            if (parser->panic) goto parser_statementPanic_Label;
             DEBUG_PRINT("parser_parseStatement: Failed to parse expression statement.\n");
             return NULL;
         }
@@ -4343,6 +4544,8 @@ AstNode *parser_parseStatement(Parser *parser)
         children = head;
     }
 
+    parser_statementPanic_Label:
+    if (parser->panic) parser_recoverPanic(parser);
     AstNode *statementNode = astNode_create(parser->astArena, AST_STATEMENT, NULL, children);
     if (statementNode == NULL)
     {
@@ -4384,7 +4587,7 @@ AstNode *parser_parseBranchStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -4395,6 +4598,11 @@ AstNode *parser_parseBranchStatement(Parser *parser)
         AstNode *ifStatement = parser_parseIfStatement(parser);
         if (ifStatement == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseBranchStatement: Panic state is true, skipping branch statement parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseBranchStatement: Failed to parse if statement.\n");
             return NULL;
         }
@@ -4411,6 +4619,11 @@ AstNode *parser_parseBranchStatement(Parser *parser)
         AstNode *switchStatement = parser_parseSwitchStatement(parser);
         if (switchStatement == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseBranchStatement: Panic state is true, skipping branch statement parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseBranchStatement: Failed to parse switch condition.\n");
             return NULL;
         }
@@ -4462,7 +4675,7 @@ AstNode *parser_parseIfStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -4491,7 +4704,7 @@ AstNode *parser_parseIfStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -4505,6 +4718,11 @@ AstNode *parser_parseIfStatement(Parser *parser)
     AstNode *conditionNode = parser_parseExpression(parser);
     if (conditionNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseIfStatement: Panic state is true, skipping if statement parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseIfStatement: Failed to parse condition expression.\n");
         return NULL;
     }
@@ -4538,7 +4756,7 @@ AstNode *parser_parseIfStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -4552,6 +4770,7 @@ AstNode *parser_parseIfStatement(Parser *parser)
     AstNode *ifBodyNode = parser_parseStatement(parser);
     if (ifBodyNode == NULL)
     {
+        // Statement can't panic, so we don't check parser->panic here
         DEBUG_PRINT("parser_parseIfStatement: Failed to parse if body statement.\n");
         return NULL;
     }
@@ -4581,6 +4800,7 @@ AstNode *parser_parseIfStatement(Parser *parser)
         AstNode *elseBodyNode = parser_parseStatement(parser);
         if (elseBodyNode == NULL)
         {
+            // Statement can't panic, so we don't check parser->panic here
             DEBUG_PRINT("parser_parseIfStatement: Failed to parse else body statement.\n");
             return NULL;
         }
@@ -4615,7 +4835,7 @@ AstNode *parser_parseIfStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -4665,7 +4885,7 @@ AstNode *parser_parseSwitchStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true;
         return NULL;
     }
 
@@ -4694,7 +4914,7 @@ AstNode *parser_parseSwitchStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -4708,6 +4928,11 @@ AstNode *parser_parseSwitchStatement(Parser *parser)
     AstNode *conditionNode = parser_parseExpression(parser);
     if (conditionNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseSwitchStatement: Panic state is true, skipping switch statement parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseSwitchStatement: Failed to parse switch condition expression.\n");
         return NULL;
     }
@@ -4741,7 +4966,7 @@ AstNode *parser_parseSwitchStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -4768,7 +4993,7 @@ AstNode *parser_parseSwitchStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -4793,6 +5018,11 @@ AstNode *parser_parseSwitchStatement(Parser *parser)
         }
         if (caseNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseSwitchStatement: Panic state is true, skipping switch case parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseSwitchStatement: Failed to parse case statement.\n");
             return NULL;
         }
@@ -4827,7 +5057,7 @@ AstNode *parser_parseSwitchStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -4872,7 +5102,7 @@ AstNode *parser_parseSwitchCase(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -4888,6 +5118,11 @@ AstNode *parser_parseSwitchCase(Parser *parser)
     AstNode *caseValueNode = parser_parseExpression(parser);
     if (caseValueNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseSwitchCase: Panic state is true, skipping switch case expression.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseSwitchCase: Failed to parse case value expression.\n");
         return NULL;
     }
@@ -4921,7 +5156,7 @@ AstNode *parser_parseSwitchCase(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -4932,19 +5167,24 @@ AstNode *parser_parseSwitchCase(Parser *parser)
         return NULL;
     }
 
-    AstNode *caseBodyNode = parser_parseStatement(parser);
-    if (caseBodyNode == NULL)
+    if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_CASE &&
+        ((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_DEFAULT)
     {
-        DEBUG_PRINT("parser_parseSwitchCase: Failed to parse case body statement.\n");
-        return NULL;
+        AstNode *caseBodyNode = parser_parseStatement(parser);
+        if (caseBodyNode == NULL)
+        {
+            // Statement can't panic, so we don't check parser->panic here
+            DEBUG_PRINT("parser_parseSwitchCase: Failed to parse case body statement.\n");
+            return NULL;
+        }
+        head = linkedList_Ast_create(parser->astArena, children, caseBodyNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseSwitchCase: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
     }
-    head = linkedList_Ast_create(parser->astArena, children, caseBodyNode);
-    if (head == NULL)
-    {
-        DEBUG_PRINT("parser_parseSwitchCase: linkedList_Ast_create failed with errno %d\n", errno);
-        return NULL;
-    }
-    children = head;
 
     AstNode *caseNode = astNode_create(parser->astArena, AST_SWITCH_CASE, NULL, children);
     if (caseNode == NULL)
@@ -4985,7 +5225,7 @@ AstNode *parser_parseSwitchDefault(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -5014,7 +5254,7 @@ AstNode *parser_parseSwitchDefault(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -5028,6 +5268,7 @@ AstNode *parser_parseSwitchDefault(Parser *parser)
     AstNode *defaultBodyNode = parser_parseStatement(parser);
     if (defaultBodyNode == NULL)
     {
+        // Statement can't panic, so we don't check parser->panic here
         DEBUG_PRINT("parser_parseSwitchDefault: Failed to parse default body statement.\n");
         return NULL;
     }
@@ -5082,7 +5323,7 @@ AstNode *parser_parseLoopStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -5093,6 +5334,11 @@ AstNode *parser_parseLoopStatement(Parser *parser)
         AstNode *forStatementNode = parser_parseForStatement(parser);
         if (forStatementNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseLoopStatement: Panic state is true, skipping parsing loop statement.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseLoopStatement: Failed to parse for statement.\n");
             return NULL;
         }
@@ -5109,6 +5355,11 @@ AstNode *parser_parseLoopStatement(Parser *parser)
         AstNode *foreachStatementNode = parser_parseForeachStatement(parser);
         if (foreachStatementNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseLoopStatement: Panic state is true, skipping parsing loop statement.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseLoopStatement: Failed to parse foreach statement.\n");
             return NULL;
         }
@@ -5125,6 +5376,11 @@ AstNode *parser_parseLoopStatement(Parser *parser)
         AstNode *whileStatementNode = parser_parseWhileStatement(parser);
         if (whileStatementNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseLoopStatement: Panic state is true, skipping parsing loop statement.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseLoopStatement: Failed to parse while statement.\n");
             return NULL;
         }
@@ -5141,6 +5397,11 @@ AstNode *parser_parseLoopStatement(Parser *parser)
         AstNode *doWhileStatementNode = parser_parseDoWhileStatement(parser);
         if (doWhileStatementNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseLoopStatement: Panic state is true, skipping parsing loop statement.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseLoopStatement: Failed to parse do-while statement.\n");
             return NULL;
         }
@@ -5192,7 +5453,7 @@ AstNode *parser_parseForStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -5221,7 +5482,7 @@ AstNode *parser_parseForStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -5237,6 +5498,11 @@ AstNode *parser_parseForStatement(Parser *parser)
         AstNode *initNode = parser_parseForInitializer(parser);
         if (initNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseForStatement: Panic mode is enabled, skipping to next statement.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseForStatement: Failed to parse for initializer.\n");
             return NULL;
         }
@@ -5270,6 +5536,9 @@ AstNode *parser_parseForStatement(Parser *parser)
             return NULL;
         }
         parser->errors = head;
+
+        parser->panic = true; // Set panic mode to true
+        return NULL;
     }
 
     parser->tokens = parser->tokens->next; // Move past the first semicolon token
@@ -5284,6 +5553,11 @@ AstNode *parser_parseForStatement(Parser *parser)
         AstNode *conditionNode = parser_parseForCondition(parser);
         if (conditionNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseForStatement: Panic state is true, skipping for statement parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseForStatement: Failed to parse condition expression.\n");
             return NULL;
         }
@@ -5318,7 +5592,7 @@ AstNode *parser_parseForStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -5334,6 +5608,11 @@ AstNode *parser_parseForStatement(Parser *parser)
         AstNode *incrementNode = parser_parseForIncrementation(parser);
         if (incrementNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseForStatement: Panic state is true, skipping for statement parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseForStatement: Failed to parse increment expression.\n");
             return NULL;
         }
@@ -5368,7 +5647,7 @@ AstNode *parser_parseForStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -5382,6 +5661,7 @@ AstNode *parser_parseForStatement(Parser *parser)
     AstNode *bodyNode = parser_parseStatement(parser);
     if (bodyNode == NULL)
     {
+        // Statement can't panic, so we don't check parser->panic here
         DEBUG_PRINT("parser_parseForStatement: Failed to parse for statement body.\n");
         return NULL;
     }
@@ -5429,6 +5709,11 @@ AstNode *parser_parseForInitializer(Parser *parser)
         AstNode *variableDeclarationNode = parser_parseVariableDeclaration(parser);
         if (variableDeclarationNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseForInitializer: Panic state is true, skipping for initializer parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseForInitializer: Failed to parse variable declaration.\n");
             return NULL;
         }
@@ -5445,6 +5730,11 @@ AstNode *parser_parseForInitializer(Parser *parser)
         AstNode *assignementExpretionNode = parser_parseAssignmentExpression(parser);
         if (assignementExpretionNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseForInitializer: Panic state is true, skipping for initializer parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseForInitializer: Failed to parse expression.\n");
             return NULL;
         }
@@ -5485,6 +5775,11 @@ AstNode *parser_parseForCondition(Parser *parser)
     AstNode *conditionNode = parser_parseExpression(parser);
     if (conditionNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseForCondition: Panic state is true, skipping condition parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseForCondition: Failed to parse condition expression.\n");
         return NULL;
     }
@@ -5524,6 +5819,11 @@ AstNode *parser_parseForIncrementation(Parser *parser)
     AstNode *incrementNode = parser_parseExpression(parser);
     if (incrementNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseForIncrementation: Panic state is true, skipping incrementation parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseForIncrementation: Failed to parse increment expression.\n");
         return NULL;
     }
@@ -5574,7 +5874,7 @@ AstNode *parser_parseForeachStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -5604,7 +5904,7 @@ AstNode *parser_parseForeachStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -5618,6 +5918,11 @@ AstNode *parser_parseForeachStatement(Parser *parser)
    AstNode *fullTypeNode = parser_parseFullType(parser);
     if (fullTypeNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseForeachStatement: Panic state is true, skipping foreach statement parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseForeachStatement: Failed to parse full type.\n");
         return NULL;
     }
@@ -5651,7 +5956,7 @@ AstNode *parser_parseForeachStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -5692,7 +5997,7 @@ AstNode *parser_parseForeachStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -5740,7 +6045,7 @@ AstNode *parser_parseForeachStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -5754,6 +6059,7 @@ AstNode *parser_parseForeachStatement(Parser *parser)
     AstNode *bodyStatementNode = parser_parseStatement(parser);
     if (bodyStatementNode == NULL)
     {
+        // Statements can't panic, so we don't check for panic state here
         DEBUG_PRINT("parser_parseForeachStatement: Failed to parse foreach statement body.\n");
         return NULL;
     }
@@ -5804,7 +6110,7 @@ AstNode *parser_parseWhileStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -5833,7 +6139,7 @@ AstNode *parser_parseWhileStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -5847,6 +6153,11 @@ AstNode *parser_parseWhileStatement(Parser *parser)
     AstNode *conditionNode = parser_parseExpression(parser);
     if (conditionNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseWhileStatement: Panic state is true, skipping while statement parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseWhileStatement: Failed to parse condition expression.\n");
         return NULL;
     }
@@ -5880,7 +6191,7 @@ AstNode *parser_parseWhileStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -5894,6 +6205,7 @@ AstNode *parser_parseWhileStatement(Parser *parser)
     AstNode *bodyNode = parser_parseStatement(parser);
     if (bodyNode == NULL)
     {
+        // Statements can't panic, so we don't check for panic mode here
         DEBUG_PRINT("parser_parseWhileStatement: Failed to parse while statement body.\n");
         return NULL;
     }
@@ -5944,7 +6256,7 @@ AstNode *parser_parseDoWhileStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -5960,6 +6272,7 @@ AstNode *parser_parseDoWhileStatement(Parser *parser)
     AstNode *bodyNode = parser_parseStatement(parser);
     if (bodyNode == NULL)
     {
+        // Statements can't panic, so we don't check for panic mode here
         DEBUG_PRINT("parser_parseDoWhileStatement: Failed to parse do-while statement body.\n");
         return NULL;
     }
@@ -5993,7 +6306,7 @@ AstNode *parser_parseDoWhileStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -6020,7 +6333,7 @@ AstNode *parser_parseDoWhileStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -6034,6 +6347,11 @@ AstNode *parser_parseDoWhileStatement(Parser *parser)
     AstNode *conditionNode = parser_parseExpression(parser);
     if (conditionNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseDoWhileStatement: Panic state is true, skipping do while statement parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseDoWhileStatement: Failed to parse condition expression.\n");
         return NULL;
     }
@@ -6067,7 +6385,7 @@ AstNode *parser_parseDoWhileStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -6094,7 +6412,7 @@ AstNode *parser_parseDoWhileStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -6139,7 +6457,7 @@ AstNode *parser_parseCompoundStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -6165,6 +6483,11 @@ AstNode *parser_parseCompoundStatement(Parser *parser)
             AstNode *labelNode = parser_parseLabel(parser);
             if (labelNode == NULL)
             {
+                if (parser->panic)
+                {
+                    DEBUG_PRINT("parser_parseCompoundStatement: Panic state is true, skipping compound statement parsing.\n");
+                    return NULL;
+                }
                 DEBUG_PRINT("parser_parseCompoundStatement: Failed to parse label.\n");
                 return NULL;
             }
@@ -6181,6 +6504,7 @@ AstNode *parser_parseCompoundStatement(Parser *parser)
             AstNode *statementNode = parser_parseStatement(parser);
             if (statementNode == NULL)
             {
+                // Statements can't panic, so we don't check for panic mode here
                 DEBUG_PRINT("parser_parseCompoundStatement: Failed to parse statement.\n");
                 return NULL;
             }
@@ -6222,7 +6546,7 @@ AstNode *parser_parseCompoundStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -6242,7 +6566,7 @@ AstNode *parser_parseCompoundStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -6287,7 +6611,7 @@ AstNode *parser_parseLabel(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -6330,7 +6654,7 @@ AstNode *parser_parseLabel(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -6372,6 +6696,11 @@ AstNode *parser_parseExpressionStatement(Parser *parser)
         AstNode *variableDeclarationNode = parser_parseVariableDeclaration(parser);
         if (variableDeclarationNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseExpressionStatement: Panic state is true, skipping expression statement parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseExpressionStatement: Failed to parse variable declaration.\n");
             return NULL;
         }
@@ -6394,6 +6723,11 @@ AstNode *parser_parseExpressionStatement(Parser *parser)
         AstNode *expressionNode = parser_parseExpression(parser);
         if (expressionNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseExpressionStatement: Panic state is true, skipping expression statement parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseExpressionStatement: Failed to parse expression.\n");
             return NULL;
         }
@@ -6428,7 +6762,7 @@ AstNode *parser_parseExpressionStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -6473,7 +6807,7 @@ AstNode *parser_parseVariableDeclaration(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true;
         return NULL;
     }
 
@@ -6483,6 +6817,11 @@ AstNode *parser_parseVariableDeclaration(Parser *parser)
     AstNode *fullTypeNode = parser_parseFullType(parser);
     if (fullTypeNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseVariableDeclaration: Panic mode enabled, returning NULL.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseVariableDeclaration: Failed to parse full type.\n");
         return NULL;
     }
@@ -6516,7 +6855,7 @@ AstNode *parser_parseVariableDeclaration(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to true
         return NULL;
     }
 
@@ -6553,6 +6892,11 @@ AstNode *parser_parseVariableDeclaration(Parser *parser)
         fullTypeNode = parser_parseFullType(parser);
         if (fullTypeNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseVariableDeclaration: Panic mode enabled, returning NULL.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseVariableDeclaration: Failed to parse full type after comma.\n");
             return NULL;
         }
@@ -6586,7 +6930,7 @@ AstNode *parser_parseVariableDeclaration(Parser *parser)
             }
             parser->errors = head;
 
-            parser->tokens = parser->tokens->next; // Skip the unexpected token
+            parser->panic = true; // Set panic mode to true
             return NULL;
         }
 
@@ -6624,6 +6968,11 @@ AstNode *parser_parseVariableDeclaration(Parser *parser)
         AstNode *expressionNode = parser_parseExpression(parser);
         if (expressionNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseVariableDeclaration: Panic mode enabled, returning NULL.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseVariableDeclaration: Failed to parse assignment expression.\n");
             return NULL;
         }
@@ -6679,7 +7028,7 @@ AstNode *parser_parseJumpStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;
     }
 
@@ -6690,6 +7039,11 @@ AstNode *parser_parseJumpStatement(Parser *parser)
         AstNode *gotoNode = parser_parseGotoStatement(parser);
         if (gotoNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseJumpStatement: Panic state is true, skipping jump statement parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseJumpStatement: Failed to parse goto statement.\n");
             return NULL;
         }
@@ -6706,6 +7060,11 @@ AstNode *parser_parseJumpStatement(Parser *parser)
         AstNode *returnNode = parser_parseReturnStatement(parser);
         if (returnNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseJumpStatement: Panic state is true, skipping jump statement parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseJumpStatement: Failed to parse return statement.\n");
             return NULL;
         }
@@ -6722,6 +7081,11 @@ AstNode *parser_parseJumpStatement(Parser *parser)
         AstNode *breakNode = parser_parseBreakStatement(parser);
         if (breakNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseJumpStatement: Panic state is true, skipping jump statement parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseJumpStatement: Failed to parse break statement.\n");
             return NULL;
         }
@@ -6738,6 +7102,11 @@ AstNode *parser_parseJumpStatement(Parser *parser)
         AstNode *continueNode = parser_parseContinueStatement(parser);
         if (continueNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseJumpStatement: Panic state is true, skipping jump statement parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseJumpStatement: Failed to parse continue statement.\n");
             return NULL;
         }
@@ -6789,7 +7158,7 @@ AstNode *parser_parseGotoStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;
     }
 
@@ -6819,7 +7188,7 @@ AstNode *parser_parseGotoStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;
     }
 
@@ -6869,7 +7238,7 @@ AstNode *parser_parseGotoStatement(Parser *parser)
             }
             parser->errors = head;
 
-            parser->tokens = parser->tokens->next; // Skip the unexpected token
+            parser->panic = true; // Set panic mode to skip further parsing
             return NULL;
         }
 
@@ -6883,6 +7252,11 @@ AstNode *parser_parseGotoStatement(Parser *parser)
         AstNode *conditionNode = parser_parseExpression(parser);
         if (conditionNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseGotoStatement: Panic state is true, skipping goto statement parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseGotoStatement: Failed to parse condition expression.\n");
             return NULL;
         }
@@ -6910,7 +7284,7 @@ AstNode *parser_parseGotoStatement(Parser *parser)
             }
             parser->errors = head;
 
-            parser->tokens = parser->tokens->next; // Skip the unexpected token
+            parser->panic = true; // Set panic mode to skip further parsing
             return NULL;
         }
 
@@ -6938,7 +7312,7 @@ AstNode *parser_parseGotoStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;
     }
 
@@ -6983,7 +7357,7 @@ AstNode *parser_parseReturnStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic state to true
         return NULL;
     }
 
@@ -7001,6 +7375,11 @@ AstNode *parser_parseReturnStatement(Parser *parser)
         AstNode *expressionNode = parser_parseExpression(parser);
         if (expressionNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseReturnStatement: Panic state is true, skipping return statement parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseReturnStatement: Failed to parse return expression.\n");
             return NULL;
         }
@@ -7030,6 +7409,11 @@ AstNode *parser_parseReturnStatement(Parser *parser)
             expressionNode = parser_parseExpression(parser);
             if (expressionNode == NULL)
             {
+                if (parser->panic)
+                {
+                    DEBUG_PRINT("parser_parseReturnStatement: Panic state is true, skipping return statement parsing.\n");
+                    return NULL;
+                }
                 DEBUG_PRINT("parser_parseReturnStatement: Failed to parse return expression after comma.\n");
                 return NULL;
             }
@@ -7065,7 +7449,7 @@ AstNode *parser_parseReturnStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic state to true
         return NULL;
     }
 
@@ -7110,7 +7494,7 @@ AstNode *parser_parseBreakStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic state to true
         return NULL;
     }
 
@@ -7137,7 +7521,7 @@ AstNode *parser_parseBreakStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic state to true
         return NULL;
     }
 
@@ -7182,7 +7566,7 @@ AstNode *parser_parseContinueStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic state to true
         return NULL;
     }
 
@@ -7209,7 +7593,7 @@ AstNode *parser_parseContinueStatement(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic state to true
         return NULL;
     }
 
@@ -7243,6 +7627,11 @@ AstNode *parser_parseExpression(Parser *parser)
     AstNode *binaryExpressionNode = parser_parseBinaryExpression(parser, 0);
     if (binaryExpressionNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseExpression: Panic state is true, skipping expression parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseExpression: Failed to parse logical or expression.\n");
         return NULL;
     }
@@ -7280,6 +7669,11 @@ AstNode *parser_parseAssignmentExpression(Parser *parser)
     AstNode *unaryStartNode = parser_parseUnaryExpression(parser);
     if (unaryStartNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseAssignmentExpression: Panic state is true, skipping assignment expression parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseAssignmentExpression: Failed to parse unary expression.\n");
         return NULL;
     }
@@ -7287,6 +7681,11 @@ AstNode *parser_parseAssignmentExpression(Parser *parser)
     AstNode *assignmentNode = parser_parseAssignmentExpressionFromUnary(parser, unaryStartNode);
     if (assignmentNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseAssignmentExpression: Panic state is true, skipping assignment expression parsing from unary.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseAssignmentExpression: Failed to parse assignment expression from unary.\n");
         return NULL;
     }
@@ -7331,6 +7730,11 @@ AstNode *parser_parseAssignmentExpressionFromUnary(Parser *parser, AstNode *unar
         AstNode *nextUnaryNode = parser_parseUnaryExpression(parser);
         if (nextUnaryNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseAssignmentExpressionFromUnary: Panic state is true, skipping assignment expression parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseAssignmentExpressionFromUnary: Failed to parse next unary expression.\n");
             return NULL;
         }
@@ -7371,7 +7775,7 @@ AstNode *parser_parseAssignmentExpressionFromUnary(Parser *parser, AstNode *unar
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic state to true
         return NULL;
     }
 
@@ -7399,6 +7803,11 @@ AstNode *parser_parseAssignmentExpressionFromUnary(Parser *parser, AstNode *unar
     AstNode *rightExpressionNode = parser_parseExpression(parser);
     if (rightExpressionNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseAssignmentExpressionFromUnary: Panic state is true, skipping right expression parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseAssignmentExpressionFromUnary: Failed to parse right expression after assignment operator.\n");
         return NULL;
     }
@@ -7525,6 +7934,11 @@ AstNode *parser_parseBinaryExpression(Parser *parser, int parentPrecedence)
     AstNode *left = parser_parseUnaryExpression(parser);
     if (left == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseBinaryExpression: Panic state is true, skipping binary expression parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseBinaryExpression: Failed to parse unary expression.\n");
         return NULL;
     }
@@ -7559,13 +7973,19 @@ AstNode *parser_parseBinaryExpression(Parser *parser, int parentPrecedence)
                     return NULL;
                 }
                 parser->errors = head;
-                parser->tokens = parser->tokens->next; // Skip the unexpected token
-                return left; // Return the left expression if assignment is not allowed
+
+                parser->panic = true; // Set panic mode to true
+                return NULL;
             }
 
             AstNode *assignmentNode = parser_parseAssignmentExpressionFromUnary(parser, left);
             if (assignmentNode == NULL)
             {
+                if (parser->panic)
+                {
+                    DEBUG_PRINT("parser_parseBinaryExpression: Parser is in panic mode, returning NULL.\n");
+                    return NULL; // Return NULL if parser is in panic mode
+                }
                 DEBUG_PRINT("parser_parseBinaryExpression: Failed to parse assignment expression from unary.\n");
                 return NULL;
             }
@@ -7608,6 +8028,11 @@ AstNode *parser_parseBinaryExpression(Parser *parser, int parentPrecedence)
         AstNode *right = parser_parseBinaryExpression(parser, precedence);
         if (right == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseBinaryExpression: Panic state is true, skipping binary expression parsing.\n");
+                return NULL; // Return NULL if parser is in panic mode
+            }
             DEBUG_PRINT("parser_parseBinaryExpression: Failed to parse right unary expression.\n");
             return NULL;
         }
@@ -7679,6 +8104,11 @@ AstNode *parser_parseUnaryExpression(Parser *parser)
         AstNode *unaryExpressionNode = parser_parseUnaryExpression(parser);
         if (unaryExpressionNode == NULL)
         {
+            if (parser->tokens == NULL)
+            {
+                DEBUG_PRINT("parser_parseUnaryExpression: No tokens available after unary operator.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseUnaryExpression: Failed to parse unary expression after operator.\n");
             return NULL;
         }
@@ -7718,6 +8148,11 @@ AstNode *parser_parseUnaryExpression(Parser *parser)
         AstNode *typeCastExpressionNode = parser_parseTypeCastExpression(parser);
         if (typeCastExpressionNode == NULL)
         {
+            if (parser->tokens == NULL)
+            {
+                DEBUG_PRINT("parser_parseUnaryExpression: No tokens available after unary operator.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseUnaryExpression: Failed to parse unary expression after operator.\n");
             return NULL;
         }
@@ -7734,6 +8169,11 @@ AstNode *parser_parseUnaryExpression(Parser *parser)
         AstNode *typeCastExpressionNode = parser_parseTypeCastExpression(parser);
         if (typeCastExpressionNode == NULL)
         {
+            if (parser->tokens == NULL)
+            {
+                DEBUG_PRINT("parser_parseUnaryExpression: No tokens available after unary expression.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseUnaryExpression: Failed to parse typecast expression.\n");
             return NULL;
         }
@@ -7821,7 +8261,7 @@ AstNode *parser_parseTypeCastExpression(Parser *parser)
             }
             parser->errors = head;
 
-            parser->tokens = parser->tokens->next; // Skip the unexpected token
+            parser->panic = true; // Set panic mode to skip further parsing
             return NULL;
         }
 
@@ -7835,6 +8275,11 @@ AstNode *parser_parseTypeCastExpression(Parser *parser)
         AstNode *typeCastExpressionNode = parser_parseTypeCastExpression(parser);
         if (typeCastExpressionNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseTypeCastExpression: Panic state is true, skipping type cast expression parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseTypeCastExpression: Failed to parse type cast expression after type.\n");
             return NULL;
         }
@@ -7851,6 +8296,11 @@ AstNode *parser_parseTypeCastExpression(Parser *parser)
         AstNode *postfixExpressionNode = parser_parsePostfixExpression(parser);
         if (postfixExpressionNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseTypeCastExpression: Panic state is true, skipping postfix expression parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseTypeCastExpression: Failed to parse unary expression.\n");
             return NULL;
         }
@@ -7903,7 +8353,7 @@ AstNode *parser_parsePostfixExpression(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;
     }
 
@@ -7914,6 +8364,11 @@ AstNode *parser_parsePostfixExpression(Parser *parser)
         AstNode *structUnionDeclarator = parser_parseStructUnionDeclarator(parser);
         if (structUnionDeclarator == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parsePostfixExpression: Panic state is true, skipping struct or union declarator parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parsePostfixExpression: Failed to parse struct or union declarator.\n");
             return NULL;
         }
@@ -7930,6 +8385,11 @@ AstNode *parser_parsePostfixExpression(Parser *parser)
         AstNode *primaryExpressionNode = parser_parsePrimaryExpression(parser);
         if (primaryExpressionNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parsePostfixExpression: Panic state is true, skipping primary expression parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parsePostfixExpression: Failed to parse primary expression.\n");
             return NULL;
         }
@@ -7952,6 +8412,11 @@ AstNode *parser_parsePostfixExpression(Parser *parser)
             AstNode *postfixPrimeNode = parser_parsePostfixPrimeExpression(parser);
             if (postfixPrimeNode == NULL)
             {
+                if (parser->panic)
+                {
+                    DEBUG_PRINT("parser_parsePostfixExpression: Panic state is true, skipping postfix prime expression parsing.\n");
+                    return NULL;
+                }
                 DEBUG_PRINT("parser_parsePostfixExpression: Failed to parse postfix prime expression.\n");
                 return NULL;
             }
@@ -8029,7 +8494,7 @@ AstNode *parser_parsePostfixPrimeExpression(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic mode to skip further parsing
         return NULL;    
     }
 
@@ -8042,6 +8507,11 @@ AstNode *parser_parsePostfixPrimeExpression(Parser *parser)
         AstNode *functionCallNode = parser_parseFunctionCallExpression(parser);
         if (functionCallNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parsePostfixPrimeExpression: Panic state is true, skipping function call parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parsePostfixPrimeExpression: Failed to parse function call.\n");
             return NULL;
         }
@@ -8058,6 +8528,11 @@ AstNode *parser_parsePostfixPrimeExpression(Parser *parser)
         AstNode *arrayIndexingNode = parser_parseArrayIndexingExpression(parser);
         if (arrayIndexingNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parsePostfixPrimeExpression: Panic state is true, skipping array indexing parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parsePostfixPrimeExpression: Failed to parse array indexing.\n");
             return NULL;
         }
@@ -8096,7 +8571,7 @@ AstNode *parser_parsePostfixPrimeExpression(Parser *parser)
                 }
                 parser->errors = head;
 
-                parser->tokens = parser->tokens->next; // Skip the unexpected token
+                parser->panic = true; // Set panic state to true
                 return NULL;
             }
 
@@ -8132,7 +8607,7 @@ AstNode *parser_parsePostfixPrimeExpression(Parser *parser)
             }
             tokens = head;
 
-            parser->tokens = parser->tokens->next; // Move past the operator token
+            parser->tokens = parser->tokens->next; // Move past the postfix operator token
         }
     }
 
@@ -8175,7 +8650,7 @@ AstNode *parser_parseArrayIndexingExpression(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic state to true
         return NULL;
     }
 
@@ -8191,6 +8666,11 @@ AstNode *parser_parseArrayIndexingExpression(Parser *parser)
     AstNode *indexNode = parser_parseExpression(parser);
     if (indexNode == NULL)
     {
+        if (parser->panic)
+        {
+            DEBUG_PRINT("parser_parseArrayIndexingExpression: Panic state is true, skipping array indexing parsing.\n");
+            return NULL;
+        }
         DEBUG_PRINT("parser_parseArrayIndexingExpression: Failed to parse array index expression.\n");
         return NULL;
     }
@@ -8224,7 +8704,7 @@ AstNode *parser_parseArrayIndexingExpression(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic state to true
         return NULL;
     }
 
@@ -8268,7 +8748,8 @@ AstNode *parser_parseFunctionCallExpression(Parser *parser)
             return NULL;
         }
         parser->errors = head;
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+
+        parser->panic = true; // Set panic state to true
         return NULL;
     }
 
@@ -8286,6 +8767,11 @@ AstNode *parser_parseFunctionCallExpression(Parser *parser)
         AstNode *expressionNode = parser_parseExpression(parser);
         if (expressionNode == NULL)
         {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseFunctionCallExpression: Panic state is true, skipping function call parsing.\n");
+                return NULL;
+            }
             DEBUG_PRINT("parser_parseFunctionCallExpression: Failed to parse function call expression.\n");
             return NULL;
         }
@@ -8315,6 +8801,11 @@ AstNode *parser_parseFunctionCallExpression(Parser *parser)
             expressionNode = parser_parseExpression(parser);
             if (expressionNode == NULL)
             {
+                if (parser->panic)
+                {
+                    DEBUG_PRINT("parser_parseFunctionCallExpression: Panic state is true, skipping function call parsing.\n");
+                    return NULL;
+                }
                 DEBUG_PRINT("parser_parseFunctionCallExpression: Failed to parse function call expression.\n");
                 return NULL;
             }
@@ -8350,7 +8841,7 @@ AstNode *parser_parseFunctionCallExpression(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic state to true
         return NULL;
     }
 
@@ -8396,7 +8887,7 @@ AstNode *parser_parsePrimaryExpression(Parser *parser)
         }
         parser->errors = head;
 
-        parser->tokens = parser->tokens->next; // Skip the unexpected token
+        parser->panic = true; // Set panic state to true
         return NULL;
     }
 
@@ -8519,6 +9010,7 @@ Parser *parser_create(Arena *utilsArena, Arena *astArena, LinkedList *tokens)
     parser->errors = NULL; // Initialize errors list as NULL
     parser->tokens = tokens; // Set the provided tokens list
     parser->ast = NULL; // Initialize AST as NULL
+    parser->panic = false; // Initialize panic state as false
 
     return parser;
 }

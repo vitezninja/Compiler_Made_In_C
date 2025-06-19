@@ -21,7 +21,7 @@ bool stack_isFull(Stack *stack)
 void *stack_pop(Stack *stack)
 {
     UNIMPLEMENTED();
-    return;
+    return NULL;
 }
 
 bool stack_isEmpty(Stack *stack)
@@ -33,13 +33,13 @@ bool stack_isEmpty(Stack *stack)
 void *stack_top(Stack *stack)
 {
     UNIMPLEMENTED();
-    return;
+    return NULL;
 }
 
 void *stack_peek(Stack *stack)
 {
     UNIMPLEMENTED();
-    return;
+    return NULL;
 }
 
 void stack_reset(Stack *stack)
