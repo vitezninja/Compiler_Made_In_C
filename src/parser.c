@@ -816,6 +816,9 @@ void parser_recoverPanic(Parser *parser)
         case TOKEN_KEYWORD_EXPORT:
             parser->panic = false;
             return; // Exit recovery loop
+        case TOKEN_EOF:
+            DEBUG_PRINT("parser_recoverPanic: Reached EOF while recovering from panic.\n");
+            return; // Exit recovery loop
         default:
             break;
         }
@@ -1364,6 +1367,7 @@ AstNode *parser_parseProgram(Parser *parser)
 
         parser_programImportPanic_Label:
         if(parser->panic) parser_recoverPanic(parser);
+        if (parser->panic) return NULL; // If panic state is true, return NULL
         if (parser->tokens == NULL)
         {
             DEBUG_PRINT("parser_parseProgram: No tokens available to parse the program.\n");
@@ -1508,6 +1512,7 @@ AstNode *parser_parseProgram(Parser *parser)
 
         parser_programBodyPanic_Label:
         if(parser->panic) parser_recoverPanic(parser);
+        if (parser->panic) return NULL; // If panic state is true, return NULL
         else currentTokenNode = parser->tokens;
         if (currentTokenNode == NULL)
         {
@@ -4546,6 +4551,7 @@ AstNode *parser_parseStatement(Parser *parser)
 
     parser_statementPanic_Label:
     if (parser->panic) parser_recoverPanic(parser);
+    if (parser->panic) return NULL; // If panic state is true, return NULL
     AstNode *statementNode = astNode_create(parser->astArena, AST_STATEMENT, NULL, children);
     if (statementNode == NULL)
     {
