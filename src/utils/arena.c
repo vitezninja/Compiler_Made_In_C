@@ -102,9 +102,21 @@ void arena_print(const Arena *arena)
     }
 
     printf("Arena {\n");
-    printf("    Memory: %p\n", (void *)arena->memory);
-    printf("    Capacity: %zu\n", arena->capacity);
-    printf("    Offset: %zu\n", arena->offset);
-    printf("    Load Factor: %.2f%%\n", (double)arena->offset / arena->capacity * 100);
+    printf("\tMemory: %p\n", (void *)arena->memory);
+    printf("\tCapacity: %zu\n", arena->capacity);
+    printf("\tOffset: %zu\n", arena->offset);
+    double load_factor = (double)arena->offset / (double)arena->capacity;
+    printf("\tLoad Factor: %.2f%%\n", load_factor * 100);
+    printf("\t[");
+    size_t filled = load_factor * 20;
+    for (size_t i = 0; i < filled; i++)
+    {
+        printf("#");
+    }
+    for (size_t i = filled; i < 20; i++)
+    {
+        printf("-");
+    }
+    printf("]\n");
     printf("}\n");
 }

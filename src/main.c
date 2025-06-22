@@ -266,6 +266,10 @@ LinkedList *lexFile(Arena *alphaArena, Arena *betaArena, HashTable *stringIntern
     }
 
     LinkedList *tokens = lexer->tokens;
+#ifdef DEBUG
+    arena_print(alphaArena);
+    arena_print(betaArena);
+#endif
     arena_reset(alphaArena);
     return tokens;
 }
@@ -310,6 +314,10 @@ AstNode *parseFile(Arena *alphaArena, Arena *betaArena, LinkedList *tokens, File
     }
 
     AstNode *ast = parser->ast;
+#ifdef DEBUG
+    arena_print(alphaArena);
+    arena_print(betaArena);
+#endif
     arena_reset(betaArena);
     return ast;
 }  
