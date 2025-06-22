@@ -25,6 +25,7 @@ static const char *astNode_typeAsStrings[] = {
     [AST_STRUCT_UNION_DIRECT_DECLARATOR] = "AST_STRUCT_UNION_DIRECT_DECLARATOR",
     [AST_ENUM_DECLARATION] = "AST_ENUM_DECLARATION",
     [AST_ENUM_VALUE_DECLARATION] = "AST_ENUM_VALUE_DECLARATION",
+    [AST_ENUM_VALUE] = "AST_ENUM_VALUE",
     [AST_TYPEDEF] = "AST_TYPEDEF",
     [AST_STATEMENT] = "AST_STATEMENT",
     [AST_BRANCH_STATEMENT] = "AST_BRANCH_STATEMENT",
@@ -168,7 +169,7 @@ void astNode_printTree(const AstNode *astNode, char *indent, bool isLast)
 
 const char *astNode_getAstType(AstType type)
 {
-    if (type > 0 && type < AST_JUMP_STATEMENT)
+    if (type > 0 && type > AST_JUMP_STATEMENT)
     {
         DEBUG_PRINT("astNode_getAstType: type is within range\n");
         return "UNKNOWN";

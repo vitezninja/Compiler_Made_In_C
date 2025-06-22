@@ -59,6 +59,19 @@ Parser *parser_create(Arena *utilsArena, Arena *astArena, LinkedList *tokens);
  */
 void parser_parse(Parser *parser);
 
+/**
+ * @brief Parses global symbols in the tokens.
+ * 
+ * This function processes the tokens to identify and parse global symbols, such as variables and functions.
+ * It constructs the necessary AST nodes for these symbols and adds them to the AST.
+ * 
+ * @param parser Pointer to the Parser instance to be used for parsing global symbols.
+ * 
+ * @note This function only handles global symbols and does not parse the entire AST.
+ * @note Used in the validation phase to ensure that global symbols are correctly defined for importing.
+ */
+void parser_parseGlobalSymbols(Parser *parser);
+
 /** 
  * @brief Prints the parser data structure.
  * 

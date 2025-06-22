@@ -293,7 +293,9 @@ Struct_Union_direct_declarator = "." identifier "=" Expression { "," "." identif
 
 Enum_declaration = [ "export" ] "enum" identifier "{" Enum_value_declaration "}" ;
 
-Enum_value_declaration = identifier [ "=" Expression ] "," { identifier [ "=" Expression ] "," } ;
+Enum_value_declaration = Enum_value "," { Enum_value "," } ;
+
+Enum_value = identifier [ "=" Expression ] ;
 ```
 
 ## Own types
