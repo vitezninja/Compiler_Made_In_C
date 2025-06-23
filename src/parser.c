@@ -5821,6 +5821,7 @@ AstNode *parser_parseForStatement(Parser *parser)
     return forStatementNode;
 }
 
+// TODO: Currently, this function does not handle the case where the initializer is a variable declaration that is a fixed-size array.
 AstNode *parser_parseForInitializer(Parser *parser)
 {
     if (parser == NULL)
@@ -5843,6 +5844,10 @@ AstNode *parser_parseForInitializer(Parser *parser)
 
     LinkedList *children = NULL;
 
+    // If its a type specifier we know for sure that it is a variable declaration.
+    // The problem is when there is no type specifier, if we only check for a type, we might end up parsing an assignment expression instead of a variable declaration.
+    // This can happen when the initializer is an assignment expression that starts with an identifier.
+    // This is why we check if the next token is an identifier currently but this make array indexing impossible.
     if (parser_isTypeSpecifier(parser) || ( parser_isType(parser) && (((Token *)parser->tokens->next->data)->type == TOKEN_IDENTIFIER)))
     {
         AstNode *variableDeclarationNode = parser_parseVariableDeclaration(parser);
