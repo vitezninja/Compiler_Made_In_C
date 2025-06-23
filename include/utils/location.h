@@ -14,6 +14,9 @@
 #include <stdio.h>
 #include <inttypes.h>
 
+// Forward declaration of the SourceLocation structure
+typedef struct SourceLocation SourceLocation;
+
 #include "utils/logger.h"
 
 /**
@@ -22,14 +25,14 @@
  *
  * Includes the file name, line number, and column number.
  */
-typedef struct SourceLocation
+struct SourceLocation
 {
     const char *fileName;     /** Name of the source file */
     uint32_t line;            /** Line number in the source file */
     uint32_t column;          /** Column number in the source file */
     uint32_t lineStart;       /** Start line number in the source file */
     size_t length;            /** Length of characters in the source file */
-} SourceLocation;
+};
 
 /**
  * @brief Prints the SourceLocation to stdout.

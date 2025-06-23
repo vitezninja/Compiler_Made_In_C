@@ -17,7 +17,7 @@
 #include <stdbool.h>
 
 // Forward declaration of the AstNode structure
-struct AstNode;
+typedef struct AstNode AstNode;
 
 #include "utils/logger.h"
 #include "utils/token.h"
@@ -107,12 +107,12 @@ typedef enum AstType
  * Each AST node describes a syntactic construct. Nodes can store one or more tokens
  * and have a list of child AST nodes forming a tree structure.
  */
-typedef struct AstNode
+struct AstNode
 {
     AstType type;               /** Type of the AST node. */
-    struct LinkedList *tokens;         /** Array of tokens associated with this node. */
-    struct LinkedList *children;       /** Array of child AST nodes. */
-} AstNode;
+    LinkedList *tokens;         /** Array of tokens associated with this node. */
+    LinkedList *children;       /** Array of child AST nodes. */
+};
 
 /**
  * @brief Creates a new AST node and allocates memory from the provided arena.
@@ -128,7 +128,7 @@ typedef struct AstNode
  * @param childCount Number of children.
  * @return Pointer to the newly created ASTNode. Set `errno` to indicate the error.
  */
-AstNode *astNode_create(Arena *arena, AstType type, struct LinkedList *tokens, struct LinkedList *children);
+AstNode *astNode_create(Arena *arena, AstType type, LinkedList *tokens, LinkedList *children);
 
 /**
  * @brief Prints a brief summary of an AST node.

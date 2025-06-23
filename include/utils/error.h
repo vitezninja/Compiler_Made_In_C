@@ -15,7 +15,7 @@
 #include <inttypes.h>
 
 // Forward declaration of the Error structure
-struct Error;
+typedef struct Error Error;
 
 #include "utils/logger.h"
 #include "utils/arena.h"
@@ -41,12 +41,12 @@ typedef enum ErrorType
  * The Error structure is used to describe a specific issue encountered during
  * lexing, parsing, or other stages of compilation.
  */
-typedef struct Error
+struct Error
 {
     ErrorType type;             /** Severity/type of the error. */
     SourceLocation location;    /** Location in the source code where the error occurred. */
     const char *message;        /** Human-readable error message. */
-} Error;
+};
 
 /**
  * @brief Creates a new error.

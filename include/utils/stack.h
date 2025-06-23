@@ -9,14 +9,14 @@
 #include "utils/logger.h"
 
 // Forward declaration of the Stack structure
-struct Stack;
+typedef struct Stack Stack;
 
-typedef struct Stack
+struct Stack
 {
     uint8_t *data;
     size_t capacity;
     size_t top;
-} Stack;
+};
 
 // Maybe use Arena for the stack memory
 Stack *stack_create(size_t capacity);

@@ -14,7 +14,7 @@
 #include <errno.h>
 
 // Forward declaration of the File structure
-struct File;
+typedef struct File File;
 
 #include "utils/logger.h"
 
@@ -26,12 +26,12 @@ struct File;
  * This structure holds the name of the file, a pointer to the source buffer containing the file's contents,
  * and the size of the source buffer.
  */
-typedef struct File 
+struct File 
 {
     const char* name;           /** Name of the file */
     const char *sourceBuffer;   /** Pointer to the source buffer */
     size_t sourceBufferSize;    /** Size of the source buffer */
-} File;
+};
 
 /**
  * @brief Reads a file from the file system into memory.

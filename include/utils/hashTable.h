@@ -15,7 +15,7 @@
 #include <errno.h>
 
 // Forward declaration of the HashTable structure
-struct HashTable;
+typedef struct HashTable HashTable;
 
 #include "utils/logger.h"
 #include "utils/arena.h"
@@ -42,13 +42,13 @@ struct HashTable;
  * It contains an array of linked lists (buckets) for handling collisions, the arena
  * for memory allocation, and metadata about the number of buckets and items.
  */
-typedef struct HashTable
+struct HashTable
 {
     Arena *arena;                   /** Memory arena used for allocation */
-    struct LinkedList **buckets;    /** Array of linked lists (buckets) for collision resolution */
+    LinkedList **buckets;    /** Array of linked lists (buckets) for collision resolution */
     size_t bucketCount;             /** Number of buckets in the hash table */
     size_t itemCount;               /** Total number of items in the hash table */
-} HashTable;
+};
 
 /**
  * @brief Creates a new hash table in the given arena.

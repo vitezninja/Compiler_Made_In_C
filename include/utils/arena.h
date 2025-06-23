@@ -16,6 +16,8 @@
 #include <stdlib.h>
 #include <errno.h>
 
+typedef struct Arena Arena;
+
 #include "logger.h"
 
 /**
@@ -39,12 +41,12 @@
  * 
  * Memory allocated via this structure must be released by calling `arena_destroy()`.
  */
-typedef struct Arena 
+struct Arena
 {
     uint8_t *memory;     /** Pointer to the start of the memory block. */
     size_t capacity;     /** Total capacity of the arena in bytes. */
     size_t offset;       /** Current offset (next free byte) in the arena. */
-} Arena;
+};
 
 /**
  * @brief Creates a new arena allocator with a specified capacity.

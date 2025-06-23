@@ -17,6 +17,9 @@
 #include <stdint.h>
 #include <ctype.h>
 
+// Forward declaration of the Lexer structure
+typedef struct Lexer Lexer;
+
 #include "utils/logger.h"
 #include "utils/token.h"
 #include "utils/arena.h"
@@ -46,7 +49,7 @@
  * @note The lexer assumes that the source code is provided as a null-terminated string.
  * @note The lexer does not handle Unicode characters; it operates on ASCII characters.
  */
-typedef struct Lexer
+struct Lexer
 {
     Arena *utilsArena;                  /** Arena for utility allocations, such as errors and tokens */
     Arena *tokenArena;                  /** Arena for token allocations, used to store tokens created during lexing */
@@ -60,7 +63,7 @@ typedef struct Lexer
     size_t currentLineStart;            /** Start position of the current line in the source code buffer */
     size_t line;                        /** Current line number in the source code (1-based index) */
     size_t column;                      /** Current column number in the source code (1-based index) */
-} Lexer;
+};
 
 /**
  * @brief Creates a new lexer instance.

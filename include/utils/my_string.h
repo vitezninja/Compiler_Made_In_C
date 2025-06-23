@@ -15,7 +15,7 @@
 #include <errno.h>
 
 // Forward declaration of the String structure
-struct String;
+typedef struct String String;
 
 #include "utils/logger.h"
 #include "utils/arena.h"
@@ -27,12 +27,12 @@ struct String;
  * This structure is designed for efficient string handling within
  * the compiler.
  */
-typedef struct String
+struct String
 {
     char *name;     /** Pointer to the character data of the string */
     size_t length;  /** Length of the string in bytes (excluding null terminator) */
     size_t hash;    /** Precomputed hash value of the string for quick comparisons */
-} String;
+};
 
 /**
  * @brief Creates and initializes a new String in the given arena.

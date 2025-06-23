@@ -18,9 +18,9 @@
 #include <errno.h>
 
 // Forward declaration of the TokenValue union
-union TokenValue;
+typedef union TokenValue TokenValue;
 // Forward declaration of the Token structure
-struct Token;
+typedef struct Token Token;
 
 #include "utils/logger.h"
 #include "utils/arena.h"
@@ -173,14 +173,14 @@ typedef enum My_TokenType
  *
  * Used only when token type is a literal (e.g., integer, float, char, etc.).
  */
-typedef union TokenValue
+union TokenValue
 {
     int64_t int_value;          /** Integer value */
     double float_value;         /** Floating-point value */
     bool boolean_value;         /** Boolean value */
     const char *string_value;   /** String value */
     char char_value;            /** Character value */
-} TokenValue;
+};
 
 /**
  * @struct Token
@@ -190,13 +190,13 @@ typedef union TokenValue
  * its location in the source code, and a union for holding literal values
  * (such as integers, floats, strings, etc.) if applicable.
  */
-typedef struct Token
+struct Token
 {
     My_TokenType type;          /** Type of the token */
     const char *text;           /** Pointer to the raw text of the token */
     SourceLocation location;    /** Location in the source code */
     TokenValue value;           /** Union value for literals */
-} Token;
+};
 
 /**
  * @brief Creates and returns a new Token in the provided arena.

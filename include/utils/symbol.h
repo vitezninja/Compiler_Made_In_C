@@ -15,7 +15,7 @@
 #include <errno.h>
 
 // Forward declaration of the Symbol structure
-struct Symbol;
+typedef struct Symbol Symbol;
 
 #include "utils/logger.h"
 #include "utils/arena.h"
@@ -39,12 +39,12 @@ typedef enum SymbolType
  * The Symbol struct is used to store entries in the symbol table, containing
  * the name of the symbol, its kind/type, and a precomputed hash for efficient lookup.
  */
-typedef struct Symbol
+struct Symbol
 {
     const char *name;   /** Pointer to the name of the symbol (null-terminated string) */
     SymbolType type;    /** Type of the symbol (e.g., function, variable, type) */
     size_t hash;        /** Precomputed hash of the symbol's name for quick comparisons */
-} Symbol;
+};
 
 /**
  * @brief Creates a new Symbol in the given arena.

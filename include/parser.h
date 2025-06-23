@@ -13,6 +13,9 @@
 #include <stdbool.h>
 #include <errno.h>
 
+// Forward declaration of the Parser structure
+typedef struct Parser Parser;
+
 #include "utils/linkedList.h"
 #include "utils/arena.h"
 #include "utils/token.h"
@@ -25,7 +28,7 @@
  * This structure holds the state of the parser, including the arenas used for memory allocation,
  * linked lists for errors and tokens, and the abstract syntax tree (AST) being constructed.
  */
-typedef struct Parser
+struct Parser
 {
     Arena *utilsArena;     /** Arena for utility allocations, such as errors and tokens */
     Arena *astArena;       /** Arena for AST allocations, used to store nodes created during parsing */
@@ -33,7 +36,7 @@ typedef struct Parser
     LinkedList *tokens;    /** Linked list of tokens to be parsed */
     AstNode *ast;          /** Pointer to the root of the abstract syntax tree (AST) being constructed */
     bool panic;            /** Flag indicating whether the parser is in a panic state due to an error */
-} Parser;
+};
 
 /**
  * @brief Creates a new parser instance.

@@ -15,7 +15,7 @@
 #include <errno.h>
 
 // Forward declaration of the LinkedList structure
-struct LinkedList;
+typedef struct LinkedList LinkedList;
 
 #include "utils/logger.h"
 #include "utils/arena.h"
@@ -34,11 +34,11 @@ struct LinkedList;
  * tokens, errors, hash tables, symbols, and strings. Each node contains a pointer
  * to the next node and a pointer to the data it holds.
  */
-typedef struct LinkedList
+struct LinkedList
 {
     struct LinkedList *next;    /** Pointer to the next node in the linked list */
     void *data;                 /** Pointer to the data stored in this node */
-} LinkedList;
+};
 
 /**
  * @brief Creates a new linked list node with the given data.
@@ -78,7 +78,7 @@ LinkedList *linkedList_Error_create(Arena *arena, LinkedList *head, Error *data)
  * @param data Pointer to the hash table data to be stored in the node.
  * @return Pointer to the newly created LinkedList node. Set `errno` to indicate the error.
  */
-LinkedList *linkedList_HashTable_create(Arena *arena, LinkedList *head, struct HashTable *data);
+LinkedList *linkedList_HashTable_create(Arena *arena, LinkedList *head, HashTable *data);
 
 /**
  * @brief Creates a new linked list node with the given symbol data.
@@ -117,7 +117,7 @@ LinkedList *linkedList_String_create(Arena *arena, LinkedList *head, String *dat
  * @param data Pointer to the AST node data to be stored in the node.
  * @return Pointer to the head of the linked list. Set `errno` to indicate the error.
  */
-LinkedList *linkedList_Ast_create(Arena *arena, LinkedList *head, struct AstNode *data);
+LinkedList *linkedList_Ast_create(Arena *arena, LinkedList *head, AstNode *data);
 
 /**
  * @brief Prints the contents of a linked list node.

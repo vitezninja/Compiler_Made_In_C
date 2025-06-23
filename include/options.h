@@ -17,7 +17,7 @@
 #include <errno.h>
 
 // Forward declaration of the Options structure
-struct Options;
+typedef struct Options Options;
 
 #include "utils/logger.h"
 #include "utils/bitset.h"
@@ -45,7 +45,7 @@ typedef enum OptionFlags
  * @struct Options
  * @brief Container for all parsed command-line arguments.
  */
-typedef struct Options
+struct Options
 {
     Bitset64 flags;          /** BitSet to hold various flags. */
     char *outputFile;        /** Name or path of the output file, if specified. */
@@ -53,7 +53,7 @@ typedef struct Options
     size_t fileCount;        /** Number of source files. */
     char **headerFiles;      /** Array of strings representing header file paths. */
     size_t headerCount;      /** Number of header files. */
-} Options;
+};
 
 /**
  * @brief Parses command-line arguments into an Options structure.

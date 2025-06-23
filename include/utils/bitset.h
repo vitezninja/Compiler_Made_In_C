@@ -14,16 +14,19 @@
 #include <stdio.h>
 #include <stdint.h>
 
+// Forward declaration of the Bitset64 structure
+typedef struct Bitset64 Bitset64;
+
 #include "utils/logger.h"
 
 /**
  * @struct Bitset64
  * @brief A fixed-size bitset storing up to 64 bits in a 64-bit unsigned integer.
  */
-typedef struct Bitset64
+struct Bitset64
 {
     uint64_t bits; /** Storage for bits; each bit represents one flag (0 or 1). */
-} Bitset64;
+};
 
 /**
  * @brief Sets the bit at the specified position to 1.
