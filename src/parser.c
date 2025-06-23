@@ -1258,6 +1258,74 @@ AstNode *parser_parseFullType(Parser *parser)
     }
     children = head;
 
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parse_fullType: No tokens available after type.\n");
+        return NULL;
+    }
+
+    while (((Token *)parser->tokens->data)->type == TOKEN_OPEN_BRACKET)
+    {
+        parser->tokens = parser->tokens->next; // Move past the open bracket token
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parse_fullType: No tokens available after open bracket.\n");
+            return NULL;
+        }
+
+        AstNode *arraySizeNode = parser_parseExpression(parser);
+        if (arraySizeNode == NULL)
+        {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parse_fullType: Panic state is true, skipping full type parsing.\n");
+                return NULL;
+            }
+            DEBUG_PRINT("parse_fullType: Failed to parse array size expression.\n");
+            return NULL;
+        }
+        head = linkedList_Ast_create(parser->astArena, children, arraySizeNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parse_fullType: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parse_fullType: No tokens available after array size expression.\n");
+            return NULL;
+        }
+
+        if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_BRACKET)
+        {
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->location, "Expected a closing bracket ']' after array size expression.");
+            if (error == NULL)
+            {
+                DEBUG_PRINT("parse_fullType: error_create failed with errno %d\n", errno);
+                return NULL;
+            }
+            head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+            if (head == NULL)
+            {
+                DEBUG_PRINT("parse_fullType: linkedList_Error_create failed with errno %d\n", errno);
+                return NULL;
+            }
+            parser->errors = head;
+
+            parser->panic = true; // Set panic state
+            return NULL;
+        }
+
+        parser->tokens = parser->tokens->next; // Move past the close bracket token
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parse_fullType: No tokens available after close bracket.\n");
+            return NULL;
+        }
+    }
+
     AstNode *fullTypeNode = astNode_create(parser->astArena, AST_FULL_TYPE, NULL, children);
     if (fullTypeNode == NULL)
     {

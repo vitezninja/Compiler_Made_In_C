@@ -170,7 +170,7 @@ Type_specifiers = ( const { ( const_ptr | ptr ) } )
 
 ## Full Type:  
 ```ebnf
-Full_type = [ Type_specifiers ] Type ;
+Full_type = [ Type_specifiers ] Type { "[" Expression "]" } ;
 ```
 
 ## Escape characters:  
