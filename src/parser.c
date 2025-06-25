@@ -117,6 +117,8 @@ AstNode *parser_parseLiteral(Parser *parser);
  * @param parser Pointer to the Parser instance containing the token list.
  * 
  * @return Pointer to the root AST node representing the parsed program, or NULL if parsing fails.
+ * 
+ * @note This function handles panic recovery internally, allowing it to skip over errors and continue parsing the rest of the program.
  */
 AstNode *parser_parseProgram(Parser *parser);
 
@@ -345,6 +347,8 @@ AstNode *parser_parseTypedefDeclaration(Parser *parser);
  * @param parser Pointer to the Parser instance containing the token list.
  * 
  * @return Pointer to the newly created AST node representing the parsed statement, or NULL if parsing fails.
+ * 
+ * @note This function handles panic recovery internally, allowing it to skip over errors and continue parsing the rest of the statements.
  */
 AstNode *parser_parseStatement(Parser *parser);
 
@@ -552,6 +556,20 @@ AstNode *parser_parseExpressionStatement(Parser *parser);
  * @return Pointer to the newly created AST node representing the variable declaration, or NULL if parsing fails.
  */
 AstNode *parser_parseVariableDeclaration(Parser *parser);
+
+/**
+ * @brief Tries to parse a variable declaration from the tokens in the parser's token list.
+ * 
+ * This function attempts to parse a variable declaration from the current token in the parser's token list.
+ * It creates a new AST node for the parsed variable declaration and returns it.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the variable declaration, or NULL if parsing fails.
+ * 
+ * @note This fucntion does not consume parser->tokens if it fails.
+ */
+AstNode *parser_tryParseVariableDeclaration(Parser *parser);
 
 /**
  * @brief Parses a jump statement from the tokens in the parser's token list.
@@ -788,22 +806,115 @@ AstNode *parser_parsePrimaryExpression(Parser *parser);
 
 // --------------------------------------------------------------------------------
 
+/**
+ * @brief Recovers from a panic state in the parser.
+ * 
+ * This function attempts to recover the parser from a panic state by skipping tokens until it finds a token
+ * that can be used to continue parsing, such as a semicolon or a closing bracket.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ */
 void parser_recoverSymbolPanic(Parser *parser);
 
+/**
+ * @brief Parses a program containing symbols from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a program.
+ * It handles the syntax of a program, which typically includes function definitions, struct declarations,
+ * global variable declarations, typedefs, enum declarations, and union declarations.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the program, or NULL if parsing fails.
+ */
 AstNode *parser_parseProgramSymbols(Parser *parser);
 
+/**
+ * @brief Parses a function definition symbol from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a function definition.
+ * It handles the syntax of function definitions, which typically include a return type, an identifier, and a body.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the function definition, or NULL if parsing fails.
+ */
 AstNode *parser_parseFunctionDefinitionSymbol(Parser *parser);
 
+/**
+ * @brief Parses a struct declaration symbol from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a struct declaration.
+ * It handles the syntax of struct declarations, which typically include the "struct" keyword, an identifier,
+ * and a body enclosed in braces.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the struct declaration, or NULL if parsing fails.
+ */
 AstNode *parser_parseStructDeclarationSymbol(Parser *parser);
 
+/**
+ * @brief Parses a global variable declaration symbol from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a global variable declaration.
+ * It handles the syntax of global variable declarations, which typically include a type, an identifier, and an optional initializer.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the global variable declaration, or NULL if parsing fails.
+ */
 AstNode *parser_parseGlobalVariableDeclarationSymbol(Parser *parser);
 
+/**
+ * @brief Parses a typedef declaration symbol from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a typedef declaration.
+ * It handles the syntax of typedef declarations, which typically include the "typedef" keyword, a type,
+ * and an identifier for the new type alias.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the typedef declaration, or NULL if parsing fails.
+ */
 AstNode *parser_parseTypedefDeclarationSymbol(Parser *parser);
 
+/**
+ * @brief Parses an enum declaration symbol from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing an enum declaration.
+ * It handles the syntax of enum declarations, which typically include the "enum" keyword, an identifier,
+ * and a body enclosed in braces containing enum value declarations.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the enum declaration, or NULL if parsing fails.
+ */
 AstNode *parser_parseEnumDeclarationSymbol(Parser *parser);
 
+/**
+ * @brief Parses a union declaration symbol from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing a union declaration.
+ * It handles the syntax of union declarations, which typically include the "union" keyword, an identifier,
+ * and a body enclosed in braces containing union member declarations.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the union declaration, or NULL if parsing fails.
+ */
 AstNode *parser_parseUnionDeclarationSymbol(Parser *parser);
 
+/**
+ * @brief Parses an enum value declaration symbol from the tokens in the parser's token list.
+ * 
+ * This function processes the tokens in the parser's token list to construct an AST node representing an enum value declaration.
+ * It handles the syntax of enum value declarations, which typically include an identifier and an optional initializer.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ * 
+ * @return Pointer to the newly created AST node representing the enum value declaration, or NULL if parsing fails.
+ */
 AstNode *parser_parseEnumValueDeclarationSymbol(Parser *parser);
 
 // --------------------------------------------------------------------------------
@@ -1453,7 +1564,7 @@ AstNode *parser_parseProgram(Parser *parser)
         AstNode *import = parser_parseImport(parser); // Sets parser->tokens to the next token after the import statement
         if (import == NULL)
         {
-            if (parser->panic) goto parser_programImportPanic_Label;
+            if (parser->panic) goto parser_parseProgram_Import_Label;
             DEBUG_PRINT("parser_parseProgram: Failed to parse import.\n");
             return NULL;
         }
@@ -1465,7 +1576,7 @@ AstNode *parser_parseProgram(Parser *parser)
         }
         children = head;
 
-        parser_programImportPanic_Label:
+        parser_parseProgram_Import_Label:
         if(parser->panic) parser_recoverPanic(parser);
         if (parser->panic) return NULL; // If panic state is true, return NULL
         if (parser->tokens == NULL)
@@ -1495,7 +1606,7 @@ AstNode *parser_parseProgram(Parser *parser)
             AstNode *function = parser_parseFunctionDefinition(parser);
             if (function == NULL)
             {
-                if (parser->panic) goto parser_programBodyPanic_Label;
+                if (parser->panic) goto parser_parseProgram_Body_Label;
                 DEBUG_PRINT("parser_parseProgram: Failed to parse function.\n");
                 return NULL;
             }
@@ -1512,7 +1623,7 @@ AstNode *parser_parseProgram(Parser *parser)
             AstNode *structDeclaration = parser_parseStructDeclaration(parser);
             if (structDeclaration == NULL)
             {
-                if (parser->panic) goto parser_programBodyPanic_Label;
+                if (parser->panic) goto parser_parseProgram_Body_Label;
                 DEBUG_PRINT("parser_parseProgram: Failed to parse struct declaration.\n");
                 return NULL;
             }
@@ -1529,7 +1640,7 @@ AstNode *parser_parseProgram(Parser *parser)
             AstNode *unionDeclaration = parser_parseUnionDeclaration(parser);
             if (unionDeclaration == NULL)
             {
-                if (parser->panic) goto parser_programBodyPanic_Label;
+                if (parser->panic) goto parser_parseProgram_Body_Label;
                 DEBUG_PRINT("parser_parseProgram: Failed to parse union declaration.\n");
                 return NULL;
             }
@@ -1546,7 +1657,7 @@ AstNode *parser_parseProgram(Parser *parser)
             AstNode *enumDeclaration = parser_parseEnumDeclaration(parser);
             if (enumDeclaration == NULL)
             {
-                if (parser->panic) goto parser_programBodyPanic_Label;
+                if (parser->panic) goto parser_parseProgram_Body_Label;
                 DEBUG_PRINT("parser_parseProgram: Failed to parse enum declaration.\n");
                 return NULL;
             }
@@ -1563,7 +1674,7 @@ AstNode *parser_parseProgram(Parser *parser)
             AstNode *typedefDeclaration = parser_parseTypedefDeclaration(parser);
             if (typedefDeclaration == NULL)
             {
-                if (parser->panic) goto parser_programBodyPanic_Label;
+                if (parser->panic) goto parser_parseProgram_Body_Label;
                 DEBUG_PRINT("parser_parseProgram: Failed to parse typedef declaration.\n");
                 return NULL;
             }
@@ -1580,7 +1691,7 @@ AstNode *parser_parseProgram(Parser *parser)
             AstNode *globalDeclaration = parser_parseGlobalVariableDeclaration(parser);
             if (globalDeclaration == NULL)
             {
-                if (parser->panic) goto parser_programBodyPanic_Label;
+                if (parser->panic) goto parser_parseProgram_Body_Label;
                 DEBUG_PRINT("parser_parseProgram: Failed to parse global declaration.\n");
                 return NULL;
             }
@@ -1610,7 +1721,7 @@ AstNode *parser_parseProgram(Parser *parser)
             parser->panic = true; // Set panic state to true
         }
 
-        parser_programBodyPanic_Label:
+        parser_parseProgram_Body_Label:
         if(parser->panic) parser_recoverPanic(parser);
         if (parser->panic) return NULL; // If panic state is true, return NULL
         else currentTokenNode = parser->tokens;
@@ -4595,7 +4706,7 @@ AstNode *parser_parseStatement(Parser *parser)
         AstNode *branchStatementNode = parser_parseBranchStatement(parser);
         if (branchStatementNode == NULL)
         {
-            if (parser->panic) goto parser_statementPanic_Label;
+            if (parser->panic) goto parser_parseStatement_Label;
             DEBUG_PRINT("parser_parseStatement: Failed to parse branch statement.\n");
             return NULL;
         }
@@ -4615,7 +4726,7 @@ AstNode *parser_parseStatement(Parser *parser)
         AstNode *loopStatementNode = parser_parseLoopStatement(parser);
         if (loopStatementNode == NULL)
         {
-            if (parser->panic) goto parser_statementPanic_Label;
+            if (parser->panic) goto parser_parseStatement_Label;
             DEBUG_PRINT("parser_parseStatement: Failed to parse loop statement.\n");
             return NULL;
         }
@@ -4632,7 +4743,7 @@ AstNode *parser_parseStatement(Parser *parser)
         AstNode *compoundStatementNode = parser_parseCompoundStatement(parser);
         if (compoundStatementNode == NULL)
         {
-            if (parser->panic) goto parser_statementPanic_Label;
+            if (parser->panic) goto parser_parseStatement_Label;
             DEBUG_PRINT("parser_parseStatement: Failed to parse compound statement.\n");
             return NULL;
         }
@@ -4652,7 +4763,7 @@ AstNode *parser_parseStatement(Parser *parser)
         AstNode *jumpStatementNode = parser_parseJumpStatement(parser);
         if (jumpStatementNode == NULL)
         {
-            if (parser->panic) goto parser_statementPanic_Label;
+            if (parser->panic) goto parser_parseStatement_Label;
             DEBUG_PRINT("parser_parseStatement: Failed to parse jump statement.\n");
             return NULL;
         }
@@ -4669,7 +4780,7 @@ AstNode *parser_parseStatement(Parser *parser)
         AstNode *expressionStatementNode = parser_parseExpressionStatement(parser);
         if (expressionStatementNode == NULL)
         {
-            if (parser->panic) goto parser_statementPanic_Label;
+            if (parser->panic) goto parser_parseStatement_Label;
             DEBUG_PRINT("parser_parseStatement: Failed to parse expression statement.\n");
             return NULL;
         }
@@ -4682,7 +4793,7 @@ AstNode *parser_parseStatement(Parser *parser)
         children = head;
     }
 
-    parser_statementPanic_Label:
+    parser_parseStatement_Label:
     if (parser->panic) parser_recoverPanic(parser);
     if (parser->panic) return NULL; // If panic state is true, return NULL
     AstNode *statementNode = astNode_create(parser->astArena, AST_STATEMENT, NULL, children);
@@ -5821,7 +5932,6 @@ AstNode *parser_parseForStatement(Parser *parser)
     return forStatementNode;
 }
 
-// TODO: Currently, this function does not handle the case where the initializer is a variable declaration that is a fixed-size array.
 AstNode *parser_parseForInitializer(Parser *parser)
 {
     if (parser == NULL)
@@ -5844,19 +5954,15 @@ AstNode *parser_parseForInitializer(Parser *parser)
 
     LinkedList *children = NULL;
 
-    // If its a type specifier we know for sure that it is a variable declaration.
-    // The problem is when there is no type specifier, if we only check for a type, we might end up parsing an assignment expression instead of a variable declaration.
-    // This can happen when the initializer is an assignment expression that starts with an identifier.
-    // This is why we check if the next token is an identifier currently but this make array indexing impossible.
-    if (parser_isTypeSpecifier(parser) || ( parser_isType(parser) && (((Token *)parser->tokens->next->data)->type == TOKEN_IDENTIFIER)))
+    if (parser_isFullType(parser))
     {
-        AstNode *variableDeclarationNode = parser_parseVariableDeclaration(parser);
+        AstNode *variableDeclarationNode = parser_tryParseVariableDeclaration(parser);
         if (variableDeclarationNode == NULL)
         {
             if (parser->panic)
             {
-                DEBUG_PRINT("parser_parseForInitializer: Panic state is true, skipping for initializer parsing.\n");
-                return NULL;
+                parser->panic = false; // Reset panic mode
+                goto parser_parseForInitializer_Assignment_Label;
             }
             DEBUG_PRINT("parser_parseForInitializer: Failed to parse variable declaration.\n");
             return NULL;
@@ -5871,6 +5977,8 @@ AstNode *parser_parseForInitializer(Parser *parser)
     }
     else
     {
+        parser_parseForInitializer_Assignment_Label:
+        ;
         AstNode *assignementExpretionNode = parser_parseAssignmentExpression(parser);
         if (assignementExpretionNode == NULL)
         {
@@ -6835,15 +6943,16 @@ AstNode *parser_parseExpressionStatement(Parser *parser)
 
     LinkedList *children = NULL;
 
-    if (parser_isTypeSpecifier(parser) || (parser_isType(parser) && (((Token *)parser->tokens->next->data)->type == TOKEN_IDENTIFIER)))
+    if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON);
+    else if (parser_isFullType(parser))
     {
-        AstNode *variableDeclarationNode = parser_parseVariableDeclaration(parser);
+        AstNode *variableDeclarationNode = parser_tryParseVariableDeclaration(parser);
         if (variableDeclarationNode == NULL)
         {
             if (parser->panic)
             {
-                DEBUG_PRINT("parser_parseExpressionStatement: Panic state is true, skipping expression statement parsing.\n");
-                return NULL;
+                parser->panic = false; // Reset panic mode
+                goto parser_parseExpressionStatement_Expression_Label;
             }
             DEBUG_PRINT("parser_parseExpressionStatement: Failed to parse variable declaration.\n");
             return NULL;
@@ -6862,8 +6971,10 @@ AstNode *parser_parseExpressionStatement(Parser *parser)
             return NULL;
         }
     }
-    else if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
+    else
     {
+        parser_parseExpressionStatement_Expression_Label:
+        ;
         AstNode *expressionNode = parser_parseExpression(parser);
         if (expressionNode == NULL)
         {
@@ -7133,6 +7244,36 @@ AstNode *parser_parseVariableDeclaration(Parser *parser)
     if (variableDeclarationNode == NULL)
     {
         DEBUG_PRINT("parser_parseVariableDeclaration: astNode_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    return variableDeclarationNode;
+}
+
+AstNode *parser_tryParseVariableDeclaration(Parser *parser)
+{
+    if (parser == NULL)
+    {
+        DEBUG_PRINT("parser_tryParseVariableDeclaration: Parser is NULL.\n");
+        return NULL;
+    }
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_tryParseVariableDeclaration: No tokens available to parse variable declaration.\n");
+        return NULL;
+    }
+
+    LinkedList *start = parser->tokens;
+
+    AstNode *variableDeclarationNode = parser_parseVariableDeclaration(parser);
+    if (variableDeclarationNode == NULL)
+    {
+        if (parser->panic)
+        {
+            parser->tokens = start; // Restore tokens to the start position
+            return NULL;
+        }
+        DEBUG_PRINT("parser_tryParseVariableDeclaration: Failed to parse variable declaration.\n");
         return NULL;
     }
     return variableDeclarationNode;
