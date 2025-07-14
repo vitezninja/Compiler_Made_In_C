@@ -6943,7 +6943,7 @@ AstNode *parser_parseExpressionStatement(Parser *parser)
 
     LinkedList *children = NULL;
 
-    if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON);
+    if (((Token *)parser->tokens->data)->type == TOKEN_SEMICOLON);
     else if (parser_isFullType(parser))
     {
         AstNode *variableDeclarationNode = parser_tryParseVariableDeclaration(parser);
