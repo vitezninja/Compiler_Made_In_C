@@ -16,7 +16,6 @@
 #include <errno.h>
 #include <stdbool.h>
 
-// Forward declaration of the AstNode structure
 typedef struct AstNode AstNode;
 
 #include "utils/logger.h"

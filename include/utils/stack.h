@@ -8,7 +8,6 @@
 
 #include "utils/logger.h"
 
-// Forward declaration of the Stack structure
 typedef struct Stack Stack;
 
 struct Stack

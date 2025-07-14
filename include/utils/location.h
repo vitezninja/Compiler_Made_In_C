@@ -14,7 +14,6 @@
 #include <stdio.h>
 #include <inttypes.h>
 
-// Forward declaration of the SourceLocation structure
 typedef struct SourceLocation SourceLocation;
 
 #include "utils/logger.h"

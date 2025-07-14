@@ -14,7 +14,6 @@
 #include <stdio.h>
 #include <errno.h>
 
-// Forward declaration of the LinkedList structure
 typedef struct LinkedList LinkedList;
 
 #include "utils/logger.h"

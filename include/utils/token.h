@@ -17,9 +17,7 @@
 #include <string.h>
 #include <errno.h>
 
-// Forward declaration of the TokenValue union
 typedef union TokenValue TokenValue;
-// Forward declaration of the Token structure
 typedef struct Token Token;
 
 #include "utils/logger.h"

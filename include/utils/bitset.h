@@ -14,7 +14,6 @@
 #include <stdio.h>
 #include <stdint.h>
 
-// Forward declaration of the Bitset64 structure
 typedef struct Bitset64 Bitset64;
 
 #include "utils/logger.h"

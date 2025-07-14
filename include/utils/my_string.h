@@ -14,7 +14,6 @@
 #include <stdio.h>
 #include <errno.h>
 
-// Forward declaration of the String structure
 typedef struct String String;
 
 #include "utils/logger.h"

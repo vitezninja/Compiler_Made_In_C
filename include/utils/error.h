@@ -14,7 +14,6 @@
 #include <errno.h>
 #include <inttypes.h>
 
-// Forward declaration of the Error structure
 typedef struct Error Error;
 
 #include "utils/logger.h"

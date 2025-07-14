@@ -16,7 +16,6 @@
 #include <stdbool.h>
 #include <errno.h>
 
-// Forward declaration of the Options structure
 typedef struct Options Options;
 
 #include "utils/logger.h"

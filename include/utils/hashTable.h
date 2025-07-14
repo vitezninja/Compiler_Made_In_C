@@ -14,7 +14,6 @@
 #include <stdio.h>
 #include <errno.h>
 
-// Forward declaration of the HashTable structure
 typedef struct HashTable HashTable;
 
 #include "utils/logger.h"

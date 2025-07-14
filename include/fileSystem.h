@@ -13,7 +13,6 @@
 #include <stdlib.h>
 #include <errno.h>
 
-// Forward declaration of the File structure
 typedef struct File File;
 
 #include "utils/logger.h"

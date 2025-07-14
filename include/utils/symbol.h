@@ -14,7 +14,6 @@
 #include <stdalign.h>
 #include <errno.h>
 
-// Forward declaration of the Symbol structure
 typedef struct Symbol Symbol;
 
 #include "utils/logger.h"

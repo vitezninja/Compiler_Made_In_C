@@ -13,7 +13,6 @@
 #include <stdbool.h>
 #include <errno.h>
 
-// Forward declaration of the Parser structure
 typedef struct Parser Parser;
 
 #include "utils/linkedList.h"

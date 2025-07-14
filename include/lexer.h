@@ -17,7 +17,6 @@
 #include <stdint.h>
 #include <ctype.h>
 
-// Forward declaration of the Lexer structure
 typedef struct Lexer Lexer;
 
 #include "utils/logger.h"

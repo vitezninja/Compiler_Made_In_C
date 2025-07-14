@@ -90,7 +90,7 @@ void fileSystem_free(File* file)
         DEBUG_PRINT("fileSystem_free: file is NULL\n");
         return;
     }
-    free((char *)file->name);
+    free((char *)file->sourceBuffer);
 }
 
 void fileSystem_print(const File* file)
