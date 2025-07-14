@@ -52,15 +52,21 @@ SRC_DIR := src
 BUILD_DIR := build
 TEST_DIR := tests
 
-DEFINES := -DDEBUG
+DEFINES := -DDEBUG -DOPARSE #-DOLEX 
 
 # Flags
-DEV_FLAGS := $(STD) -Wall -Wextra -ggdb -Og -lm -Wpedantic -Werror -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wno-unused-parameter -fstack-protector-strong -Iinclude $(DEFINES)
+DEV_FLAGS := $(STD) -Wall -Wextra -ggdb -Og -Wpedantic -Werror -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wno-unused-parameter -fstack-protector-strong -Iinclude $(DEFINES)
 ifneq ($(HOST_OS),windows)
 	DEV_FLAGS += -fsanitize=address,undefined
 endif
 REL_FLAGS := $(STD) -Wall -Wextra -Wno-unused-parameter -O3 -Iinclude
 VALGRIND_FLAGS := --leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1
+
+# Linker flags
+LDFLAGS := -lm
+ifneq ($(HOST_OS),windows)
+	LDFLAGS += -static-libasan
+endif
 
 # Default
 BUILD_TYPE ?= dev
@@ -76,7 +82,8 @@ SRC += $(wildcard $(SRC_DIR)/*/*.c)
 SRC += $(wildcard $(SRC_DIR)/*/*/*.c)
 OBJ := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRC))
 DEPS := $(OBJ:.o=.d)
-VALGRIND_TEST_FILE := $(TEST_DIR)/valgrind_test.cmc
+#VALGRIND_TEST_FILE := $(TEST_DIR)/valgrind_test.cmc
+VALGRIND_TEST_FILE := test.cmc
 LOG_FILE := compiler.log
 TEST_LOG_FILE := $(TEST_DIR)/test.log
 
@@ -97,7 +104,7 @@ endif
 
 # Link target
 $(TARGET): $(OBJ) | $(BUILD_DIR)
-	@$(LD) $(CFLAGS) $^ -o "$@" && echo Target built successfully!
+	@$(LD) $(CFLAGS) $(LDFLAGS) $^ -o "$@" && echo Target built successfully!
 	@echo Output file: $(TARGET)
 
 $(BUILD_DIR):
@@ -137,9 +144,9 @@ endif
 # Run with valgrind
 valgrind: $(TARGET)
 ifeq ($(HOST_OS),linux)
-	valgrind $(VALGRIND_FLAGS) $(TARGET) $(VALGRIND_TEST_FILE)
+	valgrind $(VALGRIND_FLAGS) ./$(TARGET) $(VALGRIND_TEST_FILE)
 else ifeq ($(HOST_OS),macos)
-	valgrind $(VALGRIND_FLAGS) $(TARGET) ${VALGRIND_TEST_FILE}
+	valgrind $(VALGRIND_FLAGS) ./$(TARGET) ${VALGRIND_TEST_FILE}
 else
 	@echo "Valgrind is not supported on $(HOST_OS)"
 endif
