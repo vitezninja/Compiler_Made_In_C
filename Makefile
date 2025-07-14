@@ -38,8 +38,6 @@ ifeq ($(HOST_OS),unknown)
     $(warning Unknown host OS: build might not work properly)
 endif
 
-$(info Detected OS: $(HOST_OS))
-
 # Set output file extension based on OS
 ifeq ($(HOST_OS),windows)
 	OUTPUT_EXTENSION ?= exe
@@ -55,9 +53,12 @@ TEST_DIR := tests
 DEFINES := -DDEBUG -DOPARSE #-DOLEX 
 
 # Flags
+DISABLE_SANITIZERS ?= 0
 DEV_FLAGS := $(STD) -Wall -Wextra -ggdb -Og -Wpedantic -Werror -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wno-unused-parameter -fstack-protector-strong -Iinclude $(DEFINES)
 ifneq ($(HOST_OS),windows)
-	DEV_FLAGS += -fsanitize=address,undefined
+	ifneq ($(DISABLE_SANITIZERS),1)
+		DEV_FLAGS += -fsanitize=address,undefined
+	endif
 endif
 REL_FLAGS := $(STD) -Wall -Wextra -Wno-unused-parameter -O3 -Iinclude
 VALGRIND_FLAGS := --leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1
@@ -65,7 +66,9 @@ VALGRIND_FLAGS := --leak-check=full --show-leak-kinds=all --track-origins=yes --
 # Linker flags
 LDFLAGS := -lm
 ifneq ($(HOST_OS),windows)
-	LDFLAGS += -static-libasan
+	ifneq ($(DISABLE_SANITIZERS),1)
+		LDFLAGS += -static-libasan
+	endif
 endif
 
 # Default
@@ -142,10 +145,12 @@ else
 endif
 
 # Run with valgrind
-valgrind: $(TARGET)
+valgrind:
 ifeq ($(HOST_OS),linux)
+	@$(MAKE) DISABLE_SANITIZERS=1
 	valgrind $(VALGRIND_FLAGS) ./$(TARGET) $(VALGRIND_TEST_FILE)
 else ifeq ($(HOST_OS),macos)
+	@$(MAKE) DISABLE_SANITIZERS=1
 	valgrind $(VALGRIND_FLAGS) ./$(TARGET) ${VALGRIND_TEST_FILE}
 else
 	@echo "Valgrind is not supported on $(HOST_OS)"
