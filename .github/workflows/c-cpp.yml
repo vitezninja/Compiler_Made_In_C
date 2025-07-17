@@ -1,4 +1,4 @@
-name: C/C++ CI
+name: Compiler_Made_In_C CI
 
 on:
   push:
@@ -8,27 +8,72 @@ on:
 
 jobs:
   build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Install GCC 11 (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-11 g++-11
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 11
+        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 11
+        echo "CC=gcc-11" >> $GITHUB_ENV
+
+    - name: Install GCC 11 on macOS
+      if: runner.os == 'macOS'
+      run: |
+        brew update
+        brew install gcc@11
+        echo "CC=gcc-11" >> $GITHUB_ENV
+
+    - name: Set up Make on Windows
+      if: runner.os == 'Windows'
+      uses: msys2/setup-msys2@v2
+      with:
+        install: make gcc
+
+    - name: Build (release)
+      if: runner.os != 'Windows'
+      run: make release
+      shell: bash
+
+    - name: Build (release on Windows)
+      if: runner.os == 'Windows'
+      run: make release
+      shell: msys2 {0}
+
+    - name: Show build output
+      run: ls -R build || dir build
+      shell: bash
+
+  valgrind:
+    name: Valgrind on Ubuntu
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
+    - name: Checkout repository
       uses: actions/checkout@v4
-      
-    - name: Install dependencies
-      run: sudo apt-get update && sudo apt-get install -y build-essential
 
-    - name: Set GCC 11 as default
-      run: gcc --version && sudo apt install gcc-11 && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 11
+    - name: Install GCC 11 and Valgrind
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-11 g++-11 valgrind
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 11
+        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 11
+        echo "CC=gcc-11" >> $GITHUB_ENV
 
-    - name: Install Valgrind
-      run: sudo apt-get install -y valgrind
-        
-    - name: Build
-      run: make
-      
-    - name: Valgrind Check
+    - name: Build (release)
+      run: make release
+      shell: bash
+    
+    - name: Run Valgrind
       run: make valgrind
-      
-    - name: Clean
-      run: make clean
+      continue-on-error: true

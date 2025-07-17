@@ -1,0 +1,27 @@
+import json_read, json_write from "stdjson";
+
+export (void) main(int64 argc, string argv)
+{
+    string buffer = json_read("test.json");
+
+    print(buffer);
+
+    for (int64 i = 0; i < 20; i++)
+    {
+        if (i % 2 == 0)
+        {
+            buffer += "Hello ";
+        }
+        else
+        {
+            buffer += "Bye ";
+        }
+        endif
+    }
+
+    json_write(buffer);
+
+    int[50] thing;
+
+    return;
+} 

@@ -1,468 +1,283 @@
-#include "token.h"
-
-/*****************************************************************************************************
-                            PRIVATE TOKEN FUNCTIONS DECLARATIONS START HERE
- *****************************************************************************************************/
+#include "utils/token.h"
 
 /**
- * Count of all the keywords in the lookup table
+ * Lookup table for My_TokenType
  */
-#define KEYWORDS_COUNT (sizeof(keywords) / sizeof(keywords[0]))
-
-static Token *createToken(const char *const text, const int start, const TokenType type, const TokenValue value);
-
-static const char *escapeCharToString(const char escapeChar);
-
-/*****************************************************************************************************
-                                PRIVATE TOKEN FUNCTIONS START HERE
- *****************************************************************************************************/
-
-/**
- * Creates a new `Token` with the given text, start position, type, and value.
- * The function allocates memory for the `Token` structure.
- *
- * This function assumes that `text` is dynamically allocated by the caller 
- * and takes ownership of it. The `Token` will be responsible for freeing 
- * the `text` when it is no longer needed.
- *
- * @param text The text to be associated with the token (assumed to be dynamically allocated).
- *             If `text` is `NULL`, the `length` field of the token will be set to `0`.
- *
- * @param start The starting position of the token in the source code.
- *
- * @param type The type of the token, indicating its category in the lexical analysis.
- *
- * @param value The value of the token, representing additional information like numeric values.
- *
- * @return A pointer to the created `Token`, or `NULL` if allocation fails.
- *
- * @note If memory allocation for the `Token` fails, the function will free the provided `text` to avoid memory leaks.
- *
- * @note The caller is responsible for cleaning up the memory allocated for the `Token` object. This
- *       should be done using `deleteToken` for a single token or `deleteTokens` for multiple tokens.
- */
-static Token *createToken(const char *const text, const int start, const TokenType type, const TokenValue value)
-{
-    Token *token = (Token *)malloc(sizeof(Token));
-    if (token == NULL)
-    {
-        fprintf(stderr, "Memory allocation for Token failed!\n");
-        free((char *)text);
-        return NULL;
-    }
-
-    token->text = text;
-    token->start = start;
-    if (text != NULL)
-    {
-        token->length = strlen(text);
-    }
-    else
-    {
-        token->text = 0;
-    }
-    token->type = type;
-    token->value = value;
-
-    return token;
-}
-
-/**
- * Converts an escape character into its string representation.
- *
- * This function takes a character that represents an escape sequence
- * and returns a string that represents it in the format "\\{char}".
- * If the character is not a recognized escape sequence, it returns NULL.
- * 
- * @param escapeChar The escape character to be converted.
- * 
- * @return A string representing the escape character or NULL if not recognized.
- */
-const char *escapeCharToString(const char escapeChar)
-{
-    switch (escapeChar)
-    {
-        case '\a':
-            return "\\a";
-        case '\b':
-            return "\\b";
-        case '\e':
-            return "\\e";
-        case '\f':
-            return "\\f";
-        case '\n':
-            return "\\n";
-        case '\r':
-            return "\\r";
-        case '\t':
-            return "\\t";
-        case '\v':
-            return "\\v";
-        case '\\':
-            return "\\\\";
-        case '\'':
-            return "\\'";
-        case '\"':
-            return "\\\"";
-        case '\?':
-            return "\\?";
-        default:
-            return NULL;
-    }
-}
+static const char *token_typeAsStrings[] = {
+    [TOKEN_PLUS] = "TOKEN_PLUS",
+    [TOKEN_DOUBLE_PLUS] = "TOKEN_DOUBLE_PLUS",
+    [TOKEN_MINUS] = "TOKEN_MINUS",
+    [TOKEN_DOUBLE_MINUS] = "TOKEN_DOUBLE_MINUS",
+    [TOKEN_STAR] = "TOKEN_STAR",
+    [TOKEN_SLASH] = "TOKEN_SLASH",
+    [TOKEN_PERCENT] = "TOKEN_PERCENT",
+    [TOKEN_PLUS_EQUALS] = "TOKEN_PLUS_EQUALS",
+    [TOKEN_MINUS_EQUALS] = "TOKEN_MINUS_EQUALS",
+    [TOKEN_STAR_EQUALS] = "TOKEN_STAR_EQUALS",
+    [TOKEN_SLASH_EQUALS] = "TOKEN_SLASH_EQUALS",
+    [TOKEN_PERCENT_EQUALS] = "TOKEN_PERCENT_EQUALS",
+    [TOKEN_DOUBLE_LESS_THAN_EQUALS] = "TOKEN_DOUBLE_LESS_THAN_EQUALS",
+    [TOKEN_DOUBLE_GREATER_THAN_EQUALS] = "TOKEN_DOUBLE_GREATER_THAN_EQUALS",
+    [TOKEN_AMPERSAND_EQUALS] = "TOKEN_AMPERSAND_EQUALS",
+    [TOKEN_CARET_EQUALS] = "TOKEN_CARET_EQUALS",
+    [TOKEN_PIPE_EQUALS] = "TOKEN_PIPE_EQUALS",
+    [TOKEN_EQUALS] = "TOKEN_EQUALS",
+    [TOKEN_DOUBLE_EQUALS] = "TOKEN_DOUBLE_EQUALS",
+    [TOKEN_EXCLAMATION_EQUALS] = "TOKEN_EXCLAMATION_EQUALS",
+    [TOKEN_LESS_THAN] = "TOKEN_LESS_THAN",
+    [TOKEN_GREATER_THAN] = "TOKEN_GREATER_THAN",
+    [TOKEN_LESS_THAN_EQUALS] = "TOKEN_LESS_THAN_EQUALS",
+    [TOKEN_GREATER_THAN_EQUALS] = "TOKEN_GREATER_THAN_EQUALS",
+    [TOKEN_DOUBLE_AMPERSAND] = "TOKEN_DOUBLE_AMPERSAND",
+    [TOKEN_DOUBLE_PIPE] = "TOKEN_DOUBLE_PIPE",
+    [TOKEN_EXCLAMATION] = "TOKEN_EXCLAMATION",
+    [TOKEN_AMPERSAND] = "TOKEN_AMPERSAND",
+    [TOKEN_PIPE] = "TOKEN_PIPE",
+    [TOKEN_CARET] = "TOKEN_CARET",
+    [TOKEN_TILDE] = "TOKEN_TILDE",
+    [TOKEN_DOUBLE_LESS_THAN] = "TOKEN_DOUBLE_LESS_THAN",
+    [TOKEN_DOUBLE_GREATER_THAN] = "TOKEN_DOUBLE_GREATER_THAN",
+    [TOKEN_OPEN_PARENTHESIS] = "TOKEN_OPEN_PARENTHESIS",
+    [TOKEN_CLOSE_PARENTHESIS] = "TOKEN_CLOSE_PARENTHESIS",
+    [TOKEN_OPEN_BRACKET] = "TOKEN_OPEN_BRACKET",
+    [TOKEN_CLOSE_BRACKET] = "TOKEN_CLOSE_BRACKET",
+    [TOKEN_OPEN_CURLY] = "TOKEN_OPEN_CURLY",
+    [TOKEN_CLOSE_CURLY] = "TOKEN_CLOSE_CURLY",
+    [TOKEN_LITERAL_INTEGER] = "TOKEN_LITERAL_INTEGER",
+    [TOKEN_LITERAL_BINARY] = "TOKEN_LITERAL_BINARY",
+    [TOKEN_LITERAL_OCTAL] = "TOKEN_LITERAL_OCTAL",
+    [TOKEN_LITERAL_HEXADECIMAL] = "TOKEN_LITERAL_HEXADECIMAL",
+    [TOKEN_LITERAL_FLOATINGPOINT] = "TOKEN_LITERAL_FLOATINGPOINT",
+    [TOKEN_LITERAL_CHARACTER] = "TOKEN_LITERAL_CHARACTER",
+    [TOKEN_LITERAL_STRING] = "TOKEN_LITERAL_STRING",
+    [TOKEN_LITERAL_BOOLEAN] = "TOKEN_LITERAL_BOOLEAN",
+    [TOKEN_LITERAL_NULL] = "TOKEN_LITERAL_NULL",
+    [TOKEN_IDENTIFIER] = "TOKEN_IDENTIFIER",
+    [TOKEN_KEYWORD_INT_64] = "TOKEN_KEYWORD_INT_64",
+    [TOKEN_KEYWORD_INT_32] = "TOKEN_KEYWORD_INT_32",
+    [TOKEN_KEYWORD_INT_16] = "TOKEN_KEYWORD_INT_16",
+    [TOKEN_KEYWORD_INT_8] = "TOKEN_KEYWORD_INT_8",
+    [TOKEN_KEYWORD_UINT_64] = "TOKEN_KEYWORD_UINT_64",
+    [TOKEN_KEYWORD_UINT_32] = "TOKEN_KEYWORD_UINT_32",
+    [TOKEN_KEYWORD_UINT_16] = "TOKEN_KEYWORD_UINT_16",
+    [TOKEN_KEYWORD_UINT_8] = "TOKEN_KEYWORD_UINT_8",
+    [TOKEN_KEYWORD_FLOAT_64] = "TOKEN_KEYWORD_FLOAT_64",
+    [TOKEN_KEYWORD_FLOAT_32] = "TOKEN_KEYWORD_FLOAT_32",
+    [TOKEN_KEYWORD_CHAR] = "TOKEN_KEYWORD_CHAR",
+    [TOKEN_KEYWORD_STRING] = "TOKEN_KEYWORD_STRING",
+    [TOKEN_KEYWORD_BOOL] = "TOKEN_KEYWORD_BOOL",
+    [TOKEN_KEYWORD_VOID] = "TOKEN_KEYWORD_VOID",
+    [TOKEN_KEYWORD_TYPEDEF] = "TOKEN_KEYWORD_TYPEDEF",
+    [TOKEN_KEYWORD_CONST] = "TOKEN_KEYWORD_CONST",
+    [TOKEN_KEYWORD_CONST_PTR] = "TOKEN_KEYWORD_CONST_PTR",
+    [TOKEN_KEYWORD_PTR] = "TOKEN_KEYWORD_PTR",
+    [TOKEN_KEYWORD_IF] = "TOKEN_KEYWORD_IF",
+    [TOKEN_KEYWORD_ELSE] = "TOKEN_KEYWORD_ELSE",
+    [TOKEN_KEYWORD_ENDIF] = "TOKEN_KEYWORD_ENDIF",
+    [TOKEN_KEYWORD_SWITCH] = "TOKEN_KEYWORD_SWITCH",
+    [TOKEN_KEYWORD_CASE] = "TOKEN_KEYWORD_CASE",
+    [TOKEN_KEYWORD_DEFAULT] = "TOKEN_KEYWORD_DEFAULT",
+    [TOKEN_KEYWORD_FOR] = "TOKEN_KEYWORD_FOR",
+    [TOKEN_KEYWORD_FOREACH] = "TOKEN_KEYWORD_FOREACH",
+    [TOKEN_KEYWORD_WHILE] = "TOKEN_KEYWORD_WHILE",
+    [TOKEN_KEYWORD_DO] = "TOKEN_KEYWORD_DO",
+    [TOKEN_KEYWORD_RETURN] = "TOKEN_KEYWORD_RETURN",
+    [TOKEN_KEYWORD_CONTINUE] = "TOKEN_KEYWORD_CONTINUE",
+    [TOKEN_KEYWORD_BREAK] = "TOKEN_KEYWORD_BREAK",
+    [TOKEN_KEYWORD_GOTO] = "TOKEN_KEYWORD_GOTO",
+    [TOKEN_KEYWORD_WHEN] = "TOKEN_KEYWORD_WHEN",
+    [TOKEN_KEYWORD_STRUCT] = "TOKEN_KEYWORD_STRUCT",
+    [TOKEN_KEYWORD_UNION] = "TOKEN_KEYWORD_UNION",
+    [TOKEN_KEYWORD_ENUM] = "TOKEN_KEYWORD_ENUM",
+    [TOKEN_KEYWORD_IMPORT] = "TOKEN_KEYWORD_IMPORT",
+    [TOKEN_KEYWORD_FROM] = "TOKEN_KEYWORD_FROM",
+    [TOKEN_KEYWORD_EXPORT] = "TOKEN_KEYWORD_EXPORT",
+    [TOKEN_COMMA] = "TOKEN_COMMA",
+    [TOKEN_SEMICOLON] = "TOKEN_SEMICOLON",
+    [TOKEN_COLON] = "TOKEN_COLON",
+    [TOKEN_DOT] = "TOKEN_DOT",
+    [TOKEN_EOF] = "TOKEN_EOF",
+    [TOKEN_UNKNOWN] = "TOKEN_UNKNOWN",
+};
 
 /**
  * Lookup table for keywords
  */
-static const char *const keywords[] = {
-    [KEYWORD_TYPEDEF] = "typedef",
-    [KEYWORD_EXTERN] = "extern",
-    [KEYWORD_STATIC] = "static",
-    [KEYWORD_AUTO] = "auto",
-    [KEYWORD_REGISTER] = "register",
-    [KEYWORD_VOID] = "void",
-    [KEYWORD_CHAR] = "char",
-    [KEYWORD_STRING] = "string",
-    [KEYWORD_SHORT] = "short",
-    [KEYWORD_INT] = "int",
-    [KEYWORD_LONG] = "long",
-    [KEYWORD_FLOAT] = "float",
-    [KEYWORD_DOUBLE] = "double",
-    [KEYWORD_SIGNED] = "signed",
-    [KEYWORD_UNSIGNED] = "unsigned",
-    [KEYWORD_STRUCT] = "struct",
-    [KEYWORD_UNION] = "union",
-    [KEYWORD_CONST] = "const",
-    [KEYWORD_RESTRICT] = "restrict",
-    [KEYWORD_VOLATILE] = "volatile",
-    [KEYWORD_SIZEOF] = "sizeof",
-    [KEYWORD_ENUM] = "enum",
-    [KEYWORD_INLINE] = "inline",
-    [KEYWORD_CASE] = "case",
-    [KEYWORD_DEFAULT] = "default",
-    [KEYWORD_IF] = "if",
-    [KEYWORD_ELSE] = "else",
-    [KEYWORD_SWITCH] = "switch",
-    [KEYWORD_WHILE] = "while",
-    [KEYWORD_DO] = "do",
-    [KEYWORD_FOR] = "for",
-    [KEYWORD_GOTO] = "goto",
-    [KEYWORD_CONTINUE] = "continue",
-    [KEYWORD_BREAK] = "break",
-    [KEYWORD_RETURN] = "return",
+static const char *token_keywordsAsStrings[] = {
+    [TOKEN_KEYWORD_INT_64] = "int64",
+    [TOKEN_KEYWORD_INT_32] = "int32",
+    [TOKEN_KEYWORD_INT_16] = "int16",
+    [TOKEN_KEYWORD_INT_8] = "int8",
+    [TOKEN_KEYWORD_UINT_64] = "uint64",
+    [TOKEN_KEYWORD_UINT_32] = "uint32",
+    [TOKEN_KEYWORD_UINT_16] = "uint16",
+    [TOKEN_KEYWORD_UINT_8] = "uint8",
+    [TOKEN_KEYWORD_FLOAT_64] = "float64",
+    [TOKEN_KEYWORD_FLOAT_32] = "float32",
+    [TOKEN_KEYWORD_CHAR] = "char",
+    [TOKEN_KEYWORD_STRING] = "string",
+    [TOKEN_KEYWORD_BOOL] = "bool",
+    [TOKEN_KEYWORD_VOID] = "void",
+    [TOKEN_KEYWORD_TYPEDEF] = "typedef",
+    [TOKEN_KEYWORD_CONST] = "const",
+    [TOKEN_KEYWORD_CONST_PTR] = "const_ptr",
+    [TOKEN_KEYWORD_PTR] = "ptr",
+    [TOKEN_KEYWORD_IF] = "if",
+    [TOKEN_KEYWORD_ENDIF] = "endif",
+    [TOKEN_KEYWORD_ELSE] = "else",
+    [TOKEN_KEYWORD_SWITCH] = "switch",
+    [TOKEN_KEYWORD_CASE] = "case",
+    [TOKEN_KEYWORD_DEFAULT] = "default",
+    [TOKEN_KEYWORD_FOR] = "for",
+    [TOKEN_KEYWORD_FOREACH] = "foreach",
+    [TOKEN_KEYWORD_WHILE] = "while",
+    [TOKEN_KEYWORD_DO] = "do",
+    [TOKEN_KEYWORD_RETURN] = "return",
+    [TOKEN_KEYWORD_CONTINUE] = "continue",
+    [TOKEN_KEYWORD_BREAK] = "break",
+    [TOKEN_KEYWORD_GOTO] = "goto",
+    [TOKEN_KEYWORD_WHEN] = "when",
+    [TOKEN_KEYWORD_STRUCT] = "struct",
+    [TOKEN_KEYWORD_UNION] = "union",
+    [TOKEN_KEYWORD_ENUM] = "enum",
+    [TOKEN_KEYWORD_IMPORT] = "import",
+    [TOKEN_KEYWORD_FROM] = "from",
+    [TOKEN_KEYWORD_EXPORT] = "export",
 };
 
-/**
- * Lookup table for TokenType
- */
-static const char *const tokenTypeStrings[] = {
-    // Arithmetic Operators:
-    [TOKEN_PLUS] = "PLUS",
-    [TOKEN_DOUBLE_PLUS] = "DOUBLE_PLUS",
-    [TOKEN_MINUS] = "MINUS",
-    [TOKEN_DOUBLE_MINUS] = "DOUBLE_MINUS",
-    [TOKEN_STAR] = "STAR",
-    [TOKEN_SLASH] = "SLASH",
-    [TOKEN_PERCENT] = "PERCENT",
-
-    // Compound Assignment Operators (Arithmetic):
-    [TOKEN_PLUS_EQUALS] = "PLUS_EQUAL" ,
-    [TOKEN_MINUS_EQUALS] = "MINUS_EQUAL",
-    [TOKEN_STAR_EQUALS] = "STAR_EQUAL",
-    [TOKEN_SLASH_EQUALS] = "SLASH_EQUAL",
-    [TOKEN_PERCENT_EQUALS] = "PERCENT_EQUAL",
-
-    // Compound Assignment Operators (Bitwise):
-    [TOKEN_BITWISE_LEFT_SHIFT_EQUALS] = "BITWISE_LEFT_SHIFT_EQUAL",
-    [TOKEN_BITWISE_RIGHT_SHIFT_EQUALS] = "BITWISE_RIGHT_SHIFT_EQUAL",
-    [TOKEN_BITWISE_AND_EQUALS] = "BITWISE_AND_EQUAL",
-    [TOKEN_BITWISE_XOR_EQUALS] = "BITWISE_XOR_EQUAL",
-    [TOKEN_BITWISE_OR_EQUALS] = "BITWISE_OR_EQUAL",
-
-    // Comparison Operators:
-    [TOKEN_EQUALS] = "EQUALS",
-    [TOKEN_DOUBLE_EQUALS] = "DOUBLE_EQUALS",
-    [TOKEN_NOT_EQUALS] = "NOT_EQUALS",
-    [TOKEN_LESS_THAN] = "LESS_THAN",
-    [TOKEN_GREATER_THAN] = "GREATER_THAN",
-    [TOKEN_LESS_THAN_OR_EQUALS] = "LESS_THAN_OR_EQUAL",
-    [TOKEN_GREATER_THAN_OR_EQUALS] = "GREATER_THAN_OR_EQUAL",
-
-    // Logical Operators:
-    [TOKEN_AND] = "AND",
-    [TOKEN_OR] = "OR",
-    [TOKEN_NOT] = "NOT",
-
-    // Bitwise Operators:
-    [TOKEN_BITWISE_AND] = "BITWISE_AND",
-    [TOKEN_BITWISE_OR] = "BITWISE_OR",
-    [TOKEN_BITWISE_XOR] = "BITWISE_XOR",
-    [TOKEN_BITWISE_NOT] = "BITWISE_NOT",
-    [TOKEN_BITWISE_LEFT_SHIFT] = "BITWISE_LEFT_SHIFT",
-    [TOKEN_BITWISE_RIGHT_SHIFT] = "BITWISE_RIGHT_SHIFT",
-
-    // Parentheses and Brackets:
-    [TOKEN_OPEN_PARENTHESIS] = "OPEN_PARENTHESIS",
-    [TOKEN_CLOSE_PARENTHESIS] = "CLOSE_PARENTHESIS",
-    [TOKEN_OPEN_BRACKET] = "OPEN_BRACKET",
-    [TOKEN_CLOSE_BRACKET] = "CLOSE_BRACKET",
-    [TOKEN_OPEN_CURLY] = "OPEN_CURLY",
-    [TOKEN_CLOSE_CURLY] = "CLOSE_CURLY",
-
-    // Literals:
-    [TOKEN_INTEGER] = "INTEGER",
-    [TOKEN_FLOATINGPOINT] = "FLOATINGPOINT",
-    [TOKEN_CHARACTER] = "CHARACTER",
-    [TOKEN_STRING] = "STRING",
-    [TOKEN_HEXADECIMAL] = "HEXADECIMAL",
-    [TOKEN_OCTAL] = "OCTAL",
-
-    // Identifier:
-    [TOKEN_IDENTIFIER] = "IDENTIFIER",
-
-    // Keywords:
-    [TOKEN_KEYWORD] = "KEYWORD",
-
-    // Punctuation:
-    [TOKEN_COMMA] = "COMMA",
-    [TOKEN_SEMICOLON] = "SEMICOLON",
-    [TOKEN_COLON] = "COLON",
-    [TOKEN_DOT] = "DOT",
-    [TOKEN_ARROW] = "ARROW",
-    [TOKEN_QUESTION_MARK] = "QUESTION_MARK",
-
-    // Whitespace:
-    [TOKEN_WHITESPACE] = "WHITESPACE",
-
-    // Comments:
-    [TOKEN_LINE_COMMENT] = "LINE_COMMENT",
-    [TOKEN_BLOCK_COMMENT] = "BLOCK_COMMENT",
-
-    // End of File:
-    [TOKEN_EOF] = "EOF",
-
-    // Unknown:
-    [TOKEN_UNKNOWN] = "UNKNOWN",
-};
-
-/*****************************************************************************************************
-                                PUBLIC TOKEN FUNCTIONS START HERE                                
- *****************************************************************************************************/
-
-Token *createTokenNone(const char *const text, const int start, const TokenType type)
+Token *token_create(Arena *arena, My_TokenType type, const char *text, SourceLocation location, TokenValue value)
 {
-    TokenValue value = {0};
-
-    Token *token = createToken(text, start, type, value);
-    if (token == NULL)
+    if (arena == NULL)
     {
-        free((char *)text);
-    }
-
-    return token;
-}
-
-Token *createTokenNumber(const char *const text, const int start, const TokenType type, const int number)
-{
-    TokenValue value = {.number = number};
-
-    Token *token = createToken(text, start, type, value);
-    if (token == NULL)
-    {
-        free((char *)text);
-    }
-
-    return token;
-}
-
-Token *createTokenString(const char *const text, const int start, const TokenType type, const char *const string)
-{
-    TokenValue value = {.string = string};
-
-    Token *token = createToken(text, start, type, value);
-    if (token == NULL)
-    {
-        if (value.string != NULL)
-        {
-            free((char *)value.string);
-        }
-        free((char *)text);
-    }
-
-    return token;
-}
-
-Token *createTokenChar(const char *const text, const int start, const TokenType type, const char character)
-{
-    TokenValue value = {.character = character};
-
-    Token *token = createToken(text, start, type, value);
-    if (token == NULL)
-    {
-        free((char *)text);
-    }
-
-    return token;
-}
-
-Token *createTokenFloat(const char *const text, const int start, const TokenType type, const double floatingPoint)
-{
-    TokenValue value = {.floatingPoint = floatingPoint};
-
-    Token *token = createToken(text, start, type, value);
-    if (token == NULL)
-    {
-        free((char *)text);
-    }
-
-    return token;
-}
-
-Token *createTokenKeyword(const char *const text, const int start, const TokenType type, const Keywords keyword)
-{
-    TokenValue value = {.keyword = keyword};
-
-    Token *token = createToken(text, start, type, value);
-    if (token == NULL)
-    {
-        free((char *)text);
-    }
-
-    return token;
-}
-
-void deleteToken(Token *const token)
-{
-    if (token == NULL)
-    {
-        fprintf(stderr, "Token is NULL!\n");
-        return;
-    }
-
-    free((char *)token->text);
-    if (token->type == TOKEN_STRING)
-    {
-        free((char *)token->value.string);
-    }
-    free(token);
-}
-
-void deleteTokens(Token **const tokens, const size_t count)
-{
-    if (tokens == NULL)
-    {
-        fprintf(stderr, "Tokens is NULL!\n");
-        return;
-    }
-
-    for (size_t i = 0; i < count; i++)
-    {
-        if (tokens[i] != NULL)
-        {
-            deleteToken(tokens[i]);
-        }
-    }
-
-    free(tokens);
-}
-
-Token *duplicateToken(Token *const token)
-{
-    if (token == NULL)
-    {
-        fprintf(stderr, "Token is NULL!\n");
+        DEBUG_PRINT("token_create: arena is NULL\n");
         return NULL;
     }
 
-    Token *newToken = createToken(token->text, token->start, token->type, token->value);
-    if (newToken == NULL)
+    if (type >= TOKEN_TYPE_COUNT || type == TOKEN_KEYWORD_FIRST || type == TOKEN_KEYWORD_LAST)
     {
-        fprintf(stderr, "Memory allocation for new Token failed!\n");
+        DEBUG_PRINT("token_create: invalid token type %d\n", type);
         return NULL;
     }
-    
-    return newToken;
+
+    if (text == NULL)
+    {
+        DEBUG_PRINT("token_create: text is NULL\n");
+        return NULL;
+    }
+
+    Token *token = (Token *)arena_alloc(arena, sizeof(Token), alignof(Token));
+    if (token == NULL)
+    {
+        DEBUG_PRINT("token_create: arena_alloc failed with errno %d\n", errno);
+        return NULL;
+    }
+
+    token->type = type;
+    token->text = text;
+    token->location = location;
+    token->value = value;
+    return token;
 }
 
-void printToken(const Token *const token)
+Token *token_copy(Arena *arena, const Token *token)
+{
+    if (arena == NULL)
+    {
+        DEBUG_PRINT("token_copy: arena is NULL\n");
+        return NULL;
+    }
+
+    if (token == NULL)
+    {
+        DEBUG_PRINT("token_copy: token is NULL\n");
+        return NULL;
+    }
+
+    TokenValue value = token->value; // Copy the value union
+
+    Token *new_token = token_create(arena, token->type, token->text, token->location, value);
+    if (new_token == NULL)
+    {
+        DEBUG_PRINT("token_copy: token_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    return new_token;
+}
+
+void token_print(const Token *token)
 {
     if (token == NULL)
     {
-        fprintf(stderr, "Token is NULL!\n");
+        DEBUG_PRINT("token_print: token is NULL\n");
         return;
     }
 
-    if (token->type == TOKEN_EOF)
-    {
-        printf("%s token\n", getType(token->type));
-        return;
-    }
-
-    printf("%s token, text: %s", getType(token->type), token->text);
-
-    const char *escape = escapeCharToString(token->value.character);
+    printf("Token {\n");
+    printf("    Type   : %s\n", token_typeToString(token->type));
+    printf("    Text   : \"%s\"\n", token->text);
+    sourceLocation_print(&token->location);
+    printf("    Value  : ");
     switch (token->type)
     {
-    case TOKEN_INTEGER:
-        printf(", value: %d\n", token->value.number);
-        break;
-    case TOKEN_FLOATINGPOINT:
-        printf(", value: %f\n", token->value.floatingPoint);
-        break;
-    case TOKEN_CHARACTER:
-        if (escape == NULL)
-        {
-            printf(", value: %c\n", token->value.character);
-        }
-        else
-        {
-            printf(", value: %s\n", escape);
-        }
-        break;
-    case TOKEN_STRING:
-        printf(", value: %s\n", token->value.string);
-        break;
-    case TOKEN_HEXADECIMAL:
-        printf(", value: %#x\n", token->value.number);
-        break;
-    case TOKEN_OCTAL:
-        printf(", value: %#o\n", token->value.number);
-        break;
-    case TOKEN_KEYWORD:
-        printf(", value: %s\n", keywords[token->value.keyword]);
-        break;
-    default:
-        printf("\n");
-        return;
+        case TOKEN_LITERAL_INTEGER:
+            printf("%" PRId64 "\n", token->value.int_value);
+            break;
+        case TOKEN_LITERAL_BINARY:
+            printf("0b%" PRIx64 "\n", token->value.int_value); // TODO handle binary format
+            break;
+        case TOKEN_LITERAL_OCTAL:
+            printf("0%" PRIo64" \n", token->value.int_value);
+            break;
+        case TOKEN_LITERAL_HEXADECIMAL:
+            printf("0x%" PRIx64 "\n", token->value.int_value);
+            break;
+        case TOKEN_LITERAL_FLOATINGPOINT:
+            printf("%lf\n", token->value.float_value);
+            break;
+        case TOKEN_LITERAL_CHARACTER:
+            printf("'%d'\n", token->value.char_value);
+            break;
+        case TOKEN_LITERAL_STRING:
+            printf("\"%s\"\n", token->value.string_value);
+            break;
+        case TOKEN_LITERAL_BOOLEAN:
+            printf("%s\n", token->value.boolean_value ? "true" : "false");
+            break;
+        case TOKEN_LITERAL_NULL:
+            printf("NULL\n");
+            break;
+        default:
+            printf("N/A\n");
+            break;
     }
+    printf("}\n");
 }
 
-char *getType(TokenType type)
+My_TokenType token_keywordTypeFromString(const char *str)
 {
-    if (type >= 0 && type < TOKEN_TYPE_COUNT)
+    if (str == NULL)
     {
-        return (char *)tokenTypeStrings[type];
-    }
-    else
-    {
-        return "UNKNOWN";
-    }
-}
-
-Keywords isKeyword(const char *const input)
-{
-    if (input == NULL)
-    {
-        return 0;
+        DEBUG_PRINT("token_keywordTypeFromString: string is NULL\n");
+        return TOKEN_UNKNOWN;
     }
 
-    for (size_t i = 0; i < KEYWORDS_COUNT; i++)
+    const int firstKeyword = TOKEN_KEYWORD_FIRST + 1;
+    for (int i = firstKeyword; i < TOKEN_KEYWORD_LAST; i++)
     {
-        if (strcmp(input, keywords[i]) == 0)
+        if (strcmp(str, token_keywordsAsStrings[i]) == 0)
         {
-            return (Keywords)i;
+            return (My_TokenType)i;
         }
     }
-    
-    return (Keywords)-1;
+    return TOKEN_UNKNOWN;
+}
+
+const char *token_typeToString(My_TokenType type)
+{
+    if (type < 0 || type >= TOKEN_TYPE_COUNT || type == TOKEN_KEYWORD_FIRST || type == TOKEN_KEYWORD_LAST)
+    {
+        DEBUG_PRINT("token_typeToString: invalid token type %d\n", type);
+        return NULL;
+    }
+    return token_typeAsStrings[type];
 }
