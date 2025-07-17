@@ -26,11 +26,11 @@ else
 
     # Handle Git Bash / MSYS2 / MinGW
     ifneq (,$(findstring MINGW,$(UNAME_S)))
-        HOST_OS := windows
+        HOST_OS := msys
     endif
 
     ifneq (,$(findstring MSYS,$(UNAME_S)))
-        HOST_OS := windows
+        HOST_OS := msys
     endif
 endif
 
@@ -38,8 +38,12 @@ ifeq ($(HOST_OS),unknown)
     $(warning Unknown host OS: build might not work properly)
 endif
 
+$(info Detected OS: $(HOST_OS))
+
 # Set output file extension based on OS
 ifeq ($(HOST_OS),windows)
+	OUTPUT_EXTENSION ?= exe
+else ifeq ($(HOST_OS),msys)
 	OUTPUT_EXTENSION ?= exe
 else
 	OUTPUT_EXTENSION ?= out
@@ -56,8 +60,10 @@ DEFINES := -DDEBUG -DOPARSE #-DOLEX
 DISABLE_SANITIZERS ?= 0
 DEV_FLAGS := $(STD) -Wall -Wextra -ggdb -Og -Wpedantic -Werror -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wno-unused-parameter -fstack-protector-strong -Iinclude $(DEFINES)
 ifneq ($(HOST_OS),windows)
-	ifneq ($(DISABLE_SANITIZERS),1)
-		DEV_FLAGS += -fsanitize=address,undefined
+	ifneq ($(HOST_OS),msys)
+		ifneq ($(DISABLE_SANITIZERS),1)
+			DEV_FLAGS += -fsanitize=address,undefined
+		endif
 	endif
 endif
 REL_FLAGS := $(STD) -Wall -Wextra -Wno-unused-parameter -O3 -Iinclude
@@ -66,8 +72,10 @@ VALGRIND_FLAGS := --leak-check=full --show-leak-kinds=all --track-origins=yes --
 # Linker flags
 LDFLAGS := -lm
 ifneq ($(HOST_OS),windows)
-	ifneq ($(DISABLE_SANITIZERS),1)
-		LDFLAGS += -static-libasan
+	ifneq ($(HOST_OS),msys)
+		ifneq ($(DISABLE_SANITIZERS),1)
+			LDFLAGS += -static-libasan
+		endif
 	endif
 endif
 
