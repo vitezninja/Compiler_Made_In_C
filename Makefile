@@ -9,11 +9,24 @@ LD := gcc
 STD := -std=gnu99
 
 # Detect OS (Windows native CMD sets OS to Windows_NT)
+UNAME_EXISTS := $(shell command -v uname 2> NUL)
+
+ifeq ($(UNAME_EXISTS),)
+	UNAME_S := Unknown
+else
+	UNAME_S := $(shell uname -s 2>/dev/null || echo Unknown)
+endif
+
 ifeq ($(OS),Windows_NT)
     HOST_OS := windows
-else
-    UNAME_S := $(shell uname -s 2>/dev/null || echo Unknown)
 
+	# Handle Git Bash / MSYS2 / MinGW
+	ifneq (,$(findstring MINGW,$(UNAME_S)))
+		HOST_OS := msys
+	else ifneq (,$(findstring MSYS,$(UNAME_S)))
+		HOST_OS := msys
+	endif
+else
     ifeq ($(UNAME_S),Linux)
         HOST_OS := linux
     else ifeq ($(UNAME_S),Darwin)
@@ -22,15 +35,6 @@ else
         HOST_OS := freebsd
     else
         HOST_OS := unknown
-    endif
-
-    # Handle Git Bash / MSYS2 / MinGW
-    ifneq (,$(findstring MINGW,$(UNAME_S)))
-        HOST_OS := msys
-    endif
-
-    ifneq (,$(findstring MSYS,$(UNAME_S)))
-        HOST_OS := msys
     endif
 endif
 
@@ -60,7 +64,7 @@ DEFINES := -DDEBUG -DOPARSE #-DOLEX
 # Flags
 DISABLE_SANITIZERS ?= 0
 DEV_FLAGS := $(STD) -Wall -Wextra -ggdb -Og -Wpedantic -Werror -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wno-unused-parameter -fstack-protector-strong -Iinclude $(DEFINES)
-ifneq ($(HOST_OS),linux)
+ifeq ($(HOST_OS),linux)
 	ifneq ($(DISABLE_SANITIZERS),1)
 		DEV_FLAGS += -fsanitize=address,undefined
 	endif
@@ -153,9 +157,6 @@ valgrind:
 ifeq ($(HOST_OS),linux)
 	@$(MAKE) DISABLE_SANITIZERS=1
 	valgrind $(VALGRIND_FLAGS) ./$(TARGET) $(VALGRIND_TEST_FILE)
-else ifeq ($(HOST_OS),macos)
-	@$(MAKE) DISABLE_SANITIZERS=1
-	valgrind $(VALGRIND_FLAGS) ./$(TARGET) ${VALGRIND_TEST_FILE}
 else
 	@echo "Valgrind is not supported on $(HOST_OS)"
 endif
