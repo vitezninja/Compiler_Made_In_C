@@ -39,6 +39,7 @@ ifeq ($(HOST_OS),unknown)
 endif
 
 $(info Detected OS: $(HOST_OS))
+$(info Detected UNAME_S: $(UNAME_S))
 
 # Set output file extension based on OS
 ifeq ($(HOST_OS),windows)
@@ -59,11 +60,9 @@ DEFINES := -DDEBUG -DOPARSE #-DOLEX
 # Flags
 DISABLE_SANITIZERS ?= 0
 DEV_FLAGS := $(STD) -Wall -Wextra -ggdb -Og -Wpedantic -Werror -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wno-unused-parameter -fstack-protector-strong -Iinclude $(DEFINES)
-ifneq ($(HOST_OS),windows)
-	ifneq ($(HOST_OS),msys)
-		ifneq ($(DISABLE_SANITIZERS),1)
-			DEV_FLAGS += -fsanitize=address,undefined
-		endif
+ifneq ($(HOST_OS),linux)
+	ifneq ($(DISABLE_SANITIZERS),1)
+		DEV_FLAGS += -fsanitize=address,undefined
 	endif
 endif
 REL_FLAGS := $(STD) -Wall -Wextra -Wno-unused-parameter -O3 -Iinclude
@@ -71,11 +70,9 @@ VALGRIND_FLAGS := --leak-check=full --show-leak-kinds=all --track-origins=yes --
 
 # Linker flags
 LDFLAGS := -lm
-ifneq ($(HOST_OS),windows)
-	ifneq ($(HOST_OS),msys)
-		ifneq ($(DISABLE_SANITIZERS),1)
-			LDFLAGS += -static-libasan
-		endif
+ifeq ($(HOST_OS),linux)
+	ifneq ($(DISABLE_SANITIZERS),1)
+		LDFLAGS += -static-libasan
 	endif
 endif
 
