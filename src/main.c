@@ -302,7 +302,7 @@ AstNode *parseFile(Arena *alphaArena, Arena *betaArena, LinkedList *tokens, File
     }
 
     parser_parse(parser);
-    if (errno != 0 || parser->ast == NULL)
+    if (errno != 0 || parser->ast == NULL || parser->errors != NULL)
     {
         LinkedList *error = parser->errors;
         while (error != NULL)
