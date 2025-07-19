@@ -6,7 +6,6 @@ This languages has the basic C keywords with some removed.
 There are some new keywords as well like ptr and const_ptr but more about this in the type specifier section.  
 ```
 {types}
-typedef
 const
 ptr
 const_ptr
@@ -28,8 +27,6 @@ when
 struct
 union
 enum
-sizeof
-typeof
 import
 from
 export
@@ -116,7 +113,6 @@ Type = "int64"   | "int32"   | "int16"  | "int8"
      | "bool"
      | "void" 
      | identifier
-     | ( ( "struct" | "union" | "enum" ) identifier ) ;
 ```
 
 ## Type specifiers:  
@@ -200,7 +196,7 @@ In this language the literal formats that are supported are:
 - Booleans (has true or false value) Example: true
 - Null (can be uppercase or lowercase null) Example: NULL
 
-```ebnfw
+```ebnf
 Literal = Integer_literal | Binary_literal | Octal_literal | Hexadecimal_literal
         | Floating-point_literal
         | Character_literal
@@ -234,7 +230,7 @@ Null_literal           = "null" | "NULL" ;
 ## Program:  
 A program starts of with 0 or more imports then is followed by 0 or more of one of either a function declaration, global variable declaration, struct declration, union declaration, enum declaration or typdef.  
 ```ebnf
-Program = { Import } { ( Function_declaration | Global_variables_declaration | Struct_declaration | Union_declaration | Enum_declaration | Typedef ) } end_of_file ;
+Program = { Import } { ( Function_declaration | Global_variables_declaration | Struct_declaration | Union_declaration | Enum_declaration ) } end_of_file ;
 ```
 
 ## Importing:  
@@ -296,11 +292,6 @@ Enum_declaration = [ "export" ] "enum" identifier "{" Enum_value_declaration "}"
 Enum_value_declaration = Enum_value "," { Enum_value "," } ;
 
 Enum_value = identifier [ "=" Expression ] ;
-```
-
-## Own types
-```ebnf
-Typedef = [ "export" ] "typedef" Full_type identifier ;
 ```
 
 ## Statements:

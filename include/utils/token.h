@@ -116,7 +116,6 @@ typedef enum My_TokenType
     TOKEN_KEYWORD_STRING,               /** string */
     TOKEN_KEYWORD_BOOL,                 /** bool */
     TOKEN_KEYWORD_VOID,                 /** void */
-    TOKEN_KEYWORD_TYPEDEF,              /** typedef */
     
     TOKEN_KEYWORD_CONST,                /** const */
     TOKEN_KEYWORD_CONST_PTR,            /** const_ptr */

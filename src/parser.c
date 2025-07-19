@@ -325,19 +325,6 @@ AstNode *parser_parseEnumValueDeclaration(Parser *parser);
 AstNode *parser_parseEnumValue(Parser *parser);
 
 /**
- * @brief Parses a typedef declaration from the tokens in the parser's token list.
- * 
- * This function processes the tokens in the parser's token list to construct an AST node representing a typedef declaration.
- * It handles the syntax of typedef declarations, which typically include the "typedef" keyword, a type,
- * and an identifier for the new type alias.
- * 
- * @param parser Pointer to the Parser instance containing the token list.
- * 
- * @return Pointer to the newly created AST node representing the typedef declaration, or NULL if parsing fails.
- */
-AstNode *parser_parseTypedefDeclaration(Parser *parser);
-
-/**
  * @brief Parses a statement from the tokens in the parser's token list.
  * 
  * This function processes the tokens in the parser's token list to construct an AST node representing a statement.
@@ -867,19 +854,6 @@ AstNode *parser_parseStructDeclarationSymbol(Parser *parser);
 AstNode *parser_parseGlobalVariableDeclarationSymbol(Parser *parser);
 
 /**
- * @brief Parses a typedef declaration symbol from the tokens in the parser's token list.
- * 
- * This function processes the tokens in the parser's token list to construct an AST node representing a typedef declaration.
- * It handles the syntax of typedef declarations, which typically include the "typedef" keyword, a type,
- * and an identifier for the new type alias.
- * 
- * @param parser Pointer to the Parser instance containing the token list.
- * 
- * @return Pointer to the newly created AST node representing the typedef declaration, or NULL if parsing fails.
- */
-AstNode *parser_parseTypedefDeclarationSymbol(Parser *parser);
-
-/**
  * @brief Parses an enum declaration symbol from the tokens in the parser's token list.
  * 
  * This function processes the tokens in the parser's token list to construct an AST node representing an enum declaration.
@@ -951,7 +925,6 @@ void parser_recoverPanic(Parser *parser)
         case TOKEN_KEYWORD_FOREACH:
         case TOKEN_KEYWORD_WHILE:
         case TOKEN_KEYWORD_DO:
-        case TOKEN_KEYWORD_TYPEDEF:
         case TOKEN_KEYWORD_STRUCT:
         case TOKEN_KEYWORD_UNION:
         case TOKEN_KEYWORD_ENUM:
@@ -1049,98 +1022,21 @@ AstNode *parser_parseType(Parser *parser)
 
     LinkedList *tokens = NULL;
 
-    My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
-    if (currentTokenType == TOKEN_KEYWORD_INT_64 ||
-        currentTokenType == TOKEN_KEYWORD_INT_32 ||
-        currentTokenType == TOKEN_KEYWORD_INT_16 ||
-        currentTokenType == TOKEN_KEYWORD_INT_8 ||
-        currentTokenType == TOKEN_KEYWORD_UINT_64 ||
-        currentTokenType == TOKEN_KEYWORD_UINT_32 ||
-        currentTokenType == TOKEN_KEYWORD_UINT_16 ||
-        currentTokenType == TOKEN_KEYWORD_UINT_8 ||
-        currentTokenType == TOKEN_KEYWORD_FLOAT_64 ||
-        currentTokenType == TOKEN_KEYWORD_FLOAT_32 ||
-        currentTokenType == TOKEN_KEYWORD_CHAR ||
-        currentTokenType == TOKEN_KEYWORD_STRING ||
-        currentTokenType == TOKEN_KEYWORD_BOOL ||
-        currentTokenType == TOKEN_KEYWORD_VOID || 
-        currentTokenType == TOKEN_IDENTIFIER)
+    Token *typeToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
+    if (typeToken == NULL)
     {
-        Token *typeToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
-        if (typeToken == NULL)
-        {
-            DEBUG_PRINT("parser_parseType: token_copy failed with errno %d\n", errno);
-            return NULL;
-        }
-        LinkedList *head = linkedList_Token_create(parser->astArena, tokens, typeToken);
-        if (head == NULL)
-        {
-            DEBUG_PRINT("parser_parseType: linkedList_Token_create failed with errno %d\n", errno);
-            return NULL;
-        }
-        tokens = head;
-
-        parser->tokens = parser->tokens->next; // Move past the type token
+        DEBUG_PRINT("parser_parseType: token_copy failed with errno %d\n", errno);
+        return NULL;
     }
-    else // struct or union or enum case
+    LinkedList *head = linkedList_Token_create(parser->astArena, tokens, typeToken);
+    if (head == NULL)
     {
-        Token *structUnionEnumToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
-        if (structUnionEnumToken == NULL)
-        {
-            DEBUG_PRINT("parser_parseType: token_copy failed with errno %d\n", errno);
-            return NULL;
-        }
-        LinkedList *head = linkedList_Token_create(parser->astArena, tokens, structUnionEnumToken);
-        if (head == NULL)
-        {
-            DEBUG_PRINT("parser_parseType: linkedList_Token_create failed with errno %d\n", errno);
-            return NULL;
-        }
-        tokens = head;
-
-        parser->tokens = parser->tokens->next; // Move past the struct/union/enum token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseType: No tokens available after struct/union/enum keyword.\n");
-            return NULL;
-        }
-
-        if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
-        {
-            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->location, "Expected identifier after struct/union/enum keyword.");
-            if (error == NULL)
-            {
-                DEBUG_PRINT("parser_parseType: error_create failed with errno %d\n", errno);
-                return NULL;
-            }
-            head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
-            if (head == NULL)
-            {
-                DEBUG_PRINT("parser_parseType: linkedList_Error_create failed with errno %d\n", errno);
-                return NULL;
-            }
-            parser->errors = head;
-
-            parser->panic = true; // Set panic state
-            return NULL;
-        }
-
-        Token *identifierToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
-        if (identifierToken == NULL)
-        {
-            DEBUG_PRINT("parser_parseType: token_copy failed with errno %d\n", errno);
-            return NULL;
-        }
-        head = linkedList_Token_create(parser->astArena, tokens, identifierToken);
-        if (head == NULL)
-        {
-            DEBUG_PRINT("parser_parseType: linkedList_Token_create failed with errno %d\n", errno);
-            return NULL;
-        }
-        tokens = head;
-
-        parser->tokens = parser->tokens->next; // Move past the identifier token
+        DEBUG_PRINT("parser_parseType: linkedList_Token_create failed with errno %d\n", errno);
+        return NULL;
     }
+    tokens = head;
+
+    parser->tokens = parser->tokens->next; // Move past the type token
 
     AstNode *typeNode = astNode_create(parser->astArena, AST_TYPE, tokens, NULL);
     if (typeNode == NULL)
@@ -1662,23 +1558,6 @@ AstNode *parser_parseProgram(Parser *parser)
                 return NULL;
             }
             LinkedList *head = linkedList_Ast_create(parser->astArena, children, enumDeclaration);
-            if (head == NULL)
-            {
-                DEBUG_PRINT("parser_parseProgram: linkedList_Ast_create failed with errno %d\n", errno);
-                return NULL;
-            }
-            children = head;
-        }
-        else if (currentTokenType == TOKEN_KEYWORD_TYPEDEF)
-        {
-            AstNode *typedefDeclaration = parser_parseTypedefDeclaration(parser);
-            if (typedefDeclaration == NULL)
-            {
-                if (parser->panic) goto parser_parseProgram_Body_Label;
-                DEBUG_PRINT("parser_parseProgram: Failed to parse typedef declaration.\n");
-                return NULL;
-            }
-            LinkedList *head = linkedList_Ast_create(parser->astArena, children, typedefDeclaration);
             if (head == NULL)
             {
                 DEBUG_PRINT("parser_parseProgram: linkedList_Ast_create failed with errno %d\n", errno);
@@ -4543,144 +4422,6 @@ AstNode *parser_parseEnumValue(Parser *parser)
         return NULL;
     }
     return enumValueNode;
-}
-
-AstNode *parser_parseTypedefDeclaration(Parser *parser)
-{
-    if (parser == NULL)
-    {
-        DEBUG_PRINT("parser_parseTypedefDeclaration: Parser is NULL.\n");
-        return NULL;
-    }
-
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseTypedefDeclaration: No tokens available to parse.\n");
-        return NULL;
-    }
-
-    My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
-    if (currentTokenType != TOKEN_KEYWORD_TYPEDEF && currentTokenType != TOKEN_KEYWORD_EXPORT)
-    {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->location, "Expected 'typedef' keyword to start typedef declaration.");
-        if (error == NULL)
-        {
-            DEBUG_PRINT("parser_parseTypedefDeclaration: error_create failed with errno %d\n", errno);
-            return NULL;
-        }
-        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
-        if (head == NULL)
-        {
-            DEBUG_PRINT("parser_parseTypedefDeclaration: linkedList_Error_create failed with errno %d\n", errno);
-            return NULL;
-        }
-        parser->errors = head;
-
-        parser->panic = true; // Set panic mode to true
-        return NULL; // Return early to avoid further parsing errors
-    }
-
-    LinkedList *tokens = NULL;
-    LinkedList *children = NULL;
-
-    if (currentTokenType == TOKEN_KEYWORD_EXPORT)
-    {
-        Token *exportToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
-        if (exportToken == NULL)
-        {
-            DEBUG_PRINT("parser_parseTypedefDeclaration: token_copy failed with errno %d\n", errno);
-            return NULL;
-        }
-        LinkedList *head = linkedList_Token_create(parser->astArena, tokens, exportToken);
-        if (head == NULL)
-        {
-            DEBUG_PRINT("parser_parseTypedefDeclaration: linkedList_Token_create failed with errno %d\n", errno);
-            return NULL;
-        }
-        tokens = head;
-
-        parser->tokens = parser->tokens->next; // Move past the export token
-    }
-
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseTypedefDeclaration: No tokens available after export keyword.\n");
-        return NULL;
-    }
-
-    parser->tokens = parser->tokens->next; // Move past the typedef token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseTypedefDeclaration: No tokens available after typedef keyword.\n");
-        return NULL;
-    }
-
-    AstNode *fullTypeNode = parser_parseFullType(parser);
-    if (fullTypeNode == NULL)
-    {
-        if (parser->panic)
-        {
-            DEBUG_PRINT("parser_parseTypedefDeclaration: Panic state is true, skipping typedef parsing.\n");
-            return NULL; // Return early if panic mode is enabled
-        }
-        DEBUG_PRINT("parser_parseTypedefDeclaration: Failed to parse full type.\n");
-        return NULL;
-    }
-    LinkedList *head = linkedList_Ast_create(parser->astArena, children, fullTypeNode);
-    if (head == NULL)
-    {
-        DEBUG_PRINT("parser_parseTypedefDeclaration: linkedList_Ast_create failed with errno %d\n", errno);
-        return NULL;
-    }
-    children = head;
-
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseTypedefDeclaration: No tokens available after type.\n");
-        return NULL;
-    }
-
-    if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
-    {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->location, "Expected identifier after type in typedef declaration.");
-        if (error == NULL)
-        {
-            DEBUG_PRINT("parser_parseTypedefDeclaration: error_create failed with errno %d\n", errno);
-            return NULL;
-        }
-        head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
-        if (head == NULL)
-        {
-            DEBUG_PRINT("parser_parseTypedefDeclaration: linkedList_Error_create failed with errno %d\n", errno);
-            return NULL;
-        }
-        parser->errors = head;
-
-        parser->panic = true; // Set panic mode to true
-        return NULL;
-    }
-
-    Token *identifierToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
-    if (identifierToken == NULL)
-    {
-        DEBUG_PRINT("parser_parseTypedefDeclaration: token_copy failed with errno %d\n", errno);
-        return NULL;
-    }
-
-    head = linkedList_Token_create(parser->astArena, tokens, identifierToken);
-    if (head == NULL)
-    {
-        DEBUG_PRINT("parser_parseTypedefDeclaration: linkedList_Token_create failed with errno %d\n", errno);
-        return NULL;
-    }
-    tokens = head;
-    AstNode *typedefNode = astNode_create(parser->astArena, AST_TYPEDEF, tokens, children);
-    if (typedefNode == NULL)
-    {
-        DEBUG_PRINT("parser_parseTypedefDeclaration: astNode_create failed with errno %d\n", errno);
-        return NULL;
-    }
-    return typedefNode;
 }
 
 AstNode *parser_parseStatement(Parser *parser)
@@ -9321,8 +9062,7 @@ AstNode *parser_parseProgramSymbols(Parser *parser)
                 DEBUG_PRINT("parser_parseProgramSymbols: No tokens available after export keyword.\n");
                 return NULL;
             }
-            My_TokenType currentTokenType = ((Token *)parser->tokens->next->data)->type;    
-
+            My_TokenType currentTokenType = ((Token *)parser->tokens->next->data)->type;
             if (currentTokenType == TOKEN_OPEN_PARENTHESIS)
             {
                 AstNode *function = parser_parseFunctionDefinitionSymbol(parser);
@@ -9384,23 +9124,6 @@ AstNode *parser_parseProgramSymbols(Parser *parser)
                     return NULL;
                 }
                 LinkedList *head = linkedList_Ast_create(parser->astArena, children, enumDeclaration);
-                if (head == NULL)
-                {
-                    DEBUG_PRINT("parser_parseProgram: linkedList_Ast_create failed with errno %d\n", errno);
-                    return NULL;
-                }
-                children = head;
-            }
-            else if (currentTokenType == TOKEN_KEYWORD_TYPEDEF)
-            {
-                AstNode *typedefDeclaration = parser_parseTypedefDeclarationSymbol(parser);
-                if (typedefDeclaration == NULL)
-                {
-                    if (parser->panic) goto parser_programBodySymbolPanic_Label;
-                    DEBUG_PRINT("parser_parseProgram: Failed to parse typedef declaration symbol.\n");
-                    return NULL;
-                }
-                LinkedList *head = linkedList_Ast_create(parser->astArena, children, typedefDeclaration);
                 if (head == NULL)
                 {
                     DEBUG_PRINT("parser_parseProgram: linkedList_Ast_create failed with errno %d\n", errno);
@@ -10068,130 +9791,6 @@ AstNode *parser_parseGlobalVariableDeclarationSymbol(Parser *parser)
         return NULL;
     }
     return globalVariableDeclarationNode;
-}
-
-AstNode *parser_parseTypedefDeclarationSymbol(Parser *parser)
-{
-    if (parser == NULL)
-    {
-        DEBUG_PRINT("parser_parseTypedefDeclarationSymbol: Parser is NULL.\n");
-        return NULL;
-    }
-
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseTypedefDeclarationSymbol: No tokens available to parse.\n");
-        return NULL;
-    }
-    if (parser->tokens->next == NULL)
-    {
-        DEBUG_PRINT("parser_parseTypedefDeclarationSymbol: No tokens available after export keyword.\n");
-        return NULL;
-    }
-
-    if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_EXPORT && ((Token *)parser->tokens->next->data)->type != TOKEN_KEYWORD_TYPEDEF)
-    {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->location, "Expected 'export' then 'typedef' keyword to start typedef declaration.");
-        if (error == NULL)
-        {
-            DEBUG_PRINT("parser_parseTypedefDeclarationSymbol: error_create failed with errno %d\n", errno);
-            return NULL;
-        }
-        LinkedList *head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
-        if (head == NULL)
-        {
-            DEBUG_PRINT("parser_parseTypedefDeclarationSymbol: linkedList_Error_create failed with errno %d\n", errno);
-            return NULL;
-        }
-        parser->errors = head;
-
-        parser->panic = true; // Set panic mode to true
-        return NULL; // Return early to avoid further parsing errors
-    }
-
-    LinkedList *tokens = NULL;
-    LinkedList *children = NULL;
-
-    parser->tokens = parser->tokens->next; // Move past the export token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseTypedefDeclarationSymbol: No tokens available after export keyword.\n");
-        return NULL;
-    }
-
-    parser->tokens = parser->tokens->next; // Move past the typedef token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseTypedefDeclarationSymbol: No tokens available after typedef keyword.\n");
-        return NULL;
-    }
-
-    AstNode *fullTypeNode = parser_parseFullType(parser);
-    if (fullTypeNode == NULL)
-    {
-        if (parser->panic)
-        {
-            DEBUG_PRINT("parser_parseTypedefDeclarationSymbol: Panic state is true, skipping typedef parsing.\n");
-            return NULL; // Return early if panic mode is enabled
-        }
-        DEBUG_PRINT("parser_parseTypedefDeclarationSymbol: Failed to parse full type.\n");
-        return NULL;
-    }
-    LinkedList *head = linkedList_Ast_create(parser->astArena, children, fullTypeNode);
-    if (head == NULL)
-    {
-        DEBUG_PRINT("parser_parseTypedefDeclarationSymbol: linkedList_Ast_create failed with errno %d\n", errno);
-        return NULL;
-    }
-    children = head;
-
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseTypedefDeclarationSymbol: No tokens available after type.\n");
-        return NULL;
-    }
-
-    if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
-    {
-        Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->location, "Expected identifier after type in typedef declaration.");
-        if (error == NULL)
-        {
-            DEBUG_PRINT("parser_parseTypedefDeclarationSymbol: error_create failed with errno %d\n", errno);
-            return NULL;
-        }
-        head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
-        if (head == NULL)
-        {
-            DEBUG_PRINT("parser_parseTypedefDeclarationSymbol: linkedList_Error_create failed with errno %d\n", errno);
-            return NULL;
-        }
-        parser->errors = head;
-
-        parser->panic = true; // Set panic mode to true
-        return NULL;
-    }
-
-    Token *identifierToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
-    if (identifierToken == NULL)
-    {
-        DEBUG_PRINT("parser_parseTypedefDeclarationSymbol: token_copy failed with errno %d\n", errno);
-        return NULL;
-    }
-    head = linkedList_Token_create(parser->astArena, tokens, identifierToken);
-    if (head == NULL)
-    {
-        DEBUG_PRINT("parser_parseTypedefDeclarationSymbol: linkedList_Token_create failed with errno %d\n", errno);
-        return NULL;
-    }
-    tokens = head;
-
-    AstNode *typedefNode = astNode_create(parser->astArena, AST_TYPEDEF, tokens, children);
-    if (typedefNode == NULL)
-    {
-        DEBUG_PRINT("parser_parseTypedefDeclarationSymbol: astNode_create failed with errno %d\n", errno);
-        return NULL;
-    }
-    return typedefNode;
 }
 
 AstNode *parser_parseEnumDeclarationSymbol(Parser *parser)
