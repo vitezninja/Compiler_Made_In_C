@@ -551,12 +551,13 @@ AstNode *parser_parseVariableDeclaration(Parser *parser);
  * It creates a new AST node for the parsed variable declaration and returns it.
  * 
  * @param parser Pointer to the Parser instance containing the token list.
+ * @param success Pointer to a boolean that will be set to true if parsing succeeds, or false if it fails.
  * 
  * @return Pointer to the newly created AST node representing the variable declaration, or NULL if parsing fails.
  * 
- * @note This fucntion does not consume parser->tokens if it fails.
+ * @note This function does not consume parser->tokens if it fails.
  */
-AstNode *parser_tryParseVariableDeclaration(Parser *parser);
+AstNode *parser_tryParseVariableDeclaration(Parser *parser, bool *success);
 
 /**
  * @brief Parses a jump statement from the tokens in the parser's token list.
@@ -5697,13 +5698,19 @@ AstNode *parser_parseForInitializer(Parser *parser)
 
     if (parser_isFullType(parser))
     {
-        AstNode *variableDeclarationNode = parser_tryParseVariableDeclaration(parser);
+        bool success = false;
+        AstNode *variableDeclarationNode = parser_tryParseVariableDeclaration(parser, &success);
+        if (!success)
+        {
+            parser->panic = false; // Reset panic mode
+            goto parser_parseForInitializer_Assignment_Label;
+        }
         if (variableDeclarationNode == NULL)
         {
             if (parser->panic)
             {
-                parser->panic = false; // Reset panic mode
-                goto parser_parseForInitializer_Assignment_Label;
+                DEBUG_PRINT("parser_parseForInitializer: Panic state is true, skipping for initializer parsing.\n");
+                return NULL;
             }
             DEBUG_PRINT("parser_parseForInitializer: Failed to parse variable declaration.\n");
             return NULL;
@@ -6687,13 +6694,20 @@ AstNode *parser_parseExpressionStatement(Parser *parser)
     if (((Token *)parser->tokens->data)->type == TOKEN_SEMICOLON);
     else if (parser_isFullType(parser))
     {
-        AstNode *variableDeclarationNode = parser_tryParseVariableDeclaration(parser);
+        printf("parser_parseExpressionStatement: Parsing variable declaration.\n");
+        bool success = false;
+        AstNode *variableDeclarationNode = parser_tryParseVariableDeclaration(parser, &success);
+        if (!success)
+        {
+            parser->panic = false; // Reset panic mode
+            goto parser_parseExpressionStatement_Expression_Label;
+        }
         if (variableDeclarationNode == NULL)
         {
             if (parser->panic)
             {
-                parser->panic = false; // Reset panic mode
-                goto parser_parseExpressionStatement_Expression_Label;
+                DEBUG_PRINT("parser_parseExpressionStatement: Panic state is true, skipping expression statement parsing.\n");
+                return NULL;
             }
             DEBUG_PRINT("parser_parseExpressionStatement: Failed to parse variable declaration.\n");
             return NULL;
@@ -6990,7 +7004,7 @@ AstNode *parser_parseVariableDeclaration(Parser *parser)
     return variableDeclarationNode;
 }
 
-AstNode *parser_tryParseVariableDeclaration(Parser *parser)
+AstNode *parser_tryParseVariableDeclaration(Parser *parser, bool *success)
 {
     if (parser == NULL)
     {
@@ -7005,16 +7019,182 @@ AstNode *parser_tryParseVariableDeclaration(Parser *parser)
     }
 
     LinkedList *start = parser->tokens;
+    *success = true;
 
-    AstNode *variableDeclarationNode = parser_parseVariableDeclaration(parser);
-    if (variableDeclarationNode == NULL)
+    if (!parser_isFullType(parser))
+    {
+        parser->tokens = start;
+        parser->panic = true;
+        *success = false;
+        return NULL;
+    }
+
+    LinkedList *tokens = NULL;
+    LinkedList *children = NULL;
+
+    AstNode *fullTypeNode = parser_parseFullType(parser);
+    if (fullTypeNode == NULL)
     {
         if (parser->panic)
         {
-            parser->tokens = start; // Restore tokens to the start position
+            DEBUG_PRINT("parser_parseVariableDeclaration: Panic mode enabled, returning NULL.\n");
             return NULL;
         }
-        DEBUG_PRINT("parser_tryParseVariableDeclaration: Failed to parse variable declaration.\n");
+        DEBUG_PRINT("parser_parseVariableDeclaration: Failed to parse full type.\n");
+        return NULL;
+    }
+    LinkedList *head = linkedList_Ast_create(parser->astArena, children, fullTypeNode);
+    if (head == NULL)
+    {
+        DEBUG_PRINT("parser_parseVariableDeclaration: linkedList_Ast_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    children = head;
+
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseVariableDeclaration: No tokens available after type.\n");
+        return NULL;
+    }
+
+    if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
+    {
+        parser->tokens = start;
+        parser->panic = true;
+        *success = false;
+        return NULL;
+    }
+
+    Token *identifierToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
+    if (identifierToken == NULL)
+    {
+        DEBUG_PRINT("parser_parseVariableDeclaration: token_copy failed with errno %d\n", errno);
+        return NULL;
+    }
+    head = linkedList_Token_create(parser->astArena, tokens, identifierToken);
+    if (head == NULL)
+    {
+        DEBUG_PRINT("parser_parseVariableDeclaration: linkedList_Token_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    tokens = head;
+
+    parser->tokens = parser->tokens->next; // Move past the identifier token
+    if (parser->tokens == NULL)
+    {
+        DEBUG_PRINT("parser_parseVariableDeclaration: No tokens available after identifier.\n");
+        return NULL;
+    }
+
+    while (((Token *)parser->tokens->data)->type == TOKEN_COMMA)
+    {
+        parser->tokens = parser->tokens->next; // Move past the comma token
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseVariableDeclaration: No tokens available after comma.\n");
+            return NULL;
+        }
+
+        fullTypeNode = parser_parseFullType(parser);
+        if (fullTypeNode == NULL)
+        {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseVariableDeclaration: Panic mode enabled, returning NULL.\n");
+                return NULL;
+            }
+            DEBUG_PRINT("parser_parseVariableDeclaration: Failed to parse full type after comma.\n");
+            return NULL;
+        }
+        head = linkedList_Ast_create(parser->astArena, children, fullTypeNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseVariableDeclaration: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseVariableDeclaration: No tokens available after type.\n");
+            return NULL;
+        }
+
+        if (((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER)
+        {
+            Error *error = error_create(parser->utilsArena, ERROR_ERROR, ((Token *)parser->tokens->data)->location, "Expected identifier after comma in variable declaration.");
+            if (error == NULL)
+            {
+                DEBUG_PRINT("parser_parseVariableDeclaration: error_create failed with errno %d\n", errno);
+                return NULL;
+            }
+            head = linkedList_Error_create(parser->utilsArena, parser->errors, error);
+            if (head == NULL)
+            {
+                DEBUG_PRINT("parser_parseVariableDeclaration: linkedList_Error_create failed with errno %d\n", errno);
+                return NULL;
+            }
+            parser->errors = head;
+
+            parser->panic = true; // Set panic mode to true
+            return NULL;
+        }
+
+        identifierToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
+        if (identifierToken == NULL)
+        {
+            DEBUG_PRINT("parser_parseVariableDeclaration: token_copy failed with errno %d\n", errno);
+            return NULL;
+        }
+        head = linkedList_Token_create(parser->astArena, tokens, identifierToken);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseVariableDeclaration: linkedList_Token_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        tokens = head;
+
+        parser->tokens = parser->tokens->next; // Move past the identifier token
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseVariableDeclaration: No tokens available after identifier.\n");
+            return NULL;
+        }
+    }
+
+    if (((Token *)parser->tokens->data)->type == TOKEN_EQUALS)
+    {
+        parser->tokens = parser->tokens->next; // Move past the assignment token
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseVariableDeclaration: No tokens available after assignment.\n");
+            return NULL;
+        }
+
+        AstNode *expressionNode = parser_parseExpression(parser);
+        if (expressionNode == NULL)
+        {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseVariableDeclaration: Panic mode enabled, returning NULL.\n");
+                return NULL;
+            }
+            DEBUG_PRINT("parser_parseVariableDeclaration: Failed to parse assignment expression.\n");
+            return NULL;
+        }
+        head = linkedList_Ast_create(parser->astArena, children, expressionNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseVariableDeclaration: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+    }
+
+    AstNode *variableDeclarationNode = astNode_create(parser->astArena, AST_VARIABLE_DECLARATION, tokens, children);
+    if (variableDeclarationNode == NULL)
+    {
+        DEBUG_PRINT("parser_parseVariableDeclaration: astNode_create failed with errno %d\n", errno);
         return NULL;
     }
     return variableDeclarationNode;

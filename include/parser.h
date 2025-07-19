@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <stdbool.h>
 
 typedef struct Parser Parser;
 
