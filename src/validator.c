@@ -80,7 +80,14 @@ void validator_secondPass(Validator *validator)
         AstNode *node = (AstNode *)current->data;
         if (node->type == AST_STRUCT_DECLARATION)
         {
-            CmcType *structType = cmcType_structOrUnion_create(validator->utilsArena, CMC_TYPE_STRUCT, ((Token *)node->tokens->data)->text, NULL, 0);
+            Token *nameToken = (Token *)node->tokens->data;
+            if (nameToken->type == TOKEN_KEYWORD_EXPORT)
+            {
+                // Skip export keyword
+                nameToken = (Token *)node->tokens->next->data;
+            }
+            
+            CmcType *structType = cmcType_structOrUnion_create(validator->utilsArena, CMC_TYPE_STRUCT, nameToken->text, NULL, 0);
             if (structType == NULL) 
             {
                 DEBUG_PRINT("validator_validate: Failed to create struct type for struct declaration.\n");
@@ -89,7 +96,7 @@ void validator_secondPass(Validator *validator)
 
             if(!hashTable_CmcType_tryInsert(validator->typeTable, structType))
             {
-                Error *error = error_create(validator->utilsArena, ERROR_ERROR, ((Token *)node->tokens->data)->location, "Struct name already exists.");
+                Error *error = error_create(validator->utilsArena, ERROR_ERROR, nameToken->location, "Struct name already exists.");
                 if (error == NULL) 
                 {
                     DEBUG_PRINT("validator_validate: Failed to create error for struct name conflict.\n");
@@ -106,7 +113,14 @@ void validator_secondPass(Validator *validator)
         }
         else if (node->type == AST_UNION_DECLARATION)
         {
-            CmcType *unionType = cmcType_structOrUnion_create(validator->utilsArena, CMC_TYPE_UNION, ((Token *)node->tokens->data)->text, NULL, 0);
+            Token *nameToken = (Token *)node->tokens->data;
+            if (nameToken->type == TOKEN_KEYWORD_EXPORT)
+            {
+                // Skip export keyword
+                nameToken = (Token *)node->tokens->next->data;
+            }
+
+            CmcType *unionType = cmcType_structOrUnion_create(validator->utilsArena, CMC_TYPE_UNION, nameToken->text, NULL, 0);
             if (unionType == NULL) 
             {
                 DEBUG_PRINT("validator_validate: Failed to create union type for union declaration.\n");
@@ -115,7 +129,7 @@ void validator_secondPass(Validator *validator)
 
             if(!hashTable_CmcType_tryInsert(validator->typeTable, unionType))
             {
-                Error *error = error_create(validator->utilsArena, ERROR_ERROR, ((Token *)node->tokens->data)->location, "Union name already exists.");
+                Error *error = error_create(validator->utilsArena, ERROR_ERROR, nameToken->location, "Union name already exists.");
                 if (error == NULL) 
                 {
                     DEBUG_PRINT("validator_validate: Failed to create error for union name conflict.\n");
@@ -132,7 +146,14 @@ void validator_secondPass(Validator *validator)
         }
         else if (node->type == AST_ENUM_DECLARATION)
         {
-            CmcType *enumType = cmcType_enum_create(validator->utilsArena, ((Token *)node->tokens->data)->text);
+            Token *nameToken = (Token *)node->tokens->data;
+            if (nameToken->type == TOKEN_KEYWORD_EXPORT)
+            {
+                // Skip export keyword
+                nameToken = (Token *)node->tokens->next->data;
+            }
+
+            CmcType *enumType = cmcType_enum_create(validator->utilsArena, nameToken->text);
             if (enumType == NULL) 
             {
                 DEBUG_PRINT("validator_validate: Failed to create enum type for enum declaration.\n");
@@ -141,7 +162,7 @@ void validator_secondPass(Validator *validator)
 
             if(!hashTable_CmcType_tryInsert(validator->typeTable, enumType))
             {
-                Error *error = error_create(validator->utilsArena, ERROR_ERROR, ((Token *)node->tokens->data)->location, "Enum name already exists.");
+                Error *error = error_create(validator->utilsArena, ERROR_ERROR, nameToken->location, "Enum name already exists.");
                 if (error == NULL) 
                 {
                     DEBUG_PRINT("validator_validate: Failed to create error for enum name conflict.\n");
