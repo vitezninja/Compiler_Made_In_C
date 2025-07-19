@@ -66,6 +66,8 @@ static LinkedList *linkedList_createStart(Arena *arena, LinkedList *head, void *
     return node;
 }
 
+//----------------------------------------------------------------------------------
+
 LinkedList *linkedList_Token_create(Arena *arena, LinkedList *head, Token *data)
 {
     LinkedList *node = linkedList_createEnd(arena, head, (void *)data);
@@ -127,6 +129,17 @@ LinkedList *linkedList_Ast_create(Arena *arena, LinkedList *head, AstNode *data)
     if (node == NULL)
     {
         DEBUG_PRINT("linkedList_Ast_create: linkedList_createEnd failed with errno %d\n", errno);
+        return NULL;
+    }
+    return node;
+}
+
+LinkedList *linkedList_CmcType_create(Arena *arena, LinkedList *head, CmcType *data)
+{
+    LinkedList *node = linkedList_createEnd(arena, head, (void *)data);
+    if (node == NULL)
+    {
+        DEBUG_PRINT("linkedList_CmcType_create: linkedList_createEnd failed with errno %d\n", errno);
         return NULL;
     }
     return node;

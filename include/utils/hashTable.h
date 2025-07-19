@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <stdbool.h>
 
 typedef struct HashTable HashTable;
 
@@ -20,6 +21,7 @@ typedef struct HashTable HashTable;
 #include "utils/arena.h"
 #include "utils/linkedList.h"
 #include "utils/symbol.h"
+#include "utils/type.h"
 #include "utils/my_string.h"
 
 /**
@@ -44,7 +46,7 @@ typedef struct HashTable HashTable;
 struct HashTable
 {
     Arena *arena;                   /** Memory arena used for allocation */
-    LinkedList **buckets;    /** Array of linked lists (buckets) for collision resolution */
+    LinkedList **buckets;           /** Array of linked lists (buckets) for collision resolution */
     size_t bucketCount;             /** Number of buckets in the hash table */
     size_t itemCount;               /** Total number of items in the hash table */
 };
@@ -76,17 +78,29 @@ String *hashTable_String_tryInsert(HashTable *hashTable, const char *name, size_
 
 /**
  * @brief Inserts a symbol into the hash table.
- *
- * This function attempts to insert a symbol with the given name and type into
- * the hash table. If a symbol with the same name already exists, it returns
- * the existing symbol; otherwise, it creates a new symbol and inserts it.
- *
+ * 
+ * This function attempts to insert a symbol into the hash table.
+ * If a symbol with the same name already exists, it returns false otherwise,
+ * it inserts the symbol and returns true.
+ * 
  * @param hashTable Pointer to the HashTable to insert into.
- * @param name The name of the symbol (null-terminated).
- * @param type The type of the symbol.
- * @return Pointer to the inserted or existing Symbol object. Set `errno` to indicate the error.
+ * @param symbol Pointer to the Symbol to insert.
+ * @return true if the symbol was successfully inserted, false if it already exists.
  */
-Symbol *hashTable_Symbol_tryInsert(HashTable *hashTable, const char *name, SymbolType type);
+bool hashTable_Symbol_tryInsert(HashTable *hashTable, Symbol *symbol);
+
+/**
+ * @brief Inserts a CmcType into the hash table.
+ * 
+ * This function attempts to insert a CmcType into the hash table.
+ * If a CmcType with the same name already exists, it returns false; otherwise,
+ * it inserts the CmcType and returns true.
+ * 
+ * @param hashTable Pointer to the HashTable to insert into.
+ * @param type Pointer to the CmcType to insert.
+ * @return true if the CmcType was successfully inserted, false if it already exists.
+ */
+bool hashTable_CmcType_tryInsert(HashTable *hashTable, CmcType *type);
 
 /**
  * @brief Finds a string in the hash table.
@@ -111,6 +125,18 @@ String *hashTable_String_find(HashTable *hashTable, const char *name);
  * @return Pointer to the Symbol object if found, or NULL if not found.
  */
 Symbol *hashTable_Symbol_find(HashTable *hashTable, const char *name);
+
+/**
+ * @brief Finds a CmcType in the hash table.
+ *
+ * This function searches for a CmcType by its name in the hash table and returns
+ * a pointer to the CmcType object if found, or NULL if not found.
+ *
+ * @param hashTable Pointer to the HashTable to search in.
+ * @param name The name of the CmcType to find (null-terminated).
+ * @return Pointer to the CmcType object if found, or NULL if not found.
+ */
+CmcType *hashTable_CmcType_find(HashTable *hashTable, const char *name);
 
 /**
  * @brief Prints the contents of the hash table.

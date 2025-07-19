@@ -119,6 +119,19 @@ LinkedList *linkedList_String_create(Arena *arena, LinkedList *head, String *dat
 LinkedList *linkedList_Ast_create(Arena *arena, LinkedList *head, AstNode *data);
 
 /**
+ * @brief Creates a new linked list node with the given CmcType data.
+ * 
+ * This function allocates memory for a new LinkedList node and initializes it
+ * with the provided CmcType data and chains it to the end of the linked list.
+ * 
+ * @param arena Memory arena used for allocation.
+ * @param head Pointer to the head of the linked list (can be NULL).
+ * @param data Pointer to the CmcType data to be stored in the node.
+ * @return Pointer to the head of the linked list. Set `errno` to indicate the error.
+ */
+LinkedList *linkedList_CmcType_create(Arena *arena, LinkedList *head, CmcType *data);
+
+/**
  * @brief Prints the contents of a linked list node.
  *
  * This function prints the data contained in a linked list node using the
