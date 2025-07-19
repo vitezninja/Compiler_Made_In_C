@@ -1,7 +1,22 @@
 #include "utils/hashTable.h"
 
+/**
+ * @brief Hashes a string using the FNV-1a algorithm.
+ * 
+ * This function computes a hash value for the input string, which can be used for quick lookups.
+ * 
+ * @param str The input string to hash.
+ * @return The hash value of the input string.
+ */
 int hashTable_hash(const char *str);
 
+/**
+ * @brief Resizes the hash table if the number of items exceeds a threshold.
+ * 
+ * This function increases the bucket count and redistributes existing items to maintain performance.
+ * 
+ * @param hashTable Pointer to the hash table to resize.
+ */
 void hashTable_resize(HashTable *hashTable);
 
 // ---------------------------------------------------------------------------------
@@ -112,20 +127,20 @@ String *hashTable_String_tryInsert(HashTable *hashTable, const char *name, size_
 {
     if (hashTable == NULL)
     {
-        DEBUG_PRINT("hashTable_tryInsert: hashTable is NULL\n");
+        DEBUG_PRINT("hashTable_String_tryInsert: hashTable is NULL\n");
         return NULL;
     }
 
     if (name == NULL)
     {
-        DEBUG_PRINT("hashTable_tryInsert: name is NULL\n");
+        DEBUG_PRINT("hashTable_String_tryInsert: name is NULL\n");
         return NULL;
     }
 
     int hashValue = hashTable_hash(name);
     if (hashValue == -1)
     {
-        DEBUG_PRINT("hashTable_tryInsert: hash failed\n");
+        DEBUG_PRINT("hashTable_String_tryInsert: hash failed\n");
         return NULL;
     }
 
@@ -136,14 +151,14 @@ String *hashTable_String_tryInsert(HashTable *hashTable, const char *name, size_
         string = string_create(hashTable->arena, name, length, hashValue);
         if (string == NULL)
         {
-            DEBUG_PRINT("hashTable_tryInsert: string_create failed with errno %d\n", errno);
+            DEBUG_PRINT("hashTable_String_tryInsert: string_create failed with errno %d\n", errno);
             return NULL;
         }
 
         LinkedList *head = linkedList_String_create(hashTable->arena, NULL, string);
         if (head == NULL)
         {
-            DEBUG_PRINT("hashTable_tryInsert: linkedList_String_create failed with errno %d\n", errno);
+            DEBUG_PRINT("hashTable_String_tryInsert: linkedList_String_create failed with errno %d\n", errno);
             return NULL;
         }
 
@@ -169,14 +184,14 @@ String *hashTable_String_tryInsert(HashTable *hashTable, const char *name, size_
         string = string_create(hashTable->arena, name, length, hashValue);
         if (string == NULL)
         {
-            DEBUG_PRINT("hashTable_tryInsert: string_create failed with errno %d\n", errno);
+            DEBUG_PRINT("hashTable_String_tryInsert: string_create failed with errno %d\n", errno);
             return NULL;
         }
 
         LinkedList *head = linkedList_String_create(hashTable->arena, previous, string);
         if (head == NULL)
         {
-            DEBUG_PRINT("hashTable_tryInsert: linkedList_String_create failed with errno %d\n", errno);
+            DEBUG_PRINT("hashTable_String_tryInsert: linkedList_String_create failed with errno %d\n", errno);
             return NULL;
         }
         hashTable->itemCount++;
@@ -187,7 +202,7 @@ String *hashTable_String_tryInsert(HashTable *hashTable, const char *name, size_
         hashTable_resize(hashTable);
         if (errno == ENOMEM)
         {
-            DEBUG_PRINT("hashTable_tryInsert: hashTable_resize failed with errno %d\n", errno);
+            DEBUG_PRINT("hashTable_String_tryInsert: hashTable_resize failed with errno %d\n", errno);
             return NULL;
         }
     }
@@ -195,49 +210,36 @@ String *hashTable_String_tryInsert(HashTable *hashTable, const char *name, size_
     return string;
 }
 
-Symbol *hashTable_Symbol_tryInsert(HashTable *hashTable, const char* name, SymbolType type)
+bool hashTable_Symbol_tryInsert(HashTable *hashTable, Symbol *symbol)
 {
     if (hashTable == NULL)
     {
-        DEBUG_PRINT("hashTable_tryInsert: hashTable is NULL\n");
-        return NULL;
+        DEBUG_PRINT("hashTable_Symbol_tryInsert: hashTable is NULL\n");
+        return false;
     }
 
-    if (name == NULL)
+    if (symbol == NULL)
     {
-        DEBUG_PRINT("hashTable_tryInsert: name is NULL\n");
-        return NULL;
+        DEBUG_PRINT("hashTable_Symbol_tryInsert: symbol is NULL\n");
+        return false;
     }
 
-    if (type < 0)
-    {
-        DEBUG_PRINT("hashTable_tryInsert: type is invalid\n");
-        return NULL;
-    }
-
-    int hashValue = hashTable_hash(name);
+    int hashValue = hashTable_hash(symbol->name);
     if (hashValue == -1)
     {
-        DEBUG_PRINT("hashTable_tryInsert: hash failed\n");
-        return NULL;
+        DEBUG_PRINT("hashTable_Symbol_tryInsert: hash failed\n");
+        return false;
     }
+    symbol->hash = hashValue; // Ensure the symbol has the correct hash value
 
     int index = hashValue % hashTable->bucketCount;
-    Symbol *symbol = NULL;
     if (hashTable->buckets[index] == NULL)
     {
-        symbol = symbol_create(hashTable->arena, name, type, hashValue);
-        if (symbol == NULL)
-        {
-            DEBUG_PRINT("hashTable_tryInsert: symbol_create failed with errno %d\n", errno);
-            return NULL;
-        }
-
         LinkedList *head = linkedList_Symbol_create(hashTable->arena, NULL, symbol);
         if (head == NULL)
         {
-            DEBUG_PRINT("hashTable_tryInsert: linkedList_Symbol_create failed with errno %d\n", errno);
-            return NULL;
+            DEBUG_PRINT("hashTable_Symbol_tryInsert: linkedList_Symbol_create failed with errno %d\n", errno);
+            return false;
         }
         hashTable->buckets[index] = head;
         hashTable->itemCount++;
@@ -245,31 +247,23 @@ Symbol *hashTable_Symbol_tryInsert(HashTable *hashTable, const char* name, Symbo
     else
     {
         LinkedList *bucket = hashTable->buckets[index];
-
         LinkedList *previous = NULL;
         while (bucket != NULL)
         {
             Symbol *bucketData = (Symbol *)bucket->data;
-            if (strcmp(bucketData->name, name) == 0)
+            if (strcmp(bucketData->name, symbol->name) == 0)
             {
-                return bucketData;
+                return false; // Symbol already exists
             }
             previous = bucket;
             bucket = bucket->next;
         }
 
-        symbol = symbol_create(hashTable->arena, name, type, hashValue);
-        if (symbol == NULL)
-        {
-            DEBUG_PRINT("hashTable_tryInsert: symbol_create failed with errno %d\n", errno);
-            return NULL;
-        }
-
         LinkedList *head = linkedList_Symbol_create(hashTable->arena, previous, symbol);
         if (head == NULL)
         {
-            DEBUG_PRINT("hashTable_tryInsert: linkedList_Symbol_create failed with errno %d\n", errno);
-            return NULL;
+            DEBUG_PRINT("hashTable_Symbol_tryInsert: linkedList_Symbol_create failed with errno %d\n", errno);
+            return false;
         }
         hashTable->itemCount++;
     }
@@ -279,12 +273,81 @@ Symbol *hashTable_Symbol_tryInsert(HashTable *hashTable, const char* name, Symbo
         hashTable_resize(hashTable);
         if (errno == ENOMEM)
         {
-            DEBUG_PRINT("hashTable_tryInsert: hashTable_resize failed with errno %d\n", errno);
-            return NULL;
+            DEBUG_PRINT("hashTable_Symbol_tryInsert: hashTable_resize failed with errno %d\n", errno);
+            return false;
         }
     }
+    return true;
+}
 
-    return symbol;
+bool hashTable_CmcType_tryInsert(HashTable *hashTable, CmcType *type)
+{
+    if (hashTable == NULL)
+    {
+        DEBUG_PRINT("hashTable_CmcType_tryInsert: hashTable is NULL\n");
+        return false;
+    }
+
+    if (type == NULL)
+    {
+        DEBUG_PRINT("hashTable_CmcType_tryInsert: type is NULL\n");
+        return false;
+    }
+
+    int hashValue = hashTable_hash(type->name);
+    if (hashValue == -1)
+    {
+        DEBUG_PRINT("hashTable_CmcType_tryInsert: hash failed\n");
+        return false;
+    }
+    type->hash = hashValue; // Ensure the type has the correct hash value
+
+    int index = hashValue % hashTable->bucketCount;
+    if (hashTable->buckets[index] == NULL)
+    {
+        LinkedList *head = linkedList_CmcType_create(hashTable->arena, NULL, type);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("hashTable_CmcType_tryInsert: linkedList_CmcType_create failed with errno %d\n", errno);
+            return false;
+        }
+        hashTable->buckets[index] = head;
+        hashTable->itemCount++;
+    }
+    else
+    {
+        LinkedList *bucket = hashTable->buckets[index];
+        LinkedList *previous = NULL;
+        while (bucket != NULL)
+        {
+            CmcType *bucketData = (CmcType *)bucket->data;
+            if (strcmp(bucketData->name, type->name) == 0)
+            {
+                return false; // Type already exists
+            }
+            previous = bucket;
+            bucket = bucket->next;
+        }
+
+        LinkedList *head = linkedList_CmcType_create(hashTable->arena, previous, type);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("hashTable_CmcType_tryInsert: linkedList_CmcType_create failed with errno %d\n", errno);
+            return false;
+        }
+        hashTable->itemCount++;
+    }
+
+    if (hashTable->itemCount > hashTable->bucketCount * 3)
+    {
+        hashTable_resize(hashTable);
+        if (errno == ENOMEM)
+        {
+            DEBUG_PRINT("hashTable_CmcType_tryInsert: hashTable_resize failed with errno %d\n", errno);
+            return false;
+        }
+    }
+    return true;
 }
 
 String *hashTable_String_find(HashTable *hashTable, const char *name)
@@ -354,6 +417,43 @@ Symbol *hashTable_Symbol_find(HashTable *hashTable, const char *name)
         if (strcmp(symbol->name, name) == 0)
         {
             return symbol;
+        }
+        bucket = bucket->next;
+    }
+
+    return NULL;
+}
+
+CmcType *hashTable_CmcType_find(HashTable *hashTable, const char *name)
+{
+    if (hashTable == NULL)
+    {
+        DEBUG_PRINT("hashTable_find: hashTable is NULL\n");
+        return NULL;
+    }
+
+    if (name == NULL)
+    {
+        DEBUG_PRINT("hashTable_find: name is NULL\n");
+        return NULL;
+    }
+
+    int hashValue = hashTable_hash(name);
+    if (hashValue == -1)
+    {
+        DEBUG_PRINT("hashTable_tryInsert: hash failed\n");
+        return NULL;
+    }
+
+    int index = hashValue % hashTable->bucketCount;
+    LinkedList *bucket = hashTable->buckets[index];
+
+    while (bucket != NULL)
+    {
+        CmcType *type = (CmcType *)bucket->data;
+        if (strcmp(type->name, name) == 0)
+        {
+            return type;
         }
         bucket = bucket->next;
     }
