@@ -2187,29 +2187,32 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
         return NULL;
     }
 
-    AstNode *functionParameterListNode = parser_parseFunctionParameterList(parser);
-    if (functionParameterListNode == NULL)
+    if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS)
     {
-        if (parser->panic)
+        AstNode *functionParameterListNode = parser_parseFunctionParameterList(parser);
+        if (functionParameterListNode == NULL)
         {
-            DEBUG_PRINT("parser_parseFunctionDefinition: Panic state is true, skipping function definition parsing.\n");
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parseFunctionDefinition: Panic state is true, skipping function definition parsing.\n");
+                return NULL;
+            }
+            DEBUG_PRINT("parser_parseFunctionDefinition: Failed to parse function parameter list.\n");
             return NULL;
         }
-        DEBUG_PRINT("parser_parseFunctionDefinition: Failed to parse function parameter list.\n");
-        return NULL;
-    }
-    head = linkedList_Ast_create(parser->astArena, children, functionParameterListNode);
-    if (head == NULL)
-    {
-        DEBUG_PRINT("parser_parseFunctionDefinition: linkedList_Ast_create failed with errno %d\n", errno);
-        return NULL;
-    }
-    children = head;
-    
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseFunctionDefinition: No tokens available after function parameter list.\n");
-        return NULL;
+        head = linkedList_Ast_create(parser->astArena, children, functionParameterListNode);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("parser_parseFunctionDefinition: linkedList_Ast_create failed with errno %d\n", errno);
+            return NULL;
+        }
+        children = head;
+
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseFunctionDefinition: No tokens available after function parameter list.\n");
+            return NULL;
+        }
     }
 
     if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS)
