@@ -73,6 +73,10 @@ void hashTable_resize(HashTable *hashTable)
         {
             LinkedList *next = bucket->next;
 
+            // This type can be String, Symbol, or CmcType
+            // We use chose one that has a hash field
+            // WARNING: This assumes all types have a hash field
+            // WARNING: This could break or have undefined behavior
             Symbol *symbol = (Symbol *)bucket->data;
             int index = symbol->hash % newBucketCount;
 
@@ -476,7 +480,14 @@ void hashTable_print(const HashTable *hashTable, PrintFunction printFn)
     for (size_t i = 0; i < hashTable->bucketCount; ++i)
     {
         LinkedList *bucket = hashTable->buckets[i];
-        linkedList_printRecursive(bucket, printFn);
+        if (bucket == NULL)
+        {
+            printf("        Bucket %zu: NULL\n", i);
+        }
+        else
+        {
+            linkedList_printRecursive(bucket, printFn);
+        }
     }
     printf("}\n");
 }
