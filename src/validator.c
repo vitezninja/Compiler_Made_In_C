@@ -1,14 +1,73 @@
 #include "validator.h"
 
+/**
+ * @brief Initializes the base types in the validator's type table.
+ * 
+ * This function creates the standard base types (int, float, bool, char, string, void)
+ * and inserts them into the validator's type table.
+ * 
+ * @param validator Pointer to the Validator instance.
+ */
 void validator_initializeBaseTypes(Validator *validator);
 
+/**
+ * @brief Performs the first pass of validation.
+ * 
+ * This pass is responsible for importing symbols from the AST into the validator's symbol stack.
+ * 
+ * @param validator Pointer to the Validator instance.
+ */
 void validator_firstPass(Validator *validator);
 
+/**
+ * @brief Performs the second pass of validation.
+ * 
+ * This pass validates struct names, union names and enum names.
+ * 
+ * @param validator Pointer to the Validator instance.
+ */
 void validator_secondPass(Validator *validator);
 
+/** 
+ * @brief Performs the third pass of validation.
+ * 
+ * This pass validates function names, variable names, struct/union members and enum values.
+ * 
+ * @param validator Pointer to the Validator instance.
+*/
 void validator_thirdPass(Validator *validator);
 
+/**
+ * @brief Performs the fourth pass of validation.
+ * 
+ * This pass validates function definitions and checks for correct usage of types.
+ * 
+ * @param validator Pointer to the Validator instance.
+ */
 void validator_fourthPass(Validator *validator);
+
+/**
+ * @brief Creates a CmcType from an AST full type node.
+ * 
+ * This function extracts the type information from an AST node representing a full type
+ * and returns a corresponding CmcType. It handles type specifiers and array types.
+ * 
+ * @param validator Pointer to the Validator instance.
+ * @param node Pointer to the AST node representing the full type.
+ * @return Pointer to the created CmcType, or NULL if an error occurs.
+ */
+CmcType *validator_cmcTypeFromAstFullTypeNode(Validator *validator, AstNode *node);
+
+/**
+ * @brief Converts a token type to a TypeSpecEnum.
+ * 
+ * This function maps the token type of a type specifier to the corresponding
+ * TypeSpecEnum value.
+ * 
+ * @param tokenType The token type to convert.
+ * @return The corresponding TypeSpecEnum value.
+ */
+TypeSpecEnum validator_typeSpecEnumFromTokenType(My_TokenType tokenType);
 
 //------------------------------------------------------------
 
@@ -30,19 +89,25 @@ void validator_initializeBaseTypes(Validator *validator)
 
     for (size_t i = 0; i < baseTypeCount; i++) 
     {
-        CmcType *baseType = cmcType_base_create(validator->utilsArena, baseTypes[i]);
+        CmcType *baseType = cmcType_base_create(validator->utilsArena, baseTypes[i], (TypeSpec){0});
         if (baseType == NULL) 
         {
             DEBUG_PRINT("validator_initializeBaseTypes: Failed to create base type.\n");
             return;
         }
-        hashTable_CmcType_tryInsert(validator->typeTable, baseType);
+        bool success = hashTable_CmcType_tryInsert(validator->typeTable, baseType);
+        if (!success) 
+        {
+            DEBUG_PRINT("validator_initializeBaseTypes: Failed to insert base type into type table.\n");
+            return;
+        }
     }
 }
 
-// First pass: Import symbols
 void validator_firstPass(Validator *validator)
 {
+    UNIMPLEMENTED();
+
     if (validator == NULL) 
     {
         DEBUG_PRINT("validator_firstPass: Validator is NULL.\n");
@@ -54,12 +119,8 @@ void validator_firstPass(Validator *validator)
         DEBUG_PRINT("validator_firstPass: AST is NULL.\n");
         return;
     }
-
-    //LinkedList *current = validator->ast->children;
-    // TODO
 }
 
-// Second pass: Validate Struct names, Union names, Enum names and Enum values
 void validator_secondPass(Validator *validator)
 {
     if (validator == NULL) 
@@ -78,19 +139,19 @@ void validator_secondPass(Validator *validator)
     while(current != NULL)
     {
         AstNode *node = (AstNode *)current->data;
-        if (node->type == AST_STRUCT_DECLARATION)
+        Token *nameToken = (Token *)node->tokens->data;
+        if (nameToken->type == TOKEN_KEYWORD_EXPORT)
         {
-            Token *nameToken = (Token *)node->tokens->data;
-            if (nameToken->type == TOKEN_KEYWORD_EXPORT)
-            {
-                // Skip export keyword
-                nameToken = (Token *)node->tokens->next->data;
-            }
-            
-            CmcType *structType = cmcType_structOrUnion_create(validator->utilsArena, CMC_TYPE_STRUCT, nameToken->text, NULL, 0);
+            // Skip export keyword
+            nameToken = (Token *)node->tokens->next->data;
+        }
+
+        if (node->type == AST_STRUCT_DECLARATION)
+        {        
+            CmcType *structType = cmcType_structOrUnion_create(validator->utilsArena, CMC_TYPE_STRUCT, nameToken->text, (CmcTypeStructUnionValue){0});
             if (structType == NULL) 
             {
-                DEBUG_PRINT("validator_validate: Failed to create struct type for struct declaration.\n");
+                DEBUG_PRINT("validator_secondPass: Failed to create struct type for struct declaration.\n");
                 return;
             }
 
@@ -99,13 +160,13 @@ void validator_secondPass(Validator *validator)
                 Error *error = error_create(validator->utilsArena, ERROR_ERROR, nameToken->location, "Struct name already exists.");
                 if (error == NULL) 
                 {
-                    DEBUG_PRINT("validator_validate: Failed to create error for struct name conflict.\n");
+                    DEBUG_PRINT("validator_secondPass: Failed to create error for struct name conflict.\n");
                     return;
                 }
                 LinkedList *head = linkedList_Error_create(validator->utilsArena, validator->errors, error);
                 if (head == NULL) 
                 {
-                    DEBUG_PRINT("validator_validate: Failed to create error linked list.\n");
+                    DEBUG_PRINT("validator_secondPass: Failed to create error linked list.\n");
                     return;
                 }
                 validator->errors = head;
@@ -113,17 +174,10 @@ void validator_secondPass(Validator *validator)
         }
         else if (node->type == AST_UNION_DECLARATION)
         {
-            Token *nameToken = (Token *)node->tokens->data;
-            if (nameToken->type == TOKEN_KEYWORD_EXPORT)
-            {
-                // Skip export keyword
-                nameToken = (Token *)node->tokens->next->data;
-            }
-
-            CmcType *unionType = cmcType_structOrUnion_create(validator->utilsArena, CMC_TYPE_UNION, nameToken->text, NULL, 0);
+            CmcType *unionType = cmcType_structOrUnion_create(validator->utilsArena, CMC_TYPE_UNION, nameToken->text, (CmcTypeStructUnionValue){0});
             if (unionType == NULL) 
             {
-                DEBUG_PRINT("validator_validate: Failed to create union type for union declaration.\n");
+                DEBUG_PRINT("validator_secondPass: Failed to create union type for union declaration.\n");
                 return;
             }
 
@@ -132,13 +186,13 @@ void validator_secondPass(Validator *validator)
                 Error *error = error_create(validator->utilsArena, ERROR_ERROR, nameToken->location, "Union name already exists.");
                 if (error == NULL) 
                 {
-                    DEBUG_PRINT("validator_validate: Failed to create error for union name conflict.\n");
+                    DEBUG_PRINT("validator_secondPass: Failed to create error for union name conflict.\n");
                     return;
                 }
                 LinkedList *head = linkedList_Error_create(validator->utilsArena, validator->errors, error);
                 if (head == NULL) 
                 {
-                    DEBUG_PRINT("validator_validate: Failed to create error linked list.\n");
+                    DEBUG_PRINT("validator_secondPass: Failed to create error linked list.\n");
                     return;
                 }
                 validator->errors = head;
@@ -146,17 +200,10 @@ void validator_secondPass(Validator *validator)
         }
         else if (node->type == AST_ENUM_DECLARATION)
         {
-            Token *nameToken = (Token *)node->tokens->data;
-            if (nameToken->type == TOKEN_KEYWORD_EXPORT)
-            {
-                // Skip export keyword
-                nameToken = (Token *)node->tokens->next->data;
-            }
-
             CmcType *enumType = cmcType_enum_create(validator->utilsArena, nameToken->text);
             if (enumType == NULL) 
             {
-                DEBUG_PRINT("validator_validate: Failed to create enum type for enum declaration.\n");
+                DEBUG_PRINT("validator_secondPass: Failed to create enum type for enum declaration.\n");
                 return;
             }
 
@@ -165,43 +212,523 @@ void validator_secondPass(Validator *validator)
                 Error *error = error_create(validator->utilsArena, ERROR_ERROR, nameToken->location, "Enum name already exists.");
                 if (error == NULL) 
                 {
-                    DEBUG_PRINT("validator_validate: Failed to create error for enum name conflict.\n");
+                    DEBUG_PRINT("validator_secondPass: Failed to create error for enum name conflict.\n");
                     return;
                 }
                 LinkedList *head = linkedList_Error_create(validator->utilsArena, validator->errors, error);
                 if (head == NULL) 
                 {
-                    DEBUG_PRINT("validator_validate: Failed to create error linked list.\n");
+                    DEBUG_PRINT("validator_secondPass: Failed to create error linked list.\n");
                     return;
                 }
                 validator->errors = head;
             }
+        }
 
+        current = current->next;
+    }
+}
+
+void validator_thirdPass(Validator *validator)
+{
+    if (validator == NULL) 
+    {
+        DEBUG_PRINT("validator_thirdPass: Validator is NULL.\n");
+        return;
+    }
+
+    if (validator->ast == NULL) 
+    {
+        DEBUG_PRINT("validator_thirdPass: AST is NULL.\n");
+        return;
+    }
+
+    LinkedList *current = validator->ast->children;
+    while (current != NULL) 
+    {
+        AstNode *node = (AstNode *)current->data;
+        Token *nameToken = (Token *)node->tokens->data;
+        if (nameToken->type == TOKEN_KEYWORD_EXPORT)
+        {
+            // Skip export keyword
+            nameToken = (Token *)node->tokens->next->data;
+        }
+
+        if (node->type == AST_FUNCTION_DEFINITION) 
+        {
+            Symbol **returnSymbolsArray = NULL;
+            size_t returnCount = 0;
+            Symbol **paramSymbolsArray = NULL;
+            size_t arity = 0;
+
+            HashTable *functionSymbolTable = hashTable_create(validator->utilsArena);
+            if (functionSymbolTable == NULL) 
+            {
+                DEBUG_PRINT("validator_thirdPass: Failed to create function symbol table.\n");
+                return;
+            }
+            Symbol *functionSymbol = symbol_function_create(validator->utilsArena, nameToken->text, (FunctionValue){.arity = arity, .returnCount = returnCount, .returnSymbols = returnSymbolsArray, .paramSymbols = paramSymbolsArray});
+            if (functionSymbol == NULL) 
+            {
+                DEBUG_PRINT("validator_thirdPass: Failed to create function symbol.\n");
+                return;
+            }
+            if(!hashTable_Symbol_tryInsert(functionSymbolTable, functionSymbol))
+            {
+                DEBUG_PRINT("validator_thirdPass: Failed to insert function symbol into symbol table.\n");
+                return;
+            }
+
+            {
+                AstNode *returnParameterListNode = node->children->data;
+
+                LinkedList *currentFullTypeNode = returnParameterListNode->children;
+                while (currentFullTypeNode != NULL) 
+                {
+                    returnCount++;
+                    currentFullTypeNode = currentFullTypeNode->next;
+                }
+    
+                returnSymbolsArray = arena_alloc(validator->utilsArena, sizeof(Symbol *) * returnCount, alignof(Symbol *));
+                if (returnSymbolsArray == NULL) 
+                {
+                    DEBUG_PRINT("validator_thirdPass: Failed to allocate memory for return symbols array.\n");
+                    return;
+                }
+
+                size_t index = 0;
+                currentFullTypeNode = returnParameterListNode->children;
+                while (currentFullTypeNode != NULL) 
+                {
+                    AstNode *currentFullType = currentFullTypeNode->data;
+                    CmcType *currentCmcType = validator_cmcTypeFromAstFullTypeNode(validator, currentFullType);
+                    if (currentCmcType == NULL) 
+                    {
+                        DEBUG_PRINT("validator_thirdPass: Failed to create CmcType from AST full type node.\n");
+                        return;
+                    }
+
+                    Symbol *returnSymbol = symbol_variable_create(validator->utilsArena, "", currentCmcType);
+                    if (returnSymbol == NULL) 
+                    {
+                        DEBUG_PRINT("validator_thirdPass: Failed to create symbol for return type.\n");
+                        return;
+                    }
+
+                    returnSymbolsArray[index++] = returnSymbol;
+                    currentFullTypeNode = currentFullTypeNode->next;
+                }
+            }
+
+            if (node->children->next != NULL && ((AstNode *)node->children->next->data)->type == AST_FUNCTION_PARAMETER_LIST)
+            {
+                AstNode *functionParameterListNode = node->children->next->data;
+
+                LinkedList *functionParameterNode = functionParameterListNode->children;
+                while (functionParameterNode != NULL) 
+                {
+                    arity++;
+                    functionParameterNode = functionParameterNode->next;
+                }
+
+                paramSymbolsArray = arena_alloc(validator->utilsArena, sizeof(Symbol *) * arity, alignof(Symbol *));
+                if (paramSymbolsArray == NULL) 
+                {
+                    DEBUG_PRINT("validator_thirdPass: Failed to allocate memory for params symbols array.\n");
+                    return;
+                }
+                functionParameterNode = functionParameterListNode->children;
+                size_t index = 0;
+                while (functionParameterNode != NULL) 
+                {
+                    AstNode *fullType = ((AstNode *)functionParameterNode->data)->children->data;
+                    CmcType *paramCmcType = validator_cmcTypeFromAstFullTypeNode(validator, fullType);
+                    if (paramCmcType == NULL) 
+                    {
+                        DEBUG_PRINT("validator_thirdPass: Failed to create CmcType from AST full type node.\n");
+                        return;
+                    }
+
+                    Token *paramNameToken = ((AstNode *)functionParameterNode->data)->tokens->data;
+                    Symbol *paramSymbol = symbol_variable_create(validator->utilsArena, paramNameToken->text, paramCmcType);
+                    if (paramSymbol == NULL) 
+                    {
+                        DEBUG_PRINT("validator_thirdPass: Failed to create symbol for function parameter.\n");
+                        return;
+                    }
+
+                    if (!hashTable_Symbol_tryInsert(functionSymbolTable, paramSymbol)) 
+                    {
+                        Error *error = error_create(validator->utilsArena, ERROR_ERROR, paramNameToken->location, "Function parameter name already exists.");
+                        if (error == NULL) 
+                        {
+                            DEBUG_PRINT("validator_thirdPass: Failed to create error for function parameter name conflict.\n");
+                            return;
+                        }
+                        LinkedList *head = linkedList_Error_create(validator->utilsArena, validator->errors, error);
+                        if (head == NULL) 
+                        {
+                            DEBUG_PRINT("validator_thirdPass: Failed to create error linked list.\n");
+                            return;
+                        }
+                        validator->errors = head;
+                    }
+                    else
+                    {
+                        paramSymbolsArray[index++] = paramSymbol;
+                    }
+
+                    functionParameterNode = functionParameterNode->next;
+                }
+            }
+
+            functionSymbol->value.function.arity = arity;
+            functionSymbol->value.function.returnCount = returnCount;
+            functionSymbol->value.function.returnSymbols = returnSymbolsArray;
+            functionSymbol->value.function.paramSymbols = paramSymbolsArray;
+
+            CmcType *typeWithSameName = hashTable_CmcType_find(validator->typeTable, functionSymbol->name);
+            if (typeWithSameName != NULL) 
+            {
+                Error *error = error_create(validator->utilsArena, ERROR_ERROR, nameToken->location, "Function name conflicts with a type.");
+                if (error == NULL) 
+                {
+                    DEBUG_PRINT("validator_thirdPass: Failed to create error for function name conflict with type.\n");
+                    return;
+                }
+                LinkedList *head = linkedList_Error_create(validator->utilsArena, validator->errors, error);
+                if (head == NULL) 
+                {
+                    DEBUG_PRINT("validator_thirdPass: Failed to create error linked list.\n");
+                    return;
+                }
+                validator->errors = head;
+            }
+            else if(!hashTable_Symbol_tryInsert(validator->symbolStack->data, functionSymbol))
+            {
+                Error *error = error_create(validator->utilsArena, ERROR_ERROR, nameToken->location, "Function name already exists.");
+                if (error == NULL) 
+                {
+                    DEBUG_PRINT("validator_thirdPass: Failed to create error for function name conflict.\n");
+                    return;
+                }
+                LinkedList *head = linkedList_Error_create(validator->utilsArena, validator->errors, error);
+                if (head == NULL) 
+                {
+                    DEBUG_PRINT("validator_thirdPass: Failed to create error linked list.\n");
+                    return;
+                }
+                validator->errors = head;
+            }
+        }
+        else if (node->type == AST_GLOBAL_VARIABLE_DECLARATION) 
+        {
+            AstNode *fullTypeNode = (AstNode *)node->children->data;
+            CmcType *type = validator_cmcTypeFromAstFullTypeNode(validator, fullTypeNode);
+            if (type == NULL) 
+            {
+                DEBUG_PRINT("validator_thirdPass: Failed to create CmcType from AST full type node.\n");
+                return;
+            }
+
+            Symbol *variableSymbol = symbol_variable_create(validator->utilsArena, nameToken->text, type);
+            if (variableSymbol == NULL) 
+            {
+                DEBUG_PRINT("validator_thirdPass: Failed to create symbol for variable.\n");
+                return;
+            }
+
+            CmcType *typeWithSameName = hashTable_CmcType_find(validator->typeTable, variableSymbol->name);
+            if (typeWithSameName != NULL)
+            {
+                Error *error = error_create(validator->utilsArena, ERROR_ERROR, nameToken->location, "Variable name conflicts with a type.");
+                if (error == NULL) 
+                {
+                    DEBUG_PRINT("validator_thirdPass: Failed to create error for variable name conflict with type.\n");
+                    return;
+                }
+                LinkedList *head = linkedList_Error_create(validator->utilsArena, validator->errors, error);
+                if (head == NULL) 
+                {
+                    DEBUG_PRINT("validator_thirdPass: Failed to create error linked list.\n");
+                    return;
+                }
+                validator->errors = head;
+            } 
+            else if(!hashTable_Symbol_tryInsert(validator->symbolStack->data, variableSymbol))
+            {
+                Error *error = error_create(validator->utilsArena, ERROR_ERROR, nameToken->location, "Variable name already exists.");
+                if (error == NULL) 
+                {
+                    DEBUG_PRINT("validator_thirdPass: Failed to create error for variable name conflict.\n");
+                    return;
+                }
+                LinkedList *head = linkedList_Error_create(validator->utilsArena, validator->errors, error);
+                if (head == NULL) 
+                {
+                    DEBUG_PRINT("validator_thirdPass: Failed to create error linked list.\n");
+                    return;
+                }
+                validator->errors = head;
+            }
+        }
+        else if (node->type == AST_STRUCT_DECLARATION) 
+        {
+            AstNode *structMembersNode = node->children->data;
+            CmcType *structType = hashTable_CmcType_find(validator->typeTable, nameToken->text);
+            if (structType == NULL) 
+            {
+                DEBUG_PRINT("validator_thirdPass: Struct type not found in type table.\n");
+                return;
+            }
+
+            size_t memberCount = 0;
+            Symbol **structMembersArray = NULL;
+
+            LinkedList *currentMemberNode = structMembersNode->children;
+            while (currentMemberNode != NULL) 
+            {
+                memberCount++;
+                currentMemberNode = currentMemberNode->next;
+            }
+
+            structMembersArray = arena_alloc(validator->utilsArena, sizeof(Symbol *) * memberCount, alignof(Symbol *));
+            if (structMembersArray == NULL) 
+            {
+                DEBUG_PRINT("validator_thirdPass: Failed to allocate memory for struct members array.\n");
+                return;
+            }
+
+            HashTable *structMemberSymbolTable = hashTable_create(validator->utilsArena);
+            if (structMemberSymbolTable == NULL) 
+            {
+                DEBUG_PRINT("validator_thirdPass: Failed to create struct member symbol table.\n");
+                return;
+            }
+
+            size_t index = 0;
+            currentMemberNode = structMembersNode->children;
+            LinkedList *currentMemeberNameNode = structMembersNode->tokens;
+            while (currentMemberNode != NULL) 
+            {
+                AstNode *currentFullTypeNode = (AstNode *)currentMemberNode->data;
+                CmcType *memberType = validator_cmcTypeFromAstFullTypeNode(validator, currentFullTypeNode);
+                if (memberType == NULL) 
+                {
+                    DEBUG_PRINT("validator_thirdPass: Failed to create CmcType from AST full type node.\n");
+                    return;
+                }
+                
+                Token *memberNameToken = (Token *)currentMemeberNameNode->data;
+                CmcType *typeWithSameName = hashTable_CmcType_find(validator->typeTable, memberNameToken->text);
+                if (typeWithSameName != NULL)
+                {
+                    Error *error = error_create(validator->utilsArena, ERROR_ERROR, memberNameToken->location, "Struct member name conflicts with a type.");
+                    if (error == NULL) 
+                    {
+                        DEBUG_PRINT("validator_thirdPass: Failed to create error for struct member name conflict with type.\n");
+                        return;
+                    }
+                    LinkedList *head = linkedList_Error_create(validator->utilsArena, validator->errors, error);
+                    if (head == NULL) 
+                    {
+                        DEBUG_PRINT("validator_thirdPass: Failed to create error linked list.\n");
+                        return;
+                    }
+                    validator->errors = head;
+
+                    currentMemberNode = currentMemberNode->next;
+                    currentMemeberNameNode = currentMemeberNameNode->next;
+                    continue;
+                }
+
+                Symbol *memberSymbol = symbol_variable_create(validator->utilsArena, memberNameToken->text, memberType);
+                if (memberSymbol == NULL) 
+                {
+                    DEBUG_PRINT("validator_thirdPass: Failed to create symbol for struct member.\n");
+                    return;
+                }
+                if (!hashTable_Symbol_tryInsert(structMemberSymbolTable, memberSymbol)) 
+                {
+                    Error *error = error_create(validator->utilsArena, ERROR_ERROR, memberNameToken->location, "Struct member name already exists.");
+                    if (error == NULL) 
+                    {
+                        DEBUG_PRINT("validator_thirdPass: Failed to create error for struct member name conflict.\n");
+                        return;
+                    }
+                    LinkedList *head = linkedList_Error_create(validator->utilsArena, validator->errors, error);
+                    if (head == NULL) 
+                    {
+                        DEBUG_PRINT("validator_thirdPass: Failed to create error linked list.\n");
+                        return;
+                    }
+                    validator->errors = head;
+                }
+                else
+                {
+                    structMembersArray[index++] = memberSymbol;
+                }
+
+                currentMemberNode = currentMemberNode->next;
+                currentMemeberNameNode = currentMemeberNameNode->next;
+            }
+
+            structType->value.structUnion.memberCount = memberCount;
+            structType->value.structUnion.structUnionMembers = structMembersArray;
+        }
+        else if (node->type == AST_UNION_DECLARATION) 
+        {
+            AstNode *unionMembersNode = node->children->data;
+            CmcType *unionType = hashTable_CmcType_find(validator->typeTable, nameToken->text);
+            if (unionType == NULL) 
+            {
+                DEBUG_PRINT("validator_thirdPass: Union type not found in type table.\n");
+                return;
+            }
+
+            size_t memberCount = 0;
+            Symbol **unionMembersArray = NULL;
+
+            LinkedList *currentMemberNode = unionMembersNode->children;
+            while (currentMemberNode != NULL) 
+            {
+                memberCount++;
+                currentMemberNode = currentMemberNode->next;
+            }
+
+            unionMembersArray = arena_alloc(validator->utilsArena, sizeof(Symbol *) * memberCount, alignof(Symbol *));
+            if (unionMembersArray == NULL) 
+            {
+                DEBUG_PRINT("validator_thirdPass: Failed to allocate memory for union members array.\n");
+                return;
+            }
+
+            HashTable *unionMemberSymbolTable = hashTable_create(validator->utilsArena);
+            if (unionMemberSymbolTable == NULL) 
+            {
+                DEBUG_PRINT("validator_thirdPass: Failed to create union member symbol table.\n");
+                return;
+            }
+
+            size_t index = 0;
+            currentMemberNode = unionMembersNode->children;
+            LinkedList *currentMemeberNameNode = unionMembersNode->tokens;
+            while (currentMemberNode != NULL) 
+            {
+                AstNode *currentFullTypeNode = (AstNode *)currentMemberNode->data;
+                CmcType *memberType = validator_cmcTypeFromAstFullTypeNode(validator, currentFullTypeNode);
+                if (memberType == NULL)
+                {
+                    DEBUG_PRINT("validator_thirdPass: Failed to create CmcType from AST full type node.\n");
+                    return;
+                }
+
+                Token *memberNameToken = (Token *)currentMemeberNameNode->data;
+                CmcType *typeWithSameName = hashTable_CmcType_find(validator->typeTable, memberNameToken->text);
+                if (typeWithSameName != NULL)
+                {
+                    Error *error = error_create(validator->utilsArena, ERROR_ERROR, memberNameToken->location, "Union member name conflicts with a type.");
+                    if (error == NULL) 
+                    {
+                        DEBUG_PRINT("validator_thirdPass: Failed to create error for union member name conflict with type.\n");
+                        return;
+                    }
+                    LinkedList *head = linkedList_Error_create(validator->utilsArena, validator->errors, error);
+                    if (head == NULL) 
+                    {
+                        DEBUG_PRINT("validator_thirdPass: Failed to create error linked list.\n");
+                        return;
+                    }
+                    validator->errors = head;
+
+                    currentMemberNode = currentMemberNode->next;
+                    currentMemeberNameNode = currentMemeberNameNode->next;
+                    continue;
+                }
+
+                Symbol *memberSymbol = symbol_variable_create(validator->utilsArena, memberNameToken->text, memberType);
+                if (memberSymbol == NULL) 
+                {
+                    DEBUG_PRINT("validator_thirdPass: Failed to create symbol for union member.\n");
+                    return;
+                }
+                if (!hashTable_Symbol_tryInsert(unionMemberSymbolTable, memberSymbol)) 
+                {
+                    Error *error = error_create(validator->utilsArena, ERROR_ERROR, memberNameToken->location, "Union member name already exists.");
+                    if (error == NULL) 
+                    {
+                        DEBUG_PRINT("validator_thirdPass: Failed to create error for union member name conflict.\n");
+                        return;
+                    }
+                    LinkedList *head = linkedList_Error_create(validator->utilsArena, validator->errors, error);
+                    if (head == NULL) 
+                    {
+                        DEBUG_PRINT("validator_thirdPass: Failed to create error linked list.\n");
+                        return;
+                    }
+                    validator->errors = head;
+                }
+                else
+                {
+                    unionMembersArray[index++] = memberSymbol;
+                }
+
+                currentMemberNode = currentMemberNode->next;
+                currentMemeberNameNode = currentMemeberNameNode->next;
+            }
+
+            unionType->value.structUnion.memberCount = memberCount;
+            unionType->value.structUnion.structUnionMembers = unionMembersArray;
+        }
+        else if (node->type == AST_ENUM_DECLARATION) 
+        {
             // Validate enum values
             LinkedList *enumValues = ((AstNode *)node->children->data)->children;
             while(enumValues != NULL)
             {
                 AstNode *enumValueNode = (AstNode *)enumValues->data;
                 
-                Symbol *enumValueSymbol = symbol_enum_constant_create(validator->utilsArena, ((Token *)enumValueNode->tokens->data)->text);
+                Token *enumValueNameToken = (Token *)enumValueNode->tokens->data;
+                CmcType *typeWithSameName = hashTable_CmcType_find(validator->typeTable, enumValueNameToken->text);
+                if (typeWithSameName != NULL)
+                {
+                    Error *error = error_create(validator->utilsArena, ERROR_ERROR, enumValueNameToken->location, "Enum value name conflicts with a type.");
+                    if (error == NULL) 
+                    {
+                        DEBUG_PRINT("validator_thirdPass: Failed to create error for enum value name conflict with type.\n");
+                        return;
+                    }
+                    LinkedList *head = linkedList_Error_create(validator->utilsArena, validator->errors, error);
+                    if (head == NULL) 
+                    {
+                        DEBUG_PRINT("validator_thirdPass: Failed to create error linked list.\n");
+                        return;
+                    }
+                    validator->errors = head;
+
+                    enumValues = enumValues->next;
+                    continue;
+                }
+
+                Symbol *enumValueSymbol = symbol_enum_constant_create(validator->utilsArena, enumValueNameToken->text);
                 if (enumValueSymbol == NULL) 
                 {
-                    DEBUG_PRINT("validator_validate: Failed to create symbol for enum value.\n");
+                    DEBUG_PRINT("validator_secondPass: Failed to create symbol for enum value.\n");
                     return;
                 }
 
                 if (!hashTable_Symbol_tryInsert(validator->symbolStack->data, enumValueSymbol))
                 {
-                    Error *error = error_create(validator->utilsArena, ERROR_ERROR, ((Token *)enumValueNode->tokens->data)->location, "Enum value already exists.");
+                    Error *error = error_create(validator->utilsArena, ERROR_ERROR, enumValueNameToken->location, "Enum value already exists.");
                     if (error == NULL) 
                     {
-                        DEBUG_PRINT("validator_validate: Failed to create error for enum value conflict.\n");
+                        DEBUG_PRINT("validator_secondPass: Failed to create error for enum value conflict.\n");
                         return;
                     }
                     LinkedList *head = linkedList_Error_create(validator->utilsArena, validator->errors, error);
                     if (head == NULL)
                     {
-                        DEBUG_PRINT("validator_validate: Failed to create error linked list.\n");
+                        DEBUG_PRINT("validator_secondPass: Failed to create error linked list.\n");
                         return;
                     }
                     validator->errors = head;
@@ -210,14 +737,15 @@ void validator_secondPass(Validator *validator)
                 enumValues = enumValues->next;
             }
         }
-
+        
         current = current->next;
     }
 }
 
-// Third pass: Validate Function names, Variables, Struct and Union members
-void validator_thirdPass(Validator *validator)
+void validator_fourthPass(Validator *validator)
 {
+    UNIMPLEMENTED();
+
     if (validator == NULL) 
     {
         DEBUG_PRINT("validator_fourthPass: Validator is NULL.\n");
@@ -230,27 +758,127 @@ void validator_thirdPass(Validator *validator)
         return;
     }
 
-    //LinkedList *current = validator->ast->children;
-    // TODO
+    LinkedList *current = validator->ast->children;
+    while (current != NULL) 
+    {
+        AstNode *node = (AstNode *)current->data;
+        Token *nameToken = (Token *)node->tokens->data;
+        if (nameToken->type == TOKEN_KEYWORD_EXPORT)
+        {
+            // Skip export keyword
+            nameToken = (Token *)node->tokens->next->data;
+        }
+
+        if (node->type == AST_FUNCTION_DEFINITION) 
+        {
+            //TODO
+        }
+
+        current = current->next;
+    }
 }
 
-// Fourth pass: Validate Functions
-void validator_fourthPass(Validator *validator)
+CmcType *validator_cmcTypeFromAstFullTypeNode(Validator *validator, AstNode *node)
 {
-    if (validator == NULL) 
+    if (node == NULL)
     {
-        DEBUG_PRINT("validator_fifthPass: Validator is NULL.\n");
-        return;
+        DEBUG_PRINT("validator_cmcTypeFromAstFullTypeNode: node is NULL.\n");
+        return NULL;
     }
 
-    if (validator->ast == NULL) 
+    if (node->type != AST_FULL_TYPE)
     {
-        DEBUG_PRINT("validator_fifthPass: AST is NULL.\n");
-        return;
+        DEBUG_PRINT("validator_cmcTypeFromAstFullTypeNode: node is not of type AST_FULL_TYPE.\n");
+        return NULL;
     }
 
-    //LinkedList *current = validator->ast->children;
-    // TODO
+    TypeSpec typeSpec = {0};
+    LinkedList *currentNode = node->children;
+    if (((AstNode *)currentNode->data)->type == AST_TYPE_SPECIFIERS)
+    {
+        AstNode *typeSpecNode = (AstNode *)currentNode->data;
+
+        size_t specifierCount = 0;
+        LinkedList *currentSpecifiers = typeSpecNode->tokens;
+        while (currentSpecifiers != NULL)
+        {
+            specifierCount++;
+            currentSpecifiers = currentSpecifiers->next;
+        }
+        typeSpec.count = specifierCount;
+
+        TypeSpecEnum *specifiersArray = arena_alloc(validator->utilsArena, sizeof(TypeSpecEnum) * specifierCount, alignof(TypeSpecEnum));
+        currentSpecifiers = typeSpecNode->tokens;
+        size_t index = 0;
+        while (currentSpecifiers != NULL)
+        {
+            specifiersArray[index++] = validator_typeSpecEnumFromTokenType(((Token *)currentSpecifiers->data)->type);
+            currentSpecifiers = currentSpecifiers->next;
+        }
+        typeSpec.types = specifiersArray;
+
+        currentNode = currentNode->next; // Move to the next node which should be AST_TYPE
+    }
+
+    Token *typeToken = ((AstNode *)currentNode->data)->tokens->data;
+
+    CmcType *cmcType = hashTable_CmcType_find(validator->typeTable, typeToken->text);
+    if (cmcType == NULL)
+    {
+        Error *error = error_create(validator->utilsArena, ERROR_ERROR, typeToken->location, "Type not found in type table.");
+        if (error == NULL)
+        {
+            DEBUG_PRINT("validator_cmcTypeFromAstFullTypeNode: Failed to create error for type not found.\n");
+            return NULL;
+        }
+        LinkedList *head = linkedList_Error_create(validator->utilsArena, validator->errors, error);
+        if (head == NULL)
+        {
+            DEBUG_PRINT("validator_cmcTypeFromAstFullTypeNode: Failed to create error linked list.\n");
+            return NULL;
+        }
+        validator->errors = head;
+        return NULL;
+    }
+    CmcType *resultType = cmcType_copy(validator->utilsArena, cmcType);
+    if (resultType == NULL)
+    {
+        DEBUG_PRINT("validator_cmcTypeFromAstFullTypeNode: Failed to copy CmcType.\n");
+        return NULL;
+    }
+    
+    currentNode = currentNode->next;
+    if (currentNode != NULL)
+    {
+        CmcType *arrayBaseType = resultType;
+        resultType = cmcType_array_create(validator->utilsArena, arrayBaseType);
+        if (resultType == NULL)
+        {
+            DEBUG_PRINT("validator_cmcTypeFromAstFullTypeNode: Failed to create array type.\n");
+            return NULL;
+        }
+        
+        currentNode = currentNode->next;
+    }
+    resultType->specifiers = typeSpec;
+
+    return resultType;
+}
+
+TypeSpecEnum validator_typeSpecEnumFromTokenType(My_TokenType tokenType)
+{
+    switch (tokenType)
+    {
+        case TOKEN_KEYWORD_CONST:
+            return TYPE_SPEC_CONST;
+        case TOKEN_KEYWORD_PTR:
+            return TYPE_SPEC_PTR;
+        case TOKEN_KEYWORD_CONST_PTR:
+            return TYPE_SPEC_CONST_PTR;
+        default:
+            DEBUG_PRINT("validator_typeSpecEnumFromTokenType: Unknown token type for TypeSpecEnum.\n");
+            return -1; // Invalid TypeSpecEnum
+    }
 }
 
 //------------------------------------------------------------
@@ -326,10 +954,13 @@ void validator_validate(Validator *validator)
     validator_initializeBaseTypes(validator);
 
     // Perform validation passes
-    validator_firstPass(validator);
+    //validator_firstPass(validator); TODO
     validator_secondPass(validator);
     validator_thirdPass(validator);
-    validator_fourthPass(validator);
+    //validator_fourthPass(validator); TODO
+
+    //hashTable_print(validator->typeTable, (PrintFunction)cmcType_print); TEST
+    //hashTable_print(validator->symbolStack->data, (PrintFunction)symbol_print); TEST
 }
 
 void validator_print(const Validator *validator)

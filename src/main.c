@@ -18,6 +18,7 @@
 #include "options.h"
 #include "lexer.h"
 #include "parser.h"
+#include "validator.h"
 
 /**
  * @brief Creates the necessary arenas and string interning table for the compiler.
@@ -66,6 +67,18 @@ LinkedList *lexFile(Arena *alphaArena, Arena *betaArena, HashTable *stringIntern
  */
 AstNode *parseFile(Arena *alphaArena, Arena *betaArena, LinkedList *tokens, File file);
 
+/**
+ * @brief Validates the abstract syntax tree (AST) and reports any errors.
+ * 
+ * This function initializes a validator with the provided arena and AST,
+ * performs validation on the AST, and reports any errors found during validation.
+ * 
+ * @param betaArena Pointer to the beta arena for validation-related data.
+ * @param ast The abstract syntax tree (AST) to be validated.
+ * @return true if validation was successful and no errors were found, false otherwise.
+ */
+bool validateFile(Arena *alphaArena, Arena *betaArena, AstNode *ast, File file);
+
 int main(int argc, char *argv[])
 {
     if (argc < 2)
@@ -108,8 +121,8 @@ int main(int argc, char *argv[])
         Arena *betaArena = NULL;
         Arena *stringInterningArena = NULL;
         HashTable *stringInterningTable = NULL;
-        bool success = createArenasAndStringTable(&alphaArena, &betaArena, &stringInterningArena, &stringInterningTable);
-        if (!success)
+        bool creationSuccess = createArenasAndStringTable(&alphaArena, &betaArena, &stringInterningArena, &stringInterningTable);
+        if (!creationSuccess)
         {
             fprintf(stderr, "[Error] : Failed to create arenas and string interning table for file: %s.\n", options.files[i]);
             options_free(&options);
@@ -134,12 +147,12 @@ int main(int argc, char *argv[])
         }
 
         #ifdef OLEX
-        linkedList_printRecursive(tokens, (PrintFunction)token_print);
-        fileSystem_free(&file);
-        arena_destroy(&stringInterningArena);
-        arena_destroy(&alphaArena);
-        arena_destroy(&betaArena);
-        break; // Exit after lexing if OLEX is defined
+            linkedList_printRecursive(tokens, (PrintFunction)token_print);
+            fileSystem_free(&file);
+            arena_destroy(&stringInterningArena);
+            arena_destroy(&alphaArena);
+            arena_destroy(&betaArena);
+            break; // Exit after lexing if OLEX is defined
         #endif
 
         // Alpha ast and token copys
@@ -157,12 +170,33 @@ int main(int argc, char *argv[])
         }
 
         #ifdef OPARSE
-        astNode_printTree(ast, "", true);
-        fileSystem_free(&file);
-        arena_destroy(&stringInterningArena);
-        arena_destroy(&alphaArena);
-        arena_destroy(&betaArena);
-        break; // Exit after parsing if OPARSE is defined
+            astNode_printTree(ast, "", true);
+            fileSystem_free(&file);
+            arena_destroy(&stringInterningArena);
+            arena_destroy(&alphaArena);
+            arena_destroy(&betaArena);
+            break; // Exit after parsing if OPARSE is defined
+        #endif
+
+        // Beta stores all validation related data
+        bool validationSuccess = validateFile(alphaArena, betaArena, ast, file);
+        if (!validationSuccess)
+        {
+            options_free(&options);
+            fileSystem_free(&file);
+            arena_destroy(&stringInterningArena);
+            arena_destroy(&alphaArena);
+            arena_destroy(&betaArena);
+            logger_close();
+            return 1;
+        }
+
+        #ifdef OVALIDATE
+            fileSystem_free(&file);
+            arena_destroy(&stringInterningArena);
+            arena_destroy(&alphaArena);
+            arena_destroy(&betaArena);
+            break; // Exit after validation if OVALIDATE is defined
         #endif
 
         fileSystem_free(&file);
@@ -266,10 +300,15 @@ LinkedList *lexFile(Arena *alphaArena, Arena *betaArena, HashTable *stringIntern
     }
 
     LinkedList *tokens = lexer->tokens;
-#ifdef DEBUG
-    arena_print(alphaArena);
-    arena_print(betaArena);
-#endif
+
+    #ifdef PROFILE
+        printf("After lexing arena states:\n");
+        printf("Alpha Arena:\n");
+        arena_print(alphaArena);
+        printf("Beta Arena:\n");
+        arena_print(betaArena);
+    #endif
+
     arena_reset(alphaArena);
     return tokens;
 }
@@ -314,10 +353,60 @@ AstNode *parseFile(Arena *alphaArena, Arena *betaArena, LinkedList *tokens, File
     }
 
     AstNode *ast = parser->ast;
-#ifdef DEBUG
-    arena_print(alphaArena);
-    arena_print(betaArena);
-#endif
+
+    #ifdef PROFILE
+        printf("After parsing arena states:\n");
+        printf("Alpha Arena:\n");
+        arena_print(alphaArena);
+        printf("Beta Arena:\n");
+        arena_print(betaArena);
+    #endif
+
     arena_reset(betaArena);
     return ast;
-}  
+}
+
+bool validateFile(Arena *alphaArena, Arena *betaArena, AstNode *ast, File file)
+{
+    if (betaArena == NULL)
+    {
+        DEBUG_PRINT("validateFile: Beta arena is NULL.\n");
+        return false;
+    }
+
+    if (ast == NULL)
+    {
+        DEBUG_PRINT("validateFile: AST is NULL.\n");
+        return false;
+    }
+
+    Validator *validator = validator_create(betaArena, ast);
+    if (validator == NULL)
+    {
+        DEBUG_PRINT("validateFile: Failed to create validator.\n");
+        return false;
+    }
+
+    validator_validate(validator);
+    if (errno != 0 || validator->errors != NULL)
+    {
+        LinkedList *error = validator->errors;
+        while (error != NULL)
+        {
+            error_print((Error *)error->data, file.sourceBuffer);
+            error = error->next;
+        }
+        return false;
+    }
+
+    #ifdef PROFILE
+        printf("After validation arena states:\n");
+        printf("Alpha Arena:\n");
+        arena_print(alphaArena);
+        printf("Beta Arena:\n");
+        arena_print(betaArena);
+    #endif
+
+    arena_reset(betaArena);
+    return true;
+}

@@ -13,6 +13,8 @@
 #include <errno.h>
 #include <stdio.h>
 
+typedef struct TypeSpec TypeSpec;
+typedef struct CmcTypeStructUnionValue CmcTypeStructUnionValue;
 typedef struct CmcType CmcType;
 typedef union CmcTypeValue CmcTypeValue;
 
@@ -50,18 +52,30 @@ typedef enum CmcTypeEnum
 } CmcTypeEnum;
 
 /**
- * @enum TypeSpec
+ * @enum TypeSpecEnum
  * @brief Enumerates type specifiers for CmcType.
  * 
  * This enum defines various type specifiers that can be applied to types,
  * such as const, pointer, and const pointer.
  */
-typedef enum TypeSpec
+typedef enum TypeSpecEnum
 {
     TYPE_SPEC_CONST,       /** Constant type specifier **/
     TYPE_SPEC_PTR,         /** Pointer type specifier **/
     TYPE_SPEC_CONST_PTR,   /** Constant pointer type specifier **/
-} TypeSpec;
+} TypeSpecEnum;
+
+struct TypeSpec
+{
+    TypeSpecEnum *types;     /** Type of the specifier (e.g., const, pointer) */
+    size_t count;           /** Number of times this specifier is applied */
+};
+
+struct CmcTypeStructUnionValue
+{
+    Symbol **structUnionMembers;    /** Members of a struct or union if this is a user-defined type (if applicable) */
+    size_t memberCount;             /** Number of members if this is a struct or union type */
+};
 
 /**
  * @union CmcTypeValue
@@ -72,8 +86,8 @@ typedef enum TypeSpec
  */
 union CmcTypeValue
 {
-    CmcType *arrayBase;             /** The type of the array elements if this is an array type (if applicable) */
-    Symbol **structUnionMembers;    /** Members of a struct or union if this is a user-defined type (if applicable) */
+    CmcType *arrayBase;              /** The type of the array elements if this is an array type (if applicable) */
+    CmcTypeStructUnionValue structUnion;  /** Members of a struct or union if this is a user-defined type (if applicable) */
 }; 
 
 /**
@@ -85,11 +99,11 @@ union CmcTypeValue
  */
 struct CmcType
 {
-    CmcTypeEnum type;    /** The type of the CmcType (e.g., int, float, struct) */
-    const char *name;    /** Name of the type (null-terminated string) */
-    size_t hash;         /** Precomputed hash of the type's name for quick comparisons */
-    CmcTypeValue value;  /** Additional information for user-defined types (e.g., struct members, array base type) */
-    size_t memberCount;  /** Number of members if this is a struct or union type */
+    CmcTypeEnum type;         /** The type of the CmcType (e.g., int, float, struct) */
+    const char *name;         /** Name of the type (null-terminated string) */
+    size_t hash;              /** Precomputed hash of the type's name for quick comparisons */
+    CmcTypeValue value;       /** Additional information for user-defined types (e.g., struct members, array base type) */
+    TypeSpec specifiers;      /** Type specifiers (e.g., const, pointer) applied to this type */
 };
 
 /**
@@ -99,9 +113,10 @@ struct CmcType
  * 
  * @param arena Pointer to the memory arena for allocation.
  * @param type The CmcTypeEnum value representing the type.
+ * @param specifiers Array of type specifiers (can be NULL).
  * @return Pointer to the newly created CmcType, or NULL on failure. Set `errno` to indicate the error.
  */
-CmcType *cmcType_base_create(Arena *arena, CmcTypeEnum type);
+CmcType *cmcType_base_create(Arena *arena, CmcTypeEnum type, TypeSpec specifiers);
 
 /**
  * @brief Creates a CmcType representing a struct or union.
@@ -112,11 +127,10 @@ CmcType *cmcType_base_create(Arena *arena, CmcTypeEnum type);
  * @param arena Pointer to the memory arena for allocation.
  * @param type The CmcTypeEnum value (CMC_TYPE_STRUCT or CMC_TYPE_UNION).
  * @param name Name of the struct or union (null-terminated string).
- * @param members Array of Symbol pointers representing the members of the struct or union.
- * @param memberCount Number of members in the struct or union.
+ * @param members Members of the struct or union (if applicable).
  * @return Pointer to the newly created CmcType, or NULL on failure. Set `errno` to indicate the error.
  */
-CmcType *cmcType_structOrUnion_create(Arena *arena, CmcTypeEnum type, const char *name, Symbol **members, size_t memberCount);
+CmcType *cmcType_structOrUnion_create(Arena *arena, CmcTypeEnum type, const char *name, CmcTypeStructUnionValue members);
 
 /**
  * @brief Creates a CmcType representing an enum.
@@ -141,6 +155,18 @@ CmcType *cmcType_enum_create(Arena *arena, const char *name);
  * @return Pointer to the newly created CmcType, or NULL on failure. Set `errno` to indicate the error.
  */
 CmcType *cmcType_array_create(Arena *arena, CmcType *baseType);
+
+/**
+ * @brief Copies a CmcType.
+ * 
+ * This function allocates and initializes a new CmcType that is a copy of the provided type.
+ * This does not copy the hash and the specifiers, only the type, name and value.
+ * 
+ * @param arena Pointer to the memory arena for allocation.
+ * @param type Pointer to the CmcType to copy.
+ * @return Pointer to the newly created CmcType, or NULL on failure. Set `errno` to indicate the error.
+ */
+CmcType *cmcType_copy(Arena *arena, const CmcType *type);
 
 /**
  * @brief Prints a CmcType to stdout for debugging.

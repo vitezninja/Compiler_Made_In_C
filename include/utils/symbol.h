@@ -35,6 +35,21 @@ typedef enum SymbolType
 } SymbolType;
 
 /**
+ * @struct FunctionValue
+ * @brief Represents function-specific information for a symbol.
+ * 
+ * This structure holds the arity (number of parameters) and arrays of return
+ * and parameter symbols for a function symbol.
+ */
+struct FunctionValue
+{
+    Symbol **returnSymbols;  /** Array of return symbols of the function */
+    size_t returnCount;      /** Number of return symbols (if applicable) */
+    Symbol **paramSymbols;   /** Array of parameter symbols (if applicable) */
+    size_t arity;            /** Number of parameters the function takes */
+};
+
+/**
  * @union SymbolValue
  * @brief Union to hold different types of values associated with a symbol.
  *
@@ -43,7 +58,7 @@ typedef enum SymbolType
  */
 union SymbolValue
 {
-    FunctionValue *function;       /** Function-specific information (if applicable) */
+    FunctionValue function;        /** Function-specific information (if applicable) */
     CmcType *variableType;         /** Type of the variable (if applicable) */
 };
 
@@ -63,21 +78,6 @@ struct Symbol
 };
 
 /**
- * @struct FunctionValue
- * @brief Represents function-specific information for a symbol.
- * 
- * This structure holds the arity (number of parameters) and arrays of return
- * and parameter types for a function symbol.
- */
-struct FunctionValue
-{
-    CmcType **returnTypes; /** Array of return types of the function */
-    size_t returnCount;    /** Number of return types (if applicable) */
-    CmcType **paramTypes;  /** Array of parameter types (if applicable) */
-    size_t arity;          /** Number of parameters the function takes */
-};
-
-/**
  * @brief Creates a new symbol for a variable.
  *
  * Allocates memory for a Symbol and initializes its fields.
@@ -85,7 +85,6 @@ struct FunctionValue
  * @param arena Memory arena used for allocation.
  * @param name Name of the variable (null-terminated string).
  * @param type Type of the variable.
- * @param hash Precomputed hash of the variable name.
  * @return Pointer to the newly created Symbol, or NULL if allocation fails.
  */
 Symbol *symbol_variable_create(Arena *arena, const char *name, CmcType *type);
@@ -100,7 +99,7 @@ Symbol *symbol_variable_create(Arena *arena, const char *name, CmcType *type);
  * @param functionValue Pointer to FunctionValue containing function-specific information.
  * @return Pointer to the newly created Symbol, or NULL if allocation fails.
  */
-Symbol *symbol_function_create(Arena *arena, const char *name, FunctionValue *functionValue);
+Symbol *symbol_function_create(Arena *arena, const char *name, FunctionValue functionValue);
 
 /**
  * @brief Creates a new symbol for an enum constant.

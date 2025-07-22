@@ -1,6 +1,16 @@
 #include "utils/symbol.h"
 
 /**
+ * @brief Converts a SymbolType enum to a string representation.
+ */
+static const char *symbol_symbolTypeAsString[] = {
+    [SYMBOL_TYPE_VARIABLE] = "VARIABLE",
+    [SYMBOL_TYPE_FUNCTION] = "FUNCTION",
+    [SYMBOL_TYPE_ENUM_CONSTANT] = "ENUM_CONSTANT",
+    [SYMBOL_TYPE_LABEL] = "LABEL"
+};
+
+/**
  * @brief Creates a new symbol for a variable.
  * 
  * Allocates a new symbol using the provided arena, initializes it with the given name,
@@ -13,6 +23,16 @@
  * @return Pointer to the newly created Symbol, or NULL if allocation fails.
  */
 Symbol *symbol_create(Arena *arena, const char *name, SymbolType type, SymbolValue value);
+
+/**
+ * @brief Converts a SymbolType enum to a string representation.
+ * 
+ * This function returns a string representation of the given SymbolType.
+ * 
+ * @param type The SymbolType to convert.
+ * @return A string representation of the SymbolType, or "UNKNOWN" if the type is invalid.
+ */
+const char *symbol_typeAsString(SymbolType type);
 
 //----------------------------------------------------------
 
@@ -50,6 +70,16 @@ Symbol *symbol_create(Arena *arena, const char *name, SymbolType type, SymbolVal
     return symbol;
 }
 
+const char *symbol_typeAsString(SymbolType type)
+{
+    if (type < 0 || type >= SYMBOL_TYPE_LABEL)
+    {
+        DEBUG_PRINT("symbol_typeAsString: Invalid SymbolType %d\n", type);
+        return "UNKNOWN";
+    }
+    return symbol_symbolTypeAsString[type];
+}
+
 //----------------------------------------------------------
 
 Symbol *symbol_variable_create(Arena *arena, const char *name, CmcType *type)
@@ -76,7 +106,7 @@ Symbol *symbol_variable_create(Arena *arena, const char *name, CmcType *type)
     return symbol_create(arena, name, SYMBOL_TYPE_VARIABLE, value);
 }
 
-Symbol *symbol_function_create(Arena *arena, const char *name, FunctionValue *functionValue)
+Symbol *symbol_function_create(Arena *arena, const char *name, FunctionValue functionValue)
 {
     if (arena == NULL)
     {
@@ -87,12 +117,6 @@ Symbol *symbol_function_create(Arena *arena, const char *name, FunctionValue *fu
     if (name == NULL)
     {
         DEBUG_PRINT("symbol_function_create: name is NULL\n");
-        return NULL;
-    }
-
-    if (functionValue == NULL)
-    {
-        DEBUG_PRINT("symbol_function_create: functionValue is NULL\n");
         return NULL;
     }
 
@@ -145,25 +169,32 @@ void symbol_print(const Symbol *symbol)
     }
 
     printf("Symbol {\n");
-    printf("    name: \"%s\",\n", symbol->name);
-    printf("    type: %d,\n", symbol->type);
+    if (symbol->name == NULL)
+    {
+        printf("    name: NULL,\n");
+    }
+    else
+    {
+        printf("    name: \"%s\",\n", symbol->name);
+    }
+    printf("    type: %s,\n", symbol_typeAsString(symbol->type));
     printf("    hash: %zu\n", symbol->hash);
     if (symbol->type == SYMBOL_TYPE_VARIABLE)
     {
-        printf("    variable type: ");
+        printf("    variable type: \n");
         cmcType_print(symbol->value.variableType);
     }
     else if (symbol->type == SYMBOL_TYPE_FUNCTION)
     {
-        printf("    function return types: ");
-        for (size_t i = 0; i < symbol->value.function->returnCount; i++)
+        printf("    function return types: \n");
+        for (size_t i = 0; i < symbol->value.function.returnCount; i++)
         {
-            cmcType_print(symbol->value.function->returnTypes[i]);
+            symbol_print(symbol->value.function.returnSymbols[i]);
         }
-        printf("    function parameter types: ");
-        for (size_t i = 0; i < symbol->value.function->arity; i++)
+        printf("    function parameter types: \n");
+        for (size_t i = 0; i < symbol->value.function.arity; i++)
         {
-            cmcType_print(symbol->value.function->paramTypes[i]);
+            symbol_print(symbol->value.function.paramSymbols[i]);
         }
     }
     printf("}\n");

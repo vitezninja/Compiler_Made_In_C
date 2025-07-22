@@ -1,27 +1,27 @@
-import json_read, json_write from "stdjson";
+import "importedLib";
 
-export (void) main(int64 argc, string argv)
-{
-    string buffer = json_read("test.json");
+struct Word {
+    char letter;
+}
 
-    print(buffer);
+union RGB {
+    int8 red;
+    int8 green;
+    int8 blue;
+}
 
-    for (int64 i = 0; i < 20; i++)
-    {
-        if (i % 2 == 0)
-        {
-            buffer += "Hello ";
-        }
-        else
-        {
-            buffer += "Bye ";
-        }
-        endif
-    }
+enum State {
+    IDLE,
+    WALKING,
+    DEAD,
+}
 
-    json_write(buffer);
+State enemyState;
 
-    int[50] thing;
+(void) die(State entity) {
+    entity = DEAD;
+}
 
-    return;
-} 
+(int32) main() {
+    die(enemyState);
+}
