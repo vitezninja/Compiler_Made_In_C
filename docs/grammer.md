@@ -230,7 +230,7 @@ Null_literal           = "null" | "NULL" ;
 ## Program:  
 A program starts of with 0 or more imports then is followed by 0 or more of one of either a function declaration, global variable declaration, struct declration, union declaration, enum declaration or typdef.  
 ```ebnf
-Program = { Import } { ( Function_declaration | Global_variables_declaration | Struct_declaration | Union_declaration | Enum_declaration ) } end_of_file ;
+Program = { Import } { ( Function_definition | Global_variables_declaration | Struct_declaration | Union_declaration | Enum_declaration ) } end_of_file ;
 ```
 
 ## Importing:  
@@ -259,7 +259,7 @@ The syntax is like this:
 ```
 
 ```ebnf
-Function_declaration = [ "export" ] "(" Return_parameter_list ")" identifier "(" [ Function_parameter_list ] ")" Compound_statement ;
+Function_definition = [ "export" ] "(" Return_parameter_list ")" identifier "(" [ Function_parameter_list ] ")" Compound_statement ;
 
 Return_parameter_list = Full_type { "," Full_type } ;
 
