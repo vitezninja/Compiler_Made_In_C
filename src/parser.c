@@ -6697,7 +6697,6 @@ AstNode *parser_parseExpressionStatement(Parser *parser)
     if (((Token *)parser->tokens->data)->type == TOKEN_SEMICOLON);
     else if (parser_isFullType(parser))
     {
-        printf("parser_parseExpressionStatement: Parsing variable declaration.\n");
         bool success = false;
         AstNode *variableDeclarationNode = parser_tryParseVariableDeclaration(parser, &success);
         if (!success)
