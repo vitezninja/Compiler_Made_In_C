@@ -2136,7 +2136,7 @@ Token *lexer_handleIdentifiersAndKeywords(Lexer *lexer)
         .fileName = lexer->fileName,
         .lineStart = lexer->currentLineStart,
         .line = lexer->line,
-        .column = lexer->column,
+        .column = lexer->column - pos,
         .length = pos
 
     };
