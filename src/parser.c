@@ -8692,7 +8692,6 @@ AstNode *parser_parsePostfixPrimeExpression(Parser *parser)
     }
 
     LinkedList *tokens = NULL;
-    LinkedList *children = NULL;
 
     My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
     if (currentTokenType == TOKEN_OPEN_PARENTHESIS)
@@ -8708,13 +8707,7 @@ AstNode *parser_parsePostfixPrimeExpression(Parser *parser)
             DEBUG_PRINT("parser_parsePostfixPrimeExpression: Failed to parse function call.\n");
             return NULL;
         }
-        LinkedList *head = linkedList_Ast_create(parser->astArena, children, functionCallNode);
-        if (head == NULL)
-        {
-            DEBUG_PRINT("parser_parsePostfixPrimeExpression: linkedList_Ast_create failed with errno %d\n", errno);
-            return NULL;
-        }
-        children = head;
+        return functionCallNode; // Return the function call expression directly instead of creating a postfix prime node
     }
     else if (currentTokenType == TOKEN_OPEN_BRACKET)
     {
@@ -8729,13 +8722,7 @@ AstNode *parser_parsePostfixPrimeExpression(Parser *parser)
             DEBUG_PRINT("parser_parsePostfixPrimeExpression: Failed to parse array indexing.\n");
             return NULL;
         }
-        LinkedList *head = linkedList_Ast_create(parser->astArena, children, arrayIndexingNode);
-        if (head == NULL)
-        {
-            DEBUG_PRINT("parser_parsePostfixPrimeExpression: linkedList_Ast_create failed with errno %d\n", errno);
-            return NULL;
-        }
-        children = head;
+        return arrayIndexingNode; // Return the array indexing expression directly instead of creating a postfix prime node
     }
     else
     {
@@ -8804,7 +8791,7 @@ AstNode *parser_parsePostfixPrimeExpression(Parser *parser)
         }
     }
 
-    AstNode *postfixPrimeNode = astNode_create(parser->astArena, AST_POSTFIX_PRIME_EXPRESSION, tokens, children);
+    AstNode *postfixPrimeNode = astNode_create(parser->astArena, AST_POSTFIX_PRIME_EXPRESSION, tokens, NULL);
     if (postfixPrimeNode == NULL)
     {
         DEBUG_PRINT("parser_parsePostfixPrimeExpression: astNode_create failed with errno %d\n", errno);
