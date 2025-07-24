@@ -387,8 +387,7 @@ Additive_expression = Multiplicative_expression { Additive_operator Multiplicati
 
 Multiplicative_expression = Unary_expression { Multiplicative_operator Unary_expression } ;
 
-Unary_expression = ( Prefix_operator Unary_expression ) 
-                 | ( Unary_operator Type_cast_expression ) 
+Unary_expression = ( ( Prefix_operator | Unary_operator ) Unary_expression )
                  | Type_cast_expression ;
 
 Type_cast_expression = ( "(" Full_type ")" Type_cast_expression )

@@ -8286,7 +8286,10 @@ AstNode *parser_parseUnaryExpression(Parser *parser)
     LinkedList *children = NULL;
 
     My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
-    if (currentTokenType == TOKEN_DOUBLE_PLUS || currentTokenType == TOKEN_DOUBLE_MINUS)
+    if (currentTokenType == TOKEN_DOUBLE_PLUS || currentTokenType == TOKEN_DOUBLE_MINUS ||
+        currentTokenType == TOKEN_MINUS || currentTokenType == TOKEN_STAR || 
+        currentTokenType == TOKEN_AMPERSAND || currentTokenType == TOKEN_TILDE || 
+        currentTokenType == TOKEN_EXCLAMATION)
     {
         Token *operatorToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
         if (operatorToken == NULL)
@@ -8321,50 +8324,6 @@ AstNode *parser_parseUnaryExpression(Parser *parser)
             return NULL;
         }
         head = linkedList_Ast_create(parser->astArena, children, unaryExpressionNode);
-        if (head == NULL)
-        {
-            DEBUG_PRINT("parser_parseUnaryExpression: linkedList_Ast_create failed with errno %d\n", errno);
-            return NULL;
-        }
-        children = head;
-    }
-    else if (   currentTokenType == TOKEN_MINUS || 
-                currentTokenType == TOKEN_STAR || currentTokenType == TOKEN_AMPERSAND ||
-                currentTokenType == TOKEN_TILDE || currentTokenType == TOKEN_EXCLAMATION)
-    {
-        Token *operatorToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
-        if (operatorToken == NULL)
-        {
-            DEBUG_PRINT("parser_parseUnaryExpression: token_copy failed with errno %d\n", errno);
-            return NULL;
-        }
-        LinkedList *head = linkedList_Token_create(parser->astArena, tokens, operatorToken);
-        if (head == NULL)
-        {
-            DEBUG_PRINT("parser_parseUnaryExpression: linkedList_Token_create failed with errno %d\n", errno);
-            return NULL;
-        }
-        tokens = head;
-
-        parser->tokens = parser->tokens->next; // Move past the unary operator token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseUnaryExpression: No tokens available after unary operator.\n");
-            return NULL;
-        }
-
-        AstNode *typeCastExpressionNode = parser_parseTypeCastExpression(parser);
-        if (typeCastExpressionNode == NULL)
-        {
-            if (parser->tokens == NULL)
-            {
-                DEBUG_PRINT("parser_parseUnaryExpression: No tokens available after unary operator.\n");
-                return NULL;
-            }
-            DEBUG_PRINT("parser_parseUnaryExpression: Failed to parse unary expression after operator.\n");
-            return NULL;
-        }
-        head = linkedList_Ast_create(parser->astArena, children, typeCastExpressionNode);
         if (head == NULL)
         {
             DEBUG_PRINT("parser_parseUnaryExpression: linkedList_Ast_create failed with errno %d\n", errno);
