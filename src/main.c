@@ -208,8 +208,11 @@ int main(int argc, char *argv[])
     // Exiting the program, free allocated resources
     options_free(&options);
     logger_close();
+#ifdef DEBUG
+    printf("Exiting compiler with no errors.\n");
+#endif
     return 0;
-}
+} 
 
 bool createArenasAndStringTable(Arena **alphaArena, Arena **betaArena, Arena **stringInterningArena, HashTable **stringInterningTable)
 {
