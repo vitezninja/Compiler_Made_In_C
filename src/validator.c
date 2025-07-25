@@ -1154,9 +1154,6 @@ CmcType *validator_matchConstBinaryType(Validator *validator, CmcType *leftType,
         return NULL; // Structs and unions cannot be used in binary operations
     }
 
-    int a[] = {1, 2, 3};
-    int b[] = {4, 5, 6};
-
     // ALL OPS: INT, UINT, FLOAT, CHAR, ENUM
     // ONLY ADD: STRING
     // ONLY BITWISE, LOGICAL, COMPARISON: BOOL
