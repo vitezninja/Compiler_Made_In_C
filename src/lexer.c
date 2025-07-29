@@ -1,6 +1,34 @@
 #include "lexer.h"
 
 /**
+ * Creates an error for the lexer.
+ * 
+ * This macro creates an error object with the specified location and message,
+ * and adds it to the lexer error list. If memory allocation fails, it prints an error
+ * message and returns NULL.
+ * 
+ * @param lexer The lexer instance.
+ * @param location The source location where the error occurred.
+ * @param message The error message to be associated with the error.
+ */
+#define lexer_createError(lexer, location, message)                                                     \
+do {                                                                                                    \
+    Error *error = error_create(lexer->utilsArena, ERROR_ERROR, location, message);                     \
+    if (error == NULL)                                                                                  \
+    {                                                                                                   \
+        DEBUG_PRINT("%s: Memory allocation for Error failed with errno %d\n", __func__, errno);         \
+        return NULL;                                                                                    \
+    }                                                                                                   \
+    LinkedList *errorHead = linkedList_Error_create(lexer->utilsArena, lexer->error, error);            \
+    if (errorHead == NULL)                                                                              \
+    {                                                                                                   \
+        DEBUG_PRINT("%s: Memory allocation for LinkedList failed with errno %d\n", __func__, errno);    \
+        return NULL;                                                                                    \
+    }                                                                                                   \
+    lexer->error = errorHead;                                                                           \
+} while (0)
+
+/**
  * Checks if a character is a valid binary digit (0 or 1).
  * 
  * This function determines if the provided character is either '0' or '1'.
@@ -10,7 +38,7 @@
  * 
  * @return true if the character is a binary digit (0 or 1), false otherwise.
  */
-bool lexer_isBinaryDigit(char c);
+inline bool lexer_isBinaryDigit(char c);
 
 /**
  * Checks if a character is a valid binary digit (0 or 1).
@@ -35,7 +63,7 @@ int lexer_getBinaryValue(char c);
  * 
  * @return 1 if the character is an octal digit (0-7), 0 otherwise.
  */
-bool lexer_isOctalDigit(char c);
+inline bool lexer_isOctalDigit(char c);
 
 /**
  * Converts a character to its octal digit value.
@@ -61,7 +89,7 @@ int lexer_getOctalValue(char c);
  * 
  * @return 1 if the character is a hexadecimal digit (0-9, A-F, a-f), 0 otherwise.
  */
-bool lexer_isHexalDigit(char c);
+inline bool lexer_isHexalDigit(char c);
 
 /**
  * Converts a character to its hexadecimal digit value.
@@ -257,7 +285,7 @@ Token *lexer_handleIdentifiersAndKeywords(Lexer *lexer);
 
 // ---------------------------------------------------------------------------
 
-bool lexer_isBinaryDigit(char c)
+inline bool lexer_isBinaryDigit(char c)
 {
     return (c == '0' || c == '1');
 }
@@ -273,7 +301,7 @@ int lexer_getBinaryValue(char c)
     return -1;
 }
 
-bool lexer_isOctalDigit(char c)
+inline bool lexer_isOctalDigit(char c)
 {
     return c >= '0' && c <= '7';
 }
@@ -289,7 +317,7 @@ int lexer_getOctalValue(char c)
     return -1;
 }
 
-bool lexer_isHexalDigit(char c)
+inline bool lexer_isHexalDigit(char c)
 {
     return (isxdigit(c) != 0);
 }
@@ -777,7 +805,7 @@ Token *lexer_handleSimpleCase(Lexer *lexer)
         .fileName = lexer->fileName,
         .lineStart = lexer->currentLineStart,
         .line = lexer->line,
-        .column = lexer->column,
+        .column = lexer->column - pos,
         .length = pos
     };
     Token *token = token_create(lexer->tokenArena, type, str->name, posLoc, (TokenValue){0});
@@ -900,21 +928,7 @@ Token *lexer_handleNumbers(Lexer *lexer)
                 return NULL;
             }
 
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "Invalid integer constant starting with 0");
-            if (error == NULL)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
-                return NULL;
-
-            }
-            LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
-            if (head == NULL)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
-                return NULL;
-            }
-            lexer->error = head;
-
+            lexer_createError(lexer, posLoc, "Invalid integer constant starting with 0");
             return token;
         }
     }
@@ -946,19 +960,7 @@ Token *lexer_handleNumbers(Lexer *lexer)
             return NULL;
         }
 
-        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "Invalid integer constant starting with 0");
-        if (error == NULL)
-        {
-            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
-            return NULL;
-        }
-        LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
-        if (head == NULL)
-        {
-            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
-            return NULL;
-        }
-        lexer->error = head;
+        lexer_createError(lexer, posLoc, "Invalid integer constant starting with 0");
         return token;
     }
 
@@ -1036,19 +1038,7 @@ Token *lexer_handleNumbers(Lexer *lexer)
             }
 
             posLoc.length = invalidSuffixLength;
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "Invalid suffix in binary number");
-            if (error == NULL)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
-                return NULL;
-            }
-            LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
-            if (head == NULL)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
-                return NULL;
-            }
-            lexer->error = head;
+            lexer_createError(lexer, posLoc, "Invalid suffix in binary number");
             return token;
         }
     
@@ -1154,19 +1144,7 @@ Token *lexer_handleNumbers(Lexer *lexer)
             }
 
             posLoc.length = invalidSuffixLength;
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "Invalid suffix in octal number");
-            if (error == NULL)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
-                return NULL;
-            }
-            LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
-            if (head == NULL)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
-                return NULL;
-            }
-            lexer->error = head;
+            lexer_createError(lexer, posLoc, "Invalid suffix in octal number");
             return token;
         }
 
@@ -1270,19 +1248,7 @@ Token *lexer_handleNumbers(Lexer *lexer)
             }
 
             posLoc.length = invalidSuffixLength;
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "Invalid suffix in hexadecimal number");
-            if (error == NULL)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
-                return NULL;
-            }
-            LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
-            if (head == NULL)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
-                return NULL;
-            }
-            lexer->error = head;
+            lexer_createError(lexer, posLoc, "Invalid suffix in hexadecimal number");
             return token;
         }
 
@@ -1413,19 +1379,7 @@ Token *lexer_handleNumbers(Lexer *lexer)
             }
 
             posLoc.length = invalidSuffixLength;
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "Invalid suffix in floating-point number");
-            if (error == NULL)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
-                return NULL;
-            }
-            LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
-            if (head == NULL)
-            {
-                DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
-                return NULL;
-            }
-            lexer->error = head;
+            lexer_createError(lexer, posLoc, "Invalid suffix in floating-point number");
             return token;
         }
 
@@ -1507,19 +1461,7 @@ Token *lexer_handleNumbers(Lexer *lexer)
         }
 
         posLoc.length = invalidSuffixLength;
-        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "Invalid suffix in integer number");
-        if (error == NULL)
-        {
-            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error failed with errno %d\n", errno);
-            return NULL;
-        }
-        LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
-        if (head == NULL)
-        {
-            DEBUG_PRINT("lexer_handleNumbers: Memory allocation for Error linked list failed with errno %d\n", errno);
-            return NULL;
-        }
-        lexer->error = head;
+        lexer_createError(lexer, posLoc, "Invalid suffix in integer number");
         return token;
     }
 
@@ -1604,19 +1546,7 @@ Token *lexer_handleCharacters(Lexer *lexer)
             return NULL;
         }
 
-        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "The character wasn't closed!");
-        if (error == NULL)
-        {
-            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error failed with errno %d\n", errno);
-            return NULL;
-        }
-        LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
-        if (head == NULL)
-        {
-            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error linked list failed with errno %d\n", errno);
-            return NULL;
-        }
-        lexer->error = head;
+        lexer_createError(lexer, posLoc, "Character constant must be closed with on the same line!");
         return token;
     }
 
@@ -1653,19 +1583,7 @@ Token *lexer_handleCharacters(Lexer *lexer)
             return NULL;
         }
 
-        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "Empty character constant is not allowed!");
-        if (error == NULL)
-        {
-            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error failed with errno %d\n", errno);
-            return NULL;
-        }
-        LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
-        if (head == NULL)
-        {
-            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error linked list failed with errno %d\n", errno);
-            return NULL;
-        }
-        lexer->error = head;
+        lexer_createError(lexer, posLoc, "Character constant must contain exactly one character!");
         return token;
     }
 
@@ -1696,19 +1614,7 @@ Token *lexer_handleCharacters(Lexer *lexer)
             return NULL;
         }
 
-        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "Multi-character character constant is not allowed!");
-        if (error == NULL)
-        {
-            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error failed with errno %d\n", errno);
-            return NULL;
-        }
-        LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
-        if (head == NULL)
-        {
-            DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error linked list failed with errno %d\n", errno);
-            return NULL;
-        }
-        lexer->error = head;
+        lexer_createError(lexer, posLoc, "Character constant must contain exactly one character!");
         return token;
     }
 
@@ -1750,19 +1656,7 @@ Token *lexer_handleCharacters(Lexer *lexer)
                 return NULL;
             }
 
-            Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "Invalid escape sequence in character constant!");
-            if (error == NULL)
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error failed with errno %d\n", errno);
-                return NULL;
-            }
-            LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
-            if (head == NULL)
-            {
-                DEBUG_PRINT("lexer_handleCharacters: Memory allocation for Error linked list failed with errno %d\n", errno);
-                return NULL;
-            }
-            lexer->error = head;
+            lexer_createError(lexer, posLoc, "Invalid escape sequence in character constant!");
             return token;
         }
     }
@@ -1871,19 +1765,7 @@ Token *lexer_handleStrings(Lexer *lexer)
             return NULL;
         }
 
-        Error *error = error_create(lexer->utilsArena, ERROR_ERROR, posLoc, "The string wasn't closed!");
-        if (error == NULL)
-        {
-            DEBUG_PRINT("lexer_handleStrings: Memory allocation for Error failed with errno %d\n", errno);
-            return NULL;
-        }
-        LinkedList *head = linkedList_Error_create(lexer->utilsArena, lexer->error, error);
-        if (head == NULL)
-        {
-            DEBUG_PRINT("lexer_handleStrings: Memory allocation for Error linked list failed with errno %d\n", errno);
-            return NULL;
-        }
-        lexer->error = head;
+        lexer_createError(lexer, posLoc, "String must be closed on the same line!");
         return token;
     }
 
