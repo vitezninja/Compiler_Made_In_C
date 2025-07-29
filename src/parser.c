@@ -3367,6 +3367,13 @@ AstNode *parser_parseEnumValueDeclaration(Parser *parser)
 
         parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ',' after enum value declaration.",
                            ((Token *)parser->tokens->data)->type != TOKEN_COMMA);
+
+        parser->tokens = parser->tokens->next; // Move past the comma token
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_parseEnumValueDeclaration: No tokens available after comma.\n");
+            return NULL;
+        }
     }
 
     AstNode *enumValueDeclarationNode = astNode_create(parser->astArena, AST_ENUM_VALUE_DECLARATION, NULL, children);
