@@ -34,6 +34,24 @@ do {                                                                            
 } while (0)
 
 /**
+ * @brief Moves the parser to the next token in the token list.
+ * 
+ * This macro advances the parser's token pointer to the next token in the linked list of tokens.
+ * It checks if there are any tokens available and returns NULL if there are no more tokens.
+ * 
+ * @param parser Pointer to the Parser instance containing the token list.
+ */
+#define parser_moveSafelyToNextToken(parser)                    \
+do {                                                            \
+    parser->tokens = parser->tokens->next;                      \
+    if (parser->tokens == NULL)                                 \
+    {                                                           \
+        DEBUG_PRINT("%s: No tokens available.\n", __func__);    \
+        return NULL;                                            \
+    }                                                           \
+} while (0)
+
+/**
  * @brief Tries to recover from a parsing panic state.
  * 
  * This function attempts to recover the parser from a panic state by skipping tokens until it finds a valid point to continue parsing.
@@ -1053,7 +1071,7 @@ AstNode *parser_parseType(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the type token
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *typeNode = astNode_create(parser->astArena, AST_TYPE, tokens, NULL);
     if (typeNode == NULL)
@@ -1126,12 +1144,7 @@ AstNode *parser_parseTypeSpecifiers(Parser *parser)
         }
         tokens = head;
 
-        parser->tokens = parser->tokens->next; // Move past the type specifier token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseTypeSpecifiers: No tokens available after type specifier.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
     }
 
     AstNode *typeSpecifierNode = astNode_create(parser->astArena, AST_TYPE_SPECIFIERS, tokens, NULL);
@@ -1239,12 +1252,7 @@ AstNode *parser_parseFullType(Parser *parser)
 
     while (((Token *)parser->tokens->data)->type == TOKEN_OPEN_BRACKET)
     {
-        parser->tokens = parser->tokens->next; // Move past the open bracket token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parse_fullType: No tokens available after open bracket.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         AstNode *arraySizeNode = parser_parseExpression(parser);
         if (arraySizeNode == NULL)
@@ -1274,12 +1282,7 @@ AstNode *parser_parseFullType(Parser *parser)
         parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected a closing bracket ']' after array size expression.",
                             ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_BRACKET);
 
-        parser->tokens = parser->tokens->next; // Move past the close bracket token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parse_fullType: No tokens available after close bracket.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
     }
 
     AstNode *fullTypeNode = astNode_create(parser->astArena, AST_FULL_TYPE, NULL, children);
@@ -1351,7 +1354,7 @@ AstNode *parser_parseLiteral(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the literal token
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *literalNode = astNode_create(parser->astArena, AST_LITERAL, tokens, NULL);
     if (literalNode == NULL)
@@ -1380,7 +1383,7 @@ AstNode *parser_parseProgram(Parser *parser)
 
     while (((Token *)parser->tokens->data)->type == TOKEN_KEYWORD_IMPORT)
     {
-        AstNode *import = parser_parseImport(parser); // Sets parser->tokens to the next token after the import statement
+        AstNode *import = parser_parseImport(parser);
         if (import == NULL)
         {
             if (parser->panic) goto parser_parseProgram_Import_Label;
@@ -1589,12 +1592,7 @@ AstNode *parser_parseImport(Parser *parser)
     LinkedList *tokens = NULL;
     LinkedList *children = NULL;
     
-    parser->tokens = parser->tokens->next; // Move past the import token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseImport: No tokens available after import keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     bool isFrom = false;
     if (((Token *)parser->tokens->data)->type == TOKEN_LITERAL_STRING)
@@ -1613,7 +1611,7 @@ AstNode *parser_parseImport(Parser *parser)
         }
         tokens = head;
 
-        parser->tokens = parser->tokens->next; // Move past the string literal token
+        parser_moveSafelyToNextToken(parser);
     }
     else if (((Token *)parser->tokens->data)->type == TOKEN_IDENTIFIER)
     {
@@ -1647,12 +1645,7 @@ AstNode *parser_parseImport(Parser *parser)
         parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected 'from' keyword after import identifiers.",
                         ((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_FROM);
 
-        parser->tokens = parser->tokens->next; // Move past the 'from' keyword token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseImport: No tokens available after 'from' keyword.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected string literal after 'from' keyword.",
                         ((Token *)parser->tokens->data)->type != TOKEN_LITERAL_STRING);
@@ -1671,7 +1664,7 @@ AstNode *parser_parseImport(Parser *parser)
         }
         tokens = head;
 
-        parser->tokens = parser->tokens->next; // Move past the string literal token
+        parser_moveSafelyToNextToken(parser);
     }
     else
     {
@@ -1687,7 +1680,7 @@ AstNode *parser_parseImport(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected semicolon after import statement.",
                         ((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON);
 
-    parser->tokens = parser->tokens->next; // Move past the semicolon token
+    parser_moveSafelyToNextToken(parser);
 
     AstType importType = isFrom ? AST_IMPORT_FROM : AST_IMPORT;
     AstNode *importNode = astNode_create(parser->astArena, importType, tokens, children);
@@ -1732,22 +1725,11 @@ AstNode *parser_parseIdentifierList(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the identifier token
-
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseIdentifierList: No tokens available after identifier.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     while (((Token *)parser->tokens->data)->type == TOKEN_COMMA)
     {
-        parser->tokens = parser->tokens->next; // Move past the comma token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseIdentifierList: No tokens available after comma.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected identifier after comma in identifier list.",
                         ((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER);
@@ -1766,12 +1748,7 @@ AstNode *parser_parseIdentifierList(Parser *parser)
         }
         tokens = head;
 
-        parser->tokens = parser->tokens->next; // Move past the identifier token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseIdentifierList: No tokens available after identifier.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
     }
 
     AstNode *identifierListNode = astNode_create(parser->astArena, AST_IDENTIFIER_LIST, tokens, NULL);
@@ -1820,23 +1797,13 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
         }
         tokens = head;
 
-        parser->tokens = parser->tokens->next; // Move past the export token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseFunctionDefinition: No tokens available after export keyword.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
     }
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected open parenthesis after function name.",
                         ((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the open parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseFunctionDefinition: No tokens available after open parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *functionReturnParameterListNode = parser_parseReturnParameterList(parser);
     if (functionReturnParameterListNode == NULL)
@@ -1866,12 +1833,7 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected close parenthesis after return parameter list.",
                         ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the close parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseFunctionDefinition: No tokens available after close parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected function name after close parenthesis.",
                         ((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER);
@@ -1890,22 +1852,12 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the function name token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseFunctionDefinition: No tokens available after function name.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected open parenthesis after function name.",
                         ((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the open parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseFunctionDefinition: No tokens available after open parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS)
     {
@@ -1938,12 +1890,7 @@ AstNode *parser_parseFunctionDefinition(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected close parenthesis after function parameter list.",
                         ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the close parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseFunctionDefinition: No tokens available after close parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *functionBodyNode = parser_parseCompoundStatement(parser);
     if (functionBodyNode == NULL)
@@ -2019,12 +1966,7 @@ AstNode *parser_parseReturnParameterList(Parser *parser)
 
     while (((Token *)parser->tokens->data)->type == TOKEN_COMMA)
     {
-        parser->tokens = parser->tokens->next; // Move past the comma token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseReturnParameterList: No tokens available after comma.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected a full type after comma in return parameter list.",
                         !parser_isFullType(parser));
@@ -2110,12 +2052,7 @@ AstNode *parser_parseFunctionParameterList(Parser *parser)
 
     while (((Token *)parser->tokens->data)->type == TOKEN_COMMA)
     {
-        parser->tokens = parser->tokens->next; // Move past the comma token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseFunctionParameterList: No tokens available after comma.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected a full type after comma in function parameter list.",
                         !parser_isFullType(parser));
@@ -2216,7 +2153,8 @@ AstNode *parser_parseFunctionParameter(Parser *parser)
         return NULL;
     }
     tokens = head;
-    parser->tokens = parser->tokens->next; // Move past the identifier token
+
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *functionParameterNode = astNode_create(parser->astArena, AST_FUNCTION_PARAMETER, tokens, children);
     if (functionParameterNode == NULL)
@@ -2264,12 +2202,7 @@ AstNode *parser_parseGlobalVariableDeclaration(Parser *parser)
         }
         tokens = head;
 
-        parser->tokens = parser->tokens->next; // Move past the export token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseGlobalVariableDeclaration: No tokens available after export keyword.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
     }
 
     AstNode *fullTypeNode = parser_parseFullType(parser);
@@ -2314,21 +2247,11 @@ AstNode *parser_parseGlobalVariableDeclaration(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the identifier token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseGlobalVariableDeclaration: No tokens available after identifier.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     while (((Token *)parser->tokens->data)->type == TOKEN_COMMA)
     {
-        parser->tokens = parser->tokens->next; // Move past the comma token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseGlobalVariableDeclaration: No tokens available after comma.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         if (((Token *)parser->tokens->data)->type == TOKEN_KEYWORD_EXPORT)
         {
@@ -2346,12 +2269,7 @@ AstNode *parser_parseGlobalVariableDeclaration(Parser *parser)
             }
             tokens = head;
 
-            parser->tokens = parser->tokens->next; // Move past the export token
-            if (parser->tokens == NULL)
-            {
-                DEBUG_PRINT("parser_parseGlobalVariableDeclaration: No tokens available after export keyword.\n");
-                return NULL;
-            }
+            parser_moveSafelyToNextToken(parser);
         }
 
         fullTypeNode = parser_parseFullType(parser);
@@ -2396,22 +2314,12 @@ AstNode *parser_parseGlobalVariableDeclaration(Parser *parser)
         }
         tokens = head;
 
-        parser->tokens = parser->tokens->next; // Move past the identifier token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseGlobalVariableDeclaration: No tokens available after additional identifier.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
     }
 
     if (((Token *)parser->tokens->data)->type == TOKEN_EQUALS)
     {
-        parser->tokens = parser->tokens->next; // Move past the equals token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseGlobalVariableDeclaration: No tokens available after equals sign.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         AstNode *expressionNode = parser_parseExpression(parser);
         if (expressionNode == NULL)
@@ -2442,7 +2350,7 @@ AstNode *parser_parseGlobalVariableDeclaration(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected semicolon after global variable declaration.",
                         ((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON);
 
-    parser->tokens = parser->tokens->next; // Move past the semicolon token
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *globalVariableDeclarationNode = astNode_create(parser->astArena, AST_GLOBAL_VARIABLE_DECLARATION, tokens, children);
     if (globalVariableDeclarationNode == NULL)
@@ -2490,20 +2398,10 @@ AstNode *parser_parseStructDeclaration(Parser *parser)
         }
         tokens = head;
 
-        parser->tokens = parser->tokens->next; // Move past the export token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseTypedefDeclaration: No tokens available after export keyword.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
     }
 
-    parser->tokens = parser->tokens->next; // Move past the struct token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseStructDeclaration: No tokens available after struct keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected identifier after struct keyword.",
                         ((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER);
@@ -2522,22 +2420,12 @@ AstNode *parser_parseStructDeclaration(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the identifier token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseStructDeclaration: No tokens available after struct identifier.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '{' after struct identifier.",
                         ((Token *)parser->tokens->data)->type != TOKEN_OPEN_CURLY);
 
-    parser->tokens = parser->tokens->next; // Move past the open curly brace token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseStructDeclaration: No tokens available after open curly brace.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *members = parser_parseStructUnionMemberDeclaration(parser);
     if (members == NULL)
@@ -2567,7 +2455,7 @@ AstNode *parser_parseStructDeclaration(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '}' to close struct declaration.",
                         ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_CURLY);
 
-    parser->tokens = parser->tokens->next; // Move past the close curly brace token
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *structNode = astNode_create(parser->astArena, AST_STRUCT_DECLARATION, tokens, children);
     if (structNode == NULL)
@@ -2615,20 +2503,10 @@ AstNode *parser_parseUnionDeclaration(Parser *parser)
         }
         tokens = head;
 
-        parser->tokens = parser->tokens->next; // Move past the export token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseTypedefDeclaration: No tokens available after export keyword.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
     }
 
-    parser->tokens = parser->tokens->next; // Move past the union token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseUnionDeclaration: No tokens available after union keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected identifier after union keyword.",
                        ((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER);
@@ -2647,22 +2525,12 @@ AstNode *parser_parseUnionDeclaration(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the identifier token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseUnionDeclaration: No tokens available after union identifier.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '{' after union identifier.",
                        ((Token *)parser->tokens->data)->type != TOKEN_OPEN_CURLY);
 
-    parser->tokens = parser->tokens->next; // Move past the open curly brace token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseUnionDeclaration: No tokens available after open curly brace.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *members = parser_parseStructUnionMemberDeclaration(parser);
     if (members == NULL)
@@ -2692,7 +2560,7 @@ AstNode *parser_parseUnionDeclaration(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '}' to close union declaration.",
                        ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_CURLY);
 
-    parser->tokens = parser->tokens->next; // Move past the close curly brace token
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *unionNode = astNode_create(parser->astArena, AST_UNION_DECLARATION, tokens, children);
     if (unionNode == NULL)
@@ -2760,22 +2628,12 @@ AstNode *parser_parseStructUnionMemberDeclaration(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the identifier token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseStructUnionMemberDeclaration: No tokens available after identifier.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected semicolon after struct/union member identifier.",
                         ((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON);
 
-    parser->tokens = parser->tokens->next; // Move past the semicolon token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseStructUnionMemberDeclaration: No tokens available after semicolon.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     while (parser_isFullType(parser))
     {
@@ -2816,22 +2674,12 @@ AstNode *parser_parseStructUnionMemberDeclaration(Parser *parser)
         }
         tokens = head;
 
-        parser->tokens = parser->tokens->next; // Move past the identifier token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseStructUnionMemberDeclaration: No tokens available after identifier.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected semicolon after struct/union member identifier.",
                            ((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON);
 
-        parser->tokens = parser->tokens->next; // Move past the semicolon token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseStructUnionMemberDeclaration: No tokens available after semicolon.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
     }
 
     AstNode *structUnionMemberDeclarationNode = astNode_create(parser->astArena, AST_STRUCT_UNION_MEMBER_DECLARATION, tokens, children);
@@ -2862,12 +2710,7 @@ AstNode *parser_parseStructUnionDeclarator(Parser *parser)
 
     LinkedList *children = NULL;
 
-    parser->tokens = parser->tokens->next; // Move past the open curly brace token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseStructUnionDeclarator: No tokens available after open curly brace.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     if (((Token *)parser->tokens->data)->type == TOKEN_DOT)
     {
@@ -2905,7 +2748,7 @@ AstNode *parser_parseStructUnionDeclarator(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '}' to close struct/union declarator.",
                        ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_CURLY);
 
-    parser->tokens = parser->tokens->next; // Move past the close curly brace token
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *structUniondeclarator = astNode_create(parser->astArena, AST_STRUCT_UNION_DECLARATOR, NULL, children);
     if (structUniondeclarator == NULL)
@@ -2954,12 +2797,7 @@ AstNode *parser_parseStructUnionIndirectDeclarator(Parser *parser)
     
     while (((Token *)parser->tokens->data)->type == TOKEN_COMMA)
     {
-        parser->tokens = parser->tokens->next; // Move past the comma token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseStructUnionIndirectDeclarator: No tokens available after comma.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         expressionNode = parser_parseExpression(parser);
         if (expressionNode == NULL)
@@ -3011,12 +2849,7 @@ AstNode *parser_parseStructUnionDirectDeclarator(Parser *parser)
     LinkedList *tokens = NULL;
     LinkedList *children = NULL;
 
-    parser->tokens = parser->tokens->next; // Move past the dot token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseStructUnionDirectDeclarator: No tokens available after dot.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected identifier after '.' in struct/union direct declarator.",
                        ((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER);
@@ -3035,22 +2868,12 @@ AstNode *parser_parseStructUnionDirectDeclarator(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the identifier token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseStructUnionDirectDeclarator: No tokens available after identifier.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '=' after identifier in struct/union direct declarator.",
                        ((Token *)parser->tokens->data)->type != TOKEN_EQUALS);
 
-    parser->tokens = parser->tokens->next; // Move past the equals token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseStructUnionDirectDeclarator: No tokens available after equals.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *expressionNode = parser_parseExpression(parser);
     if (expressionNode == NULL)
@@ -3079,22 +2902,12 @@ AstNode *parser_parseStructUnionDirectDeclarator(Parser *parser)
 
     while (((Token *)parser->tokens->data)->type == TOKEN_COMMA)
     {
-        parser->tokens = parser->tokens->next; // Move past the comma token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseStructUnionDirectDeclarator: No tokens available after comma.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '.' after comma in struct/union direct declarator.",
                            ((Token *)parser->tokens->data)->type != TOKEN_DOT);
 
-        parser->tokens = parser->tokens->next; // Move past the dot token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseStructUnionDirectDeclarator: No tokens available after dot.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected identifier after '.' in struct/union direct declarator.",
                            ((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER);
@@ -3113,22 +2926,12 @@ AstNode *parser_parseStructUnionDirectDeclarator(Parser *parser)
         }
         tokens = head;
 
-        parser->tokens = parser->tokens->next; // Move past the identifier token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseStructUnionDirectDeclarator: No tokens available after identifier.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '=' after identifier in struct/union direct declarator.",
                            ((Token *)parser->tokens->data)->type != TOKEN_EQUALS);
 
-        parser->tokens = parser->tokens->next; // Move past the equals token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseStructUnionDirectDeclarator: No tokens available after equals.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         expressionNode = parser_parseExpression(parser);
         if (expressionNode == NULL)
@@ -3202,20 +3005,10 @@ AstNode *parser_parseEnumDeclaration(Parser *parser)
         }
         tokens = head;
 
-        parser->tokens = parser->tokens->next; // Move past the export token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseEnumDeclaration: No tokens available after export keyword.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
     }
 
-    parser->tokens = parser->tokens->next; // Move past the enum keyword
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseEnumDeclaration: No tokens available after enum keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected identifier after 'enum' keyword.",
                        ((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER);
@@ -3234,22 +3027,12 @@ AstNode *parser_parseEnumDeclaration(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the identifier token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseEnumDeclaration: No tokens available after identifier.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '{' to start enum body.",
                        ((Token *)parser->tokens->data)->type != TOKEN_OPEN_CURLY);
 
-    parser->tokens = parser->tokens->next; // Move past the open curly brace token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseEnumDeclaration: No tokens available after open curly brace.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *enumValueDeclarationNode = parser_parseEnumValueDeclaration(parser);
     if (enumValueDeclarationNode == NULL)
@@ -3279,7 +3062,7 @@ AstNode *parser_parseEnumDeclaration(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '}' to close enum body.",
                        ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_CURLY);
 
-    parser->tokens = parser->tokens->next; // Move past the close curly brace token
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *enumDeclarationNode = astNode_create(parser->astArena, AST_ENUM_DECLARATION, tokens, children);
     if (enumDeclarationNode == NULL)
@@ -3337,12 +3120,7 @@ AstNode *parser_parseEnumValueDeclaration(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ',' after enum value declaration.",
                        ((Token *)parser->tokens->data)->type != TOKEN_COMMA);
 
-    parser->tokens = parser->tokens->next; // Move past the comma token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseEnumValueDeclaration: No tokens available after comma.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     while (((Token *)parser->tokens->data)->type == TOKEN_IDENTIFIER)
     {
@@ -3368,12 +3146,7 @@ AstNode *parser_parseEnumValueDeclaration(Parser *parser)
         parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ',' after enum value declaration.",
                            ((Token *)parser->tokens->data)->type != TOKEN_COMMA);
 
-        parser->tokens = parser->tokens->next; // Move past the comma token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseEnumValueDeclaration: No tokens available after comma.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
     }
 
     AstNode *enumValueDeclarationNode = astNode_create(parser->astArena, AST_ENUM_VALUE_DECLARATION, NULL, children);
@@ -3419,21 +3192,11 @@ AstNode *parser_parseEnumValue(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the identifier token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseEnumValue: No tokens available after identifier.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     if (((Token *)parser->tokens->data)->type == TOKEN_EQUALS)
     {
-        parser->tokens = parser->tokens->next; // Move past the equals token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseEnumValue: No tokens available after equals.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         AstNode *expressionNode = parser_parseExpression(parser);
         if (expressionNode == NULL)
@@ -3683,22 +3446,12 @@ AstNode *parser_parseIfStatement(Parser *parser)
 
     LinkedList *children = NULL;
 
-    parser->tokens = parser->tokens->next; // Move past the 'if' keyword
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseIfStatement: No tokens available after 'if' keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '(' after 'if' keyword.",
                        ((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the open parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseIfStatement: No tokens available after open parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *conditionNode = parser_parseExpression(parser);
     if (conditionNode == NULL)
@@ -3728,12 +3481,7 @@ AstNode *parser_parseIfStatement(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ')' to close condition expression.",
                        ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the close parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseIfStatement: No tokens available after close parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *ifBodyNode = parser_parseStatement(parser);
     if (ifBodyNode == NULL)
@@ -3758,12 +3506,7 @@ AstNode *parser_parseIfStatement(Parser *parser)
 
     if (((Token *)parser->tokens->data)->type == TOKEN_KEYWORD_ELSE)
     {
-        parser->tokens = parser->tokens->next; // Move past the 'else' keyword
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseIfStatement: No tokens available after 'else' keyword.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         AstNode *elseBodyNode = parser_parseStatement(parser);
         if (elseBodyNode == NULL)
@@ -3790,12 +3533,7 @@ AstNode *parser_parseIfStatement(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected 'endif' keyword to end if statement.",
                        ((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_ENDIF);
 
-    parser->tokens = parser->tokens->next; // Move past the 'endif' keyword
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseIfStatement: No tokens available after 'endif' keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *ifStatementNode = astNode_create(parser->astArena, AST_IF_STATEMENT, NULL, children);
     if (ifStatementNode == NULL)
@@ -3825,22 +3563,12 @@ AstNode *parser_parseSwitchStatement(Parser *parser)
 
     LinkedList *children = NULL;
 
-    parser->tokens = parser->tokens->next; // Move past the 'switch' keyword
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseSwitchStatement: No tokens available after 'switch' keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '(' after 'switch' keyword.",
                         ((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the open parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseSwitchStatement: No tokens available after open parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *conditionNode = parser_parseExpression(parser);
     if (conditionNode == NULL)
@@ -3870,22 +3598,12 @@ AstNode *parser_parseSwitchStatement(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ')' to close switch condition expression.",
                         ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the close parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseSwitchStatement: No tokens available after close parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '{' to start switch body.",
                         ((Token *)parser->tokens->data)->type != TOKEN_OPEN_CURLY);
 
-    parser->tokens = parser->tokens->next; // Move past the open curly brace token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseSwitchStatement: No tokens available after open curly brace.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     while (((Token *)parser->tokens->data)->type == TOKEN_KEYWORD_CASE ||
            ((Token *)parser->tokens->data)->type == TOKEN_KEYWORD_DEFAULT)
@@ -3927,7 +3645,7 @@ AstNode *parser_parseSwitchStatement(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '}' to close switch body.",
                         ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_CURLY);
 
-    parser->tokens = parser->tokens->next; // Move past the close curly brace token
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *switchNode = astNode_create(parser->astArena, AST_SWITCH_STATEMENT, NULL, children);
     if (switchNode == NULL)
@@ -3957,12 +3675,7 @@ AstNode *parser_parseSwitchCase(Parser *parser)
 
     LinkedList *children = NULL;
 
-    parser->tokens = parser->tokens->next; // Move past the 'case' keyword
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseSwitchCase: No tokens available after 'case' keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *caseValueNode = parser_parseExpression(parser);
     if (caseValueNode == NULL)
@@ -3992,12 +3705,7 @@ AstNode *parser_parseSwitchCase(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ':' after case value expression.",
                         ((Token *)parser->tokens->data)->type != TOKEN_COLON);
 
-    parser->tokens = parser->tokens->next; // Move past the colon token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseSwitchCase: No tokens available after colon.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_CASE &&
         ((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_DEFAULT)
@@ -4046,22 +3754,12 @@ AstNode *parser_parseSwitchDefault(Parser *parser)
 
     LinkedList *children = NULL;
 
-    parser->tokens = parser->tokens->next; // Move past the 'default' keyword
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseSwitchDefault: No tokens available after 'default' keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ':' after 'default' keyword.",
                         ((Token *)parser->tokens->data)->type != TOKEN_COLON);
 
-    parser->tokens = parser->tokens->next; // Move past the colon token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseSwitchDefault: No tokens available after colon.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *defaultBodyNode = parser_parseStatement(parser);
     if (defaultBodyNode == NULL)
@@ -4224,22 +3922,12 @@ AstNode *parser_parseForStatement(Parser *parser)
 
     LinkedList *children = NULL;
 
-    parser->tokens = parser->tokens->next; // Move past the 'for' keyword
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseForStatement: No tokens available after 'for' keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '(' after 'for' keyword.",
                        ((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the open parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseForStatement: No tokens available after open parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
     {
@@ -4272,12 +3960,7 @@ AstNode *parser_parseForStatement(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ';' after first part of for statement.",
                        ((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON);
 
-    parser->tokens = parser->tokens->next; // Move past the first semicolon token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseForStatement: No tokens available after first part of for statement.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
     {
@@ -4310,12 +3993,7 @@ AstNode *parser_parseForStatement(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ';' after condition expression.",
                        ((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON);
 
-    parser->tokens = parser->tokens->next; // Move past the second semicolon token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseForStatement: No tokens available after second semicolon.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS)
     {
@@ -4348,12 +4026,7 @@ AstNode *parser_parseForStatement(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ')' to close for statement.",
                        ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the close parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseForStatement: No tokens available after close parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *bodyNode = parser_parseStatement(parser);
     if (bodyNode == NULL)
@@ -4569,22 +4242,12 @@ AstNode *parser_parseForeachStatement(Parser *parser)
     LinkedList *tokens = NULL;
     LinkedList *children = NULL;
 
-    parser->tokens = parser->tokens->next; // Move past the 'foreach' keyword
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseForeachStatement: No tokens available after 'foreach' keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '(' after 'foreach' keyword.",
                        ((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the open parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseForeachStatement: No tokens available after open parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
    AstNode *fullTypeNode = parser_parseFullType(parser);
     if (fullTypeNode == NULL)
@@ -4628,22 +4291,12 @@ AstNode *parser_parseForeachStatement(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the identifier token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseForeachStatement: No tokens available after identifier.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ':' after identifier in foreach statement.",
                        ((Token *)parser->tokens->data)->type != TOKEN_COLON);
 
-    parser->tokens = parser->tokens->next; // Move past the colon token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseForeachStatement: No tokens available after colon.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     identifierToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
     if (identifierToken == NULL)
@@ -4659,22 +4312,12 @@ AstNode *parser_parseForeachStatement(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the second identifier token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseForeachStatement: No tokens available after second identifier.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ')' to close foreach statement.",
                        ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the close parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseForeachStatement: No tokens available after close parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *bodyStatementNode = parser_parseStatement(parser);
     if (bodyStatementNode == NULL)
@@ -4719,22 +4362,12 @@ AstNode *parser_parseWhileStatement(Parser *parser)
 
     LinkedList *children = NULL;
 
-    parser->tokens = parser->tokens->next; // Move past the 'while' keyword
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseWhileStatement: No tokens available after 'while' keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '(' after 'while' keyword.",
                        ((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the open parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseWhileStatement: No tokens available after open parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *conditionNode = parser_parseExpression(parser);
     if (conditionNode == NULL)
@@ -4764,12 +4397,7 @@ AstNode *parser_parseWhileStatement(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ')' to close while statement condition.",
                        ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the close parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseWhileStatement: No tokens available after close parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *bodyNode = parser_parseStatement(parser);
     if (bodyNode == NULL)
@@ -4814,12 +4442,7 @@ AstNode *parser_parseDoWhileStatement(Parser *parser)
 
     LinkedList *children = NULL;
 
-    parser->tokens = parser->tokens->next; // Move past the 'do' keyword
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseDoWhileStatement: No tokens available after 'do' keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *bodyNode = parser_parseStatement(parser);
     if (bodyNode == NULL)
@@ -4845,22 +4468,12 @@ AstNode *parser_parseDoWhileStatement(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected 'while' keyword after do-while body.",
                        ((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_WHILE);
 
-    parser->tokens = parser->tokens->next; // Move past the 'while' keyword
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseDoWhileStatement: No tokens available after 'while' keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '(' after 'while' keyword.",
                        ((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the open parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseDoWhileStatement: No tokens available after open parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *conditionNode = parser_parseExpression(parser);
     if (conditionNode == NULL)
@@ -4890,17 +4503,12 @@ AstNode *parser_parseDoWhileStatement(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ')' to close do-while statement condition.",
                        ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the close parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseDoWhileStatement: No tokens available after close parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ';' after do-while condition.",
                        ((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON);
 
-    parser->tokens = parser->tokens->next; // Move past the semicolon token
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *doWhileStatementNode = astNode_create(parser->astArena, AST_DO_WHILE_STATEMENT, NULL, children);
     if (doWhileStatementNode == NULL)
@@ -4930,12 +4538,7 @@ AstNode *parser_parseCompoundStatement(Parser *parser)
 
     LinkedList *children = NULL;
 
-    parser->tokens = parser->tokens->next; // Move past the open curly brace token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseCompoundStatement: No tokens available after open curly brace.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     if (parser->tokens->next == NULL)
     {
@@ -5000,7 +4603,7 @@ AstNode *parser_parseCompoundStatement(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '}' to close compound statement.",
                     ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_CURLY);
 
-    parser->tokens = parser->tokens->next; // Move past the close curly brace token
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *compoundStatementNode = astNode_create(parser->astArena, AST_COMPOUND_STATEMENT, NULL, children);
     if (compoundStatementNode == NULL)
@@ -5044,17 +4647,12 @@ AstNode *parser_parseLabel(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the identifier token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseLabel: No tokens available after identifier.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ':' after label identifier.",
                         ((Token *)parser->tokens->data)->type != TOKEN_COLON);
 
-    parser->tokens = parser->tokens->next; // Move past the colon token
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *labelNode = astNode_create(parser->astArena, AST_LABEL, tokens, NULL);
     if (labelNode == NULL)
@@ -5154,7 +4752,7 @@ AstNode *parser_parseExpressionStatement(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ';' after expression statement.",
                         ((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON);
 
-    parser->tokens = parser->tokens->next; // Move past the semicolon token
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *expressionStatementNode = astNode_create(parser->astArena, AST_EXPRESSION_STATEMENT, NULL, children);
     if (expressionStatementNode == NULL)
@@ -5227,21 +4825,11 @@ AstNode *parser_parseVariableDeclaration(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the identifier token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseVariableDeclaration: No tokens available after identifier.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     while (((Token *)parser->tokens->data)->type == TOKEN_COMMA)
     {
-        parser->tokens = parser->tokens->next; // Move past the comma token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseVariableDeclaration: No tokens available after comma.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         fullTypeNode = parser_parseFullType(parser);
         if (fullTypeNode == NULL)
@@ -5285,22 +4873,12 @@ AstNode *parser_parseVariableDeclaration(Parser *parser)
         }
         tokens = head;
 
-        parser->tokens = parser->tokens->next; // Move past the identifier token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseVariableDeclaration: No tokens available after identifier.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
     }
 
     if (((Token *)parser->tokens->data)->type == TOKEN_EQUALS)
     {
-        parser->tokens = parser->tokens->next; // Move past the assignment token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseVariableDeclaration: No tokens available after assignment.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         AstNode *expressionNode = parser_parseExpression(parser);
         if (expressionNode == NULL)
@@ -5406,21 +4984,11 @@ AstNode *parser_tryParseVariableDeclaration(Parser *parser, bool *success)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the identifier token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseVariableDeclaration: No tokens available after identifier.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     while (((Token *)parser->tokens->data)->type == TOKEN_COMMA)
     {
-        parser->tokens = parser->tokens->next; // Move past the comma token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseVariableDeclaration: No tokens available after comma.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         fullTypeNode = parser_parseFullType(parser);
         if (fullTypeNode == NULL)
@@ -5464,22 +5032,12 @@ AstNode *parser_tryParseVariableDeclaration(Parser *parser, bool *success)
         }
         tokens = head;
 
-        parser->tokens = parser->tokens->next; // Move past the identifier token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseVariableDeclaration: No tokens available after identifier.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
     }
 
     if (((Token *)parser->tokens->data)->type == TOKEN_EQUALS)
     {
-        parser->tokens = parser->tokens->next; // Move past the assignment token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseVariableDeclaration: No tokens available after assignment.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         AstNode *expressionNode = parser_parseExpression(parser);
         if (expressionNode == NULL)
@@ -5648,12 +5206,7 @@ AstNode *parser_parseGotoStatement(Parser *parser)
     LinkedList *tokens = NULL;
     LinkedList *children = NULL;
 
-    parser->tokens = parser->tokens->next; // Move past the 'goto' keyword token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseGotoStatement: No tokens available after 'goto' keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected identifier after 'goto' keyword.",
                        ((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER);
@@ -5672,31 +5225,16 @@ AstNode *parser_parseGotoStatement(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the identifier token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseGotoStatement: No tokens available after identifier.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     if (((Token *)parser->tokens->data)->type == TOKEN_KEYWORD_WHEN)
     {
-        parser->tokens = parser->tokens->next; // Move past the 'when' keyword token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseGotoStatement: No tokens available after 'when' keyword.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '(' after 'when' keyword in goto statement.",
                            ((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS);
 
-        parser->tokens = parser->tokens->next; // Move past the open parenthesis token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseGotoStatement: No tokens available after open parenthesis.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         AstNode *conditionNode = parser_parseExpression(parser);
         if (conditionNode == NULL)
@@ -5720,18 +5258,13 @@ AstNode *parser_parseGotoStatement(Parser *parser)
         parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ')' to close condition in goto statement.",
                            ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS);
 
-        parser->tokens = parser->tokens->next; // Move past the close parenthesis token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseGotoStatement: No tokens available after close parenthesis.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
     }
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ';' to end goto statement.",
                        ((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON);
 
-    parser->tokens = parser->tokens->next; // Move past the semicolon token
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *gotoStatementNode = astNode_create(parser->astArena, AST_GOTO_STATEMENT, tokens, children);
     if (gotoStatementNode == NULL)
@@ -5761,12 +5294,7 @@ AstNode *parser_parseReturnStatement(Parser *parser)
 
     LinkedList *children = NULL;
 
-    parser->tokens = parser->tokens->next; // Move past the 'return' keyword token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseReturnStatement: No tokens available after 'return' keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     if (((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON)
     {
@@ -5797,12 +5325,7 @@ AstNode *parser_parseReturnStatement(Parser *parser)
 
         while (((Token *)parser->tokens->data)->type == TOKEN_COMMA)
         {
-            parser->tokens = parser->tokens->next; // Move past the comma token
-            if (parser->tokens == NULL)
-            {
-                DEBUG_PRINT("parser_parseReturnStatement: No tokens available after comma.\n");
-                return NULL;
-            }
+            parser_moveSafelyToNextToken(parser);
 
             expressionNode = parser_parseExpression(parser);
             if (expressionNode == NULL)
@@ -5834,7 +5357,7 @@ AstNode *parser_parseReturnStatement(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ';' to end return statement.", 
                         ((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON);
 
-    parser->tokens = parser->tokens->next; // Move past the semicolon token
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *returnStatementNode = astNode_create(parser->astArena, AST_RETURN_STATEMENT, NULL, children);
     if (returnStatementNode == NULL)
@@ -5862,17 +5385,12 @@ AstNode *parser_parseBreakStatement(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected 'break' keyword to start break statement.", 
                         ((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_BREAK);
 
-    parser->tokens = parser->tokens->next; // Move past the 'break' keyword token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseBreakStatement: No tokens available after 'break' keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ';' to end break statement.", 
                         ((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON);
 
-    parser->tokens = parser->tokens->next; // Move past the semicolon token
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *breakStatementNode = astNode_create(parser->astArena, AST_BREAK_STATEMENT, NULL, NULL);
     if (breakStatementNode == NULL)
@@ -5900,17 +5418,12 @@ AstNode *parser_parseContinueStatement(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected 'continue' keyword to start continue statement.", 
                         ((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_CONTINUE);
 
-    parser->tokens = parser->tokens->next; // Move past the 'continue' keyword token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseContinueStatement: No tokens available after 'continue' keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ';' to end continue statement.", 
                         ((Token *)parser->tokens->data)->type != TOKEN_SEMICOLON);
 
-    parser->tokens = parser->tokens->next; // Move past the semicolon token
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *continueStatementNode = astNode_create(parser->astArena, AST_CONTINUE_STATEMENT, NULL, NULL);
     if (continueStatementNode == NULL)
@@ -6038,7 +5551,7 @@ AstNode *parser_parseAssignmentExpressionFromUnary(Parser *parser, AstNode *unar
 
     while (((Token *)parser->tokens->data)->type == TOKEN_COMMA)
     {
-        parser->tokens = parser->tokens->next; // Move past the comma token
+        parser_moveSafelyToNextToken(parser);
 
         AstNode *nextUnaryNode = parser_parseUnaryExpression(parser);
         if (nextUnaryNode == NULL)
@@ -6090,12 +5603,7 @@ AstNode *parser_parseAssignmentExpressionFromUnary(Parser *parser, AstNode *unar
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the assignment operator token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseAssignmentExpressionFromUnary: No tokens available after assignment operator.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *rightExpressionNode = parser_parseExpression(parser);
     if (rightExpressionNode == NULL)
@@ -6299,12 +5807,7 @@ AstNode *parser_parseBinaryExpression(Parser *parser, int parentPrecedence)
         }
         tokens = head;
 
-        parser->tokens = parser->tokens->next; // Move past the operator token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseBinaryExpression: No tokens available after operator.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         AstNode *right = parser_parseBinaryExpression(parser, precedence);
         if (right == NULL)
@@ -6378,12 +5881,7 @@ AstNode *parser_parseUnaryExpression(Parser *parser)
         }
         tokens = head;
 
-        parser->tokens = parser->tokens->next; // Move past the unary operator token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseUnaryExpression: No tokens available after unary operator.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         AstNode *unaryExpressionNode = parser_parseUnaryExpression(parser);
         if (unaryExpressionNode == NULL)
@@ -6446,7 +5944,8 @@ AstNode *parser_parseTypeCastExpression(Parser *parser)
     LinkedList *children = NULL;
 
     LinkedList *lookBack = parser->tokens;
-    parser->tokens = parser->tokens->next; // Temporarily move to the next token to check for type cast
+    // Temporarily move to the next token to check for type cast
+    parser_moveSafelyToNextToken(parser);
     bool isTypeCast = ((Token *)lookBack->data)->type == TOKEN_OPEN_PARENTHESIS && parser_isFullType(parser);
     parser->tokens = lookBack; // Restore the tokens list
 
@@ -6466,12 +5965,7 @@ AstNode *parser_parseTypeCastExpression(Parser *parser)
         return postfixExpressionNode; // Return the postfix expression directly if not a type cast
     }
 
-    parser->tokens = parser->tokens->next; // Move past the open parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseTypeCastExpression: No tokens available after open parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *fullTypeNode = parser_parseFullType(parser);
     if (fullTypeNode == NULL)
@@ -6496,12 +5990,7 @@ AstNode *parser_parseTypeCastExpression(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ')' to close type cast expression.",
                         ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the close parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseTypeCastExpression: No tokens available after close parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *typeCastExpressionNode = parser_parseTypeCastExpression(parser);
     if (typeCastExpressionNode == NULL)
@@ -6709,13 +6198,8 @@ AstNode *parser_parsePostfixPrimeExpression(Parser *parser)
     {
         if (currentTokenType == TOKEN_DOT)
         {
-            parser->tokens = parser->tokens->next; // Move past the dot token
-            if (parser->tokens == NULL)
-            {
-                DEBUG_PRINT("parser_parsePostfixPrimeExpression: No tokens available after dot.\n");
-                return NULL;
-            }
-
+            parser_moveSafelyToNextToken(parser);
+            
             parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected identifier after '.' in postfix prime expression.",
                                 ((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER);
             
@@ -6733,7 +6217,7 @@ AstNode *parser_parsePostfixPrimeExpression(Parser *parser)
             }
             tokens = head;
 
-            parser->tokens = parser->tokens->next; // Move past the dot token
+            parser_moveSafelyToNextToken(parser);
         }
         else
         {
@@ -6751,7 +6235,7 @@ AstNode *parser_parsePostfixPrimeExpression(Parser *parser)
             }
             tokens = head;
 
-            parser->tokens = parser->tokens->next; // Move past the postfix operator token
+            parser_moveSafelyToNextToken(parser);
         }
     }
 
@@ -6783,12 +6267,7 @@ AstNode *parser_parseArrayIndexingExpression(Parser *parser)
 
     LinkedList *children = NULL;
 
-    parser->tokens = parser->tokens->next; // Move past the open bracket token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseArrayIndexingExpression: No tokens available after open bracket.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *indexNode = parser_parseExpression(parser);
     if (indexNode == NULL)
@@ -6818,7 +6297,7 @@ AstNode *parser_parseArrayIndexingExpression(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ']' to close array indexing expression.", 
                         ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_BRACKET);
 
-    parser->tokens = parser->tokens->next; // Move past the close bracket token
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *arrayIndexingNode = astNode_create(parser->astArena, AST_ARRAY_INDEXING_EXPRESSION, NULL, children);
     if (arrayIndexingNode == NULL)
@@ -6848,12 +6327,7 @@ AstNode *parser_parseFunctionCallExpression(Parser *parser)
 
     LinkedList *children = NULL;
 
-    parser->tokens = parser->tokens->next; // Move past the open parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseFunctionCallExpression: No tokens available after open parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     if (((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS)
     {
@@ -6884,13 +6358,8 @@ AstNode *parser_parseFunctionCallExpression(Parser *parser)
 
         while (((Token *)parser->tokens->data)->type == TOKEN_COMMA)
         {
-            parser->tokens = parser->tokens->next; // Move past the comma token
-            if (parser->tokens == NULL)
-            {
-                DEBUG_PRINT("parser_parseFunctionCallExpression: No tokens available after comma.\n");
-                return NULL;
-            }
-
+            parser_moveSafelyToNextToken(parser);
+            
             expressionNode = parser_parseExpression(parser);
             if (expressionNode == NULL)
             {
@@ -6921,7 +6390,7 @@ AstNode *parser_parseFunctionCallExpression(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ')' to close function call.", 
                         ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the close parenthesis token
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *functionCallNode = astNode_create(parser->astArena, AST_FUNCTION_CALL_EXPRESSION, NULL, children);
     if (functionCallNode == NULL)
@@ -6968,7 +6437,7 @@ AstNode *parser_parsePrimaryExpression(Parser *parser)
         }
         tokens = head;
 
-        parser->tokens = parser->tokens->next; // Move past the identifier token
+        parser_moveSafelyToNextToken(parser);
     }
     else if (parser_isLiteral(parser))
     {
@@ -6982,12 +6451,7 @@ AstNode *parser_parsePrimaryExpression(Parser *parser)
     }
     else if (currentTokenType == TOKEN_OPEN_PARENTHESIS)
     {
-        parser->tokens = parser->tokens->next; // Move past the open parenthesis token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parsePrimaryExpression: No tokens available after open parenthesis.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         AstNode *groupedExprNode = parser_parseExpression(parser);
         if (groupedExprNode == NULL)
@@ -7002,7 +6466,11 @@ AstNode *parser_parsePrimaryExpression(Parser *parser)
             return NULL;
         }
 
-        parser->tokens = parser->tokens->next; // Move past the close parenthesis token
+        parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected ')' to close grouped expression.", 
+                            ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS);
+
+        parser_moveSafelyToNextToken(parser);
+
         return groupedExprNode; // Return the grouped expression node instead of creating a primary expression
     }
 
@@ -7035,7 +6503,12 @@ void parser_recoverSymbolPanic(Parser *parser)
     while (parser->tokens != NULL && ((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_EXPORT &&
            ((Token *)parser->tokens->data)->type != TOKEN_EOF)
     {
-        parser->tokens = parser->tokens->next;
+        parser->tokens = parser->tokens->next; // Move to the next token
+        if (parser->tokens == NULL)
+        {
+            DEBUG_PRINT("parser_recoverSymbolPanic: Reached end of tokens while recovering from panic.\n");
+            return;
+        }
     }
 
     if (parser->tokens == NULL)
@@ -7068,12 +6541,7 @@ AstNode *parser_parseProgramSymbols(Parser *parser)
     {
         if (((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_EXPORT)
         {
-            parser->tokens = parser->tokens->next; // Move to the next token
-            if (parser->tokens == NULL)
-            {
-                DEBUG_PRINT("parser_parseProgramSymbols: No tokens available after moving to next token.\n");
-                return NULL;
-            }
+            parser_moveSafelyToNextToken(parser);
         }
         else
         {
@@ -7218,22 +6686,12 @@ AstNode *parser_parseFunctionDefinitionSymbol(Parser *parser)
     LinkedList *tokens = NULL;
     LinkedList *children = NULL;
 
-    parser->tokens = parser->tokens->next; // Move past the export token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseFunctionDefinitionSymbol: No tokens available after export keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected open parenthesis after export keyword.", 
                           ((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the open parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseFunctionDefinitionSymbol: No tokens available after open parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *functionReturnParameterListNode = parser_parseReturnParameterList(parser);
     if (functionReturnParameterListNode == NULL)
@@ -7263,12 +6721,7 @@ AstNode *parser_parseFunctionDefinitionSymbol(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected close parenthesis after return parameter list.", 
                           ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the close parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseFunctionDefinitionSymbol: No tokens available after close parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected function name after close parenthesis.", 
                           ((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER);
@@ -7287,22 +6740,12 @@ AstNode *parser_parseFunctionDefinitionSymbol(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the function name token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseFunctionDefinitionSymbol: No tokens available after function name.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected open parenthesis after function name.", 
                           ((Token *)parser->tokens->data)->type != TOKEN_OPEN_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the open parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseFunctionDefinitionSymbol: No tokens available after open parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *functionParameterListNode = parser_parseFunctionParameterList(parser);
     if (functionParameterListNode == NULL)
@@ -7332,12 +6775,7 @@ AstNode *parser_parseFunctionDefinitionSymbol(Parser *parser)
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected close parenthesis after function parameter list.", 
                           ((Token *)parser->tokens->data)->type != TOKEN_CLOSE_PARENTHESIS);
 
-    parser->tokens = parser->tokens->next; // Move past the close parenthesis token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseFunctionDefinitionSymbol: No tokens available after close parenthesis.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *functionDefinitionNode = astNode_create(parser->astArena, AST_FUNCTION_DEFINITION, tokens, children);
     if (functionDefinitionNode == NULL)
@@ -7373,22 +6811,12 @@ AstNode *parser_parseStructDeclarationSymbol(Parser *parser)
     LinkedList *tokens = NULL;
     LinkedList *children = NULL;
 
-    parser->tokens = parser->tokens->next; // Move past the export token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseStructDeclarationSymbol: No tokens available after export keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected 'struct' keyword for struct declaration.", 
                           ((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_STRUCT);
 
-    parser->tokens = parser->tokens->next; // Move past the struct token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseStructDeclarationSymbol: No tokens available after struct keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected identifier after struct keyword.", 
                           ((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER);
@@ -7407,22 +6835,12 @@ AstNode *parser_parseStructDeclarationSymbol(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the identifier token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseStructDeclarationSymbol: No tokens available after struct identifier.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '{' after struct identifier.", 
                           ((Token *)parser->tokens->data)->type != TOKEN_OPEN_CURLY);
 
-    parser->tokens = parser->tokens->next; // Move past the open curly brace token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseStructDeclarationSymbol: No tokens available after open curly brace.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *members = parser_parseStructUnionMemberDeclaration(parser);
     if (members == NULL)
@@ -7483,12 +6901,7 @@ AstNode *parser_parseGlobalVariableDeclarationSymbol(Parser *parser)
     LinkedList *tokens = NULL;
     LinkedList *children = NULL;
 
-    parser->tokens = parser->tokens->next; // Move past the export token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseGlobalVariableDeclarationSymbol: No tokens available after export keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *fullTypeNode = parser_parseFullType(parser);
     if (fullTypeNode == NULL)
@@ -7532,21 +6945,11 @@ AstNode *parser_parseGlobalVariableDeclarationSymbol(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the identifier token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseGlobalVariableDeclarationSymbol: No tokens available after identifier.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     while (((Token *)parser->tokens->data)->type == TOKEN_COMMA)
     {
-        parser->tokens = parser->tokens->next; // Move past the comma token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseGlobalVariableDeclarationSymbol: No tokens available after comma.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         if (((Token *)parser->tokens->data)->type == TOKEN_KEYWORD_EXPORT)
         {
@@ -7564,12 +6967,7 @@ AstNode *parser_parseGlobalVariableDeclarationSymbol(Parser *parser)
             }
             tokens = head;
 
-            parser->tokens = parser->tokens->next; // Move past the export token
-            if (parser->tokens == NULL)
-            {
-                DEBUG_PRINT("parser_parseGlobalVariableDeclarationSymbol: No tokens available after export keyword.\n");
-                return NULL;
-            }
+            parser_moveSafelyToNextToken(parser);
         }
 
         fullTypeNode = parser_parseFullType(parser);
@@ -7614,12 +7012,7 @@ AstNode *parser_parseGlobalVariableDeclarationSymbol(Parser *parser)
         }
         tokens = head;
 
-        parser->tokens = parser->tokens->next; // Move past the identifier token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseGlobalVariableDeclarationSymbol: No tokens available after additional identifier.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
     }
 
     AstNode *globalVariableDeclarationNode = astNode_create(parser->astArena, AST_GLOBAL_VARIABLE_DECLARATION, tokens, children);
@@ -7656,22 +7049,12 @@ AstNode *parser_parseEnumDeclarationSymbol(Parser *parser)
     LinkedList *tokens = NULL;
     LinkedList *children = NULL;
 
-    parser->tokens = parser->tokens->next; // Move past the export token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseEnumDeclarationSymbol: No tokens available after export keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected 'enum' keyword after export.", 
                       ((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_ENUM);
 
-    parser->tokens = parser->tokens->next; // Move past the enum keyword
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseEnumDeclarationSymbol: No tokens available after enum keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected identifier after 'enum' keyword.", 
                       ((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER);
@@ -7690,22 +7073,12 @@ AstNode *parser_parseEnumDeclarationSymbol(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the identifier token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseEnumDeclarationSymbol: No tokens available after identifier.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '{' to start enum body.", 
                       ((Token *)parser->tokens->data)->type != TOKEN_OPEN_CURLY);
 
-    parser->tokens = parser->tokens->next; // Move past the open curly brace token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseEnumDeclarationSymbol: No tokens available after open curly brace.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *enumValueDeclarationNode = parser_parseEnumValueDeclarationSymbol(parser);
     if (enumValueDeclarationNode == NULL)
@@ -7766,22 +7139,12 @@ AstNode *parser_parseUnionDeclarationSymbol(Parser *parser)
     LinkedList *tokens = NULL;
     LinkedList *children = NULL;
 
-    parser->tokens = parser->tokens->next; // Move past the export token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseUnionDeclarationSymbol: No tokens available after export keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected 'union' keyword after export.", 
                           ((Token *)parser->tokens->data)->type != TOKEN_KEYWORD_UNION);
 
-    parser->tokens = parser->tokens->next; // Move past the union token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseUnionDeclarationSymbol: No tokens available after union keyword.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected identifier after union keyword.", 
                         ((Token *)parser->tokens->data)->type != TOKEN_IDENTIFIER);
@@ -7800,22 +7163,12 @@ AstNode *parser_parseUnionDeclarationSymbol(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the identifier token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseUnionDeclarationSymbol: No tokens available after union identifier.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '{' after union identifier.", 
                         ((Token *)parser->tokens->data)->type != TOKEN_OPEN_CURLY);
 
-    parser->tokens = parser->tokens->next; // Move past the open curly brace token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseUnionDeclarationSymbol: No tokens available after open curly brace.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     AstNode *members = parser_parseStructUnionMemberDeclaration(parser);
     if (members == NULL)
@@ -7879,29 +7232,14 @@ AstNode *parser_parseEnumValueDeclarationSymbol(Parser *parser)
     }
     tokens = head;
 
-    parser->tokens = parser->tokens->next; // Move past the identifier token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseEnumValueDeclarationSymbol: No tokens available after identifier.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     while (((Token *)parser->tokens->data)->type != TOKEN_COMMA)
     {
-        parser->tokens = parser->tokens->next; // Move past until comma
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseEnumValueDeclarationSymbol: No tokens available after comma.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
     }
 
-    parser->tokens = parser->tokens->next; // Move past the comma token
-    if (parser->tokens == NULL)
-    {
-        DEBUG_PRINT("parser_parseEnumValueDeclarationSymbol: No tokens available after comma.\n");
-        return NULL;
-    }
+    parser_moveSafelyToNextToken(parser);
 
     while (((Token *)parser->tokens->data)->type == TOKEN_IDENTIFIER)
     {
@@ -7919,29 +7257,14 @@ AstNode *parser_parseEnumValueDeclarationSymbol(Parser *parser)
         }
         tokens = head;
 
-        parser->tokens = parser->tokens->next; // Move past the identifier token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseEnumValueDeclarationSymbol: No tokens available after identifier.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
 
         while (((Token *)parser->tokens->data)->type != TOKEN_COMMA)
         {
-            parser->tokens = parser->tokens->next; // Move past until comma
-            if (parser->tokens == NULL)
-            {
-                DEBUG_PRINT("parser_parseEnumValueDeclarationSymbol: No tokens available after comma.\n");
-                return NULL;
-            }
+            parser_moveSafelyToNextToken(parser);
         }
 
-        parser->tokens = parser->tokens->next; // Move past the comma token
-        if (parser->tokens == NULL)
-        {
-            DEBUG_PRINT("parser_parseEnumValueDeclarationSymbol: No tokens available after comma.\n");
-            return NULL;
-        }
+        parser_moveSafelyToNextToken(parser);
     }
 
     AstNode *enumValueDeclarationNode = astNode_create(parser->astArena, AST_ENUM_VALUE_DECLARATION, tokens, children);
