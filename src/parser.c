@@ -6035,13 +6035,18 @@ AstNode *parser_parsePostfixExpression(Parser *parser)
     }
 
     My_TokenType currentTokenType = ((Token *)parser->tokens->data)->type;
-    parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected identifier, literal, or '(' to start postfix expression.",
+    parser_createError(parser, ((Token *)parser->tokens->data)->location, "Expected '{', identifier, literal, or '(' to start postfix expression.",
                         currentTokenType != TOKEN_OPEN_CURLY && currentTokenType != TOKEN_IDENTIFIER && !parser_isLiteral(parser) && currentTokenType != TOKEN_OPEN_PARENTHESIS);
 
+    LinkedList *tokens = NULL;
     LinkedList *children = NULL;
 
-    if (((Token *)parser->tokens->data)->type == TOKEN_OPEN_CURLY)
+    LinkedList *lookBack = parser->tokens; // Save the current token for later use
+    parser_moveSafelyToNextToken(parser);
+
+    if (currentTokenType == TOKEN_OPEN_CURLY)
     {
+        parser->tokens = lookBack;
         AstNode *structUnionDeclarator = parser_parseStructUnionDeclarator(parser);
         if (structUnionDeclarator == NULL)
         {
@@ -6055,19 +6060,56 @@ AstNode *parser_parsePostfixExpression(Parser *parser)
         }
         return structUnionDeclarator; // Return the struct or union declarator directly instead of creating a postfix expression node
     }
+    else if (currentTokenType == TOKEN_IDENTIFIER && parser_isPostfixPrimeExpression(parser))
+    {
+        parser->tokens = lookBack;
+        // Continue after the if statement
+    }
+    else
+    {
+        parser->tokens = lookBack;
+        AstNode *primaryExpressionNode = parser_parsePrimaryExpression(parser);
+        if (primaryExpressionNode == NULL)
+        {
+            if (parser->panic)
+            {
+                DEBUG_PRINT("parser_parsePostfixExpression: Panic state is true, skipping primary expression parsing.\n");
+                return NULL;
+            }
+            DEBUG_PRINT("parser_parsePostfixExpression: Failed to parse primary expression.\n");
+            return NULL;
+        }
+        return primaryExpressionNode; // Return the primary expression directly if no postfix prime expressions
+    }
 
-    AstNode *primaryExpressionNode = parser_parsePrimaryExpression(parser);
-    if (primaryExpressionNode == NULL)
+    Token *identifierToken = token_copy(parser->astArena, (Token *)parser->tokens->data);
+    if (identifierToken == NULL)
+    {
+        DEBUG_PRINT("parser_parsePostfixExpression: token_copy failed with errno %d\n", errno);
+        return NULL;
+    }
+    LinkedList *head = linkedList_Token_create(parser->astArena, tokens, identifierToken);
+    if (head == NULL)
+    {
+        DEBUG_PRINT("parser_parsePostfixExpression: linkedList_Token_create failed with errno %d\n", errno);
+        return NULL;
+    }
+    tokens = head;
+
+    parser_moveSafelyToNextToken(parser);
+
+    AstNode *postfixPrimeNode = parser_parsePostfixPrimeExpression(parser);
+    if (postfixPrimeNode == NULL)
     {
         if (parser->panic)
         {
-            DEBUG_PRINT("parser_parsePostfixExpression: Panic state is true, skipping primary expression parsing.\n");
+            DEBUG_PRINT("parser_parsePostfixExpression: Panic state is true, skipping postfix prime expression parsing.\n");
             return NULL;
         }
-        DEBUG_PRINT("parser_parsePostfixExpression: Failed to parse primary expression.\n");
+        DEBUG_PRINT("parser_parsePostfixExpression: Failed to parse postfix prime expression.\n");
         return NULL;
     }
-    LinkedList *head = linkedList_Ast_create(parser->astArena, children, primaryExpressionNode);
+    head = linkedList_Ast_create(parser->astArena, children, postfixPrimeNode);
     if (head == NULL)
     {
         DEBUG_PRINT("parser_parsePostfixExpression: linkedList_Ast_create failed with errno %d\n", errno);
@@ -6077,15 +6119,13 @@ AstNode *parser_parsePostfixExpression(Parser *parser)
 
     if (parser->tokens == NULL)
     {
-        DEBUG_PRINT("parser_parsePostfixExpression: No tokens available after primary expression.\n");
+        DEBUG_PRINT("parser_parsePostfixExpression: No tokens available after postfix prime expression.\n");
         return NULL;
     }
 
-    bool hasPostfixPrime = false;
     while (parser_isPostfixPrimeExpression(parser))
     {
-        hasPostfixPrime = true;
-        AstNode *postfixPrimeNode = parser_parsePostfixPrimeExpression(parser);
+        postfixPrimeNode = parser_parsePostfixPrimeExpression(parser);
         if (postfixPrimeNode == NULL)
         {
             if (parser->panic)
@@ -6111,12 +6151,7 @@ AstNode *parser_parsePostfixExpression(Parser *parser)
         }
     }
 
-    if (!hasPostfixPrime)
-    {
-        return primaryExpressionNode; // If no postfix prime expressions, return the primary expression directly
-    }
-
-    AstNode *postfixExpressionNode = astNode_create(parser->astArena, AST_POSTFIX_EXPRESSION, NULL, children);
+    AstNode *postfixExpressionNode = astNode_create(parser->astArena, AST_POSTFIX_EXPRESSION, tokens, children);
     if (postfixExpressionNode == NULL)
     {
         DEBUG_PRINT("parser_parsePostfixExpression: astNode_create failed with errno %d\n", errno);

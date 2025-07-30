@@ -281,8 +281,6 @@ Union_declaration = [ "export" ] "union" identifier "{" Struct_Union_member_decl
 
 Struct_Union_member_declaration = Full_type identifier ";" { Full_type identifier ";" } ;
 
-Struct_Union_declarator = "{" ( Struct_Union_indirect_declarator | Struct_Union_direct_declarator ) "}" ;
-
 Struct_Union_indirect_declarator = Expression { "," Expression } ;
 
 Struct_Union_direct_declarator = "." identifier "=" Expression { "," "." identifier "=" Expression } ;
@@ -394,11 +392,14 @@ Type_cast_expression = ( "(" Full_type ")" Type_cast_expression )
                      | Postfix_expression ;
 
 Postfix_expression = Struct_Union_declarator
-                   | ( Primary_expression { Postfix_prime_expression } ) ;
+                   | ( identifier Postfix_prime_expression { Postfix_prime_expression } ) 
+                   | Primary_expression ;
 
 Postfix_prime_expression = Postfix_operator
                          | Array_indexing_expression
                          | Function_call_expression ;
+
+Struct_Union_declarator = "{" ( Struct_Union_indirect_declarator | Struct_Union_direct_declarator ) "}" ;
 
 Array_indexing_expression = "[" Expression "]" ;
 
