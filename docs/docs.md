@@ -13,12 +13,12 @@ compiler
 - docs/
 -- docs.md (this file)
 -- grammer.md
+-- refs.mc
 - include/ (contains all the .h files only separating utils/ into its own directory)
 - src/
 -- utils/
 --- dataStructures/
 ---- bitset.c
----- dynamicArray.c
 ---- hashTable.c
 ---- linkedList.c
 ---- stack.c
@@ -37,45 +37,12 @@ compiler
 -- options.c
 -- parser.c
 -- validator.c
-- test/
+- tests/
 - .gitignore
 - LICENSE
 - Makefile
 - README.md
 ```
-
-Done:
-   .github/workflow/c-cpp.yml
-   Makefile
-   .gitignore
-   LICENSE
-   bitset.c/h + documentation
-   hashTable.c/h + documentation
-   linkedList.c/h + documentation
-   arena.c/h + documentation
-   ast.c/h + documentation
-   error.c/h + documentation
-   location.c/h + documentation
-   logger.c/h + documentation
-   my_string.c/h + documentation
-   symbol.c/h + documentation
-   token.c/h + documentation
-   fileSystem.c/h + documentation
-   lexer.c/h + documentation
-   options.c/h + documentation
-   parser.c/h + documentation
-
-Making this now:
-
-Todo:
-   Fix includes
-   Make test files
-   Double check documentations
-
-   stack.c/h + documentation
-   dynamicArray.c/h + documentation
-   validator.c/h + documentation
-   codeGenerator.c/h + documentation
 
 ## Memory managment:
 For now I have only made plans until the parsing is finished.
