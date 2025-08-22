@@ -4,7 +4,7 @@
 Cmc is a cross-platform compiler for a C and GoLang like language.
 
 ## Project status  
-Currently under develpoment.
+Currently under development.
 
 ## Features  
 - Lexer with support for integer, float, string, char, hex/octal literals
